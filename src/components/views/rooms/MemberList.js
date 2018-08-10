@@ -16,6 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 import React from 'react';
 import { _t } from '../../../languageHandler';
 import SdkConfig from '../../../SdkConfig';
@@ -24,7 +31,8 @@ const sdk = require('../../../index');
 const rate_limited_func = require('../../../ratelimitedfunc');
 const CallHandler = require("../../../CallHandler");
 
-const INITIAL_LOAD_NUM_MEMBERS = 30;
+const INITIAL_LOAD_NUM_MEMBERS = 25;
+const INITIAL_LOAD_NUM_DISCORD = 20;
 const INITIAL_LOAD_NUM_INVITED = 5;
 const SHOW_MORE_INCREMENT = 100;
 
@@ -38,11 +46,13 @@ module.exports = React.createClass({
         return {
             members: members,
             filteredJoinedMembers: this._filterMembers(members, 'join'),
+            filteredDiscordMembers: this._filterMembers(members, 'discord'),
             filteredInvitedMembers: this._filterMembers(members, 'invite'),
 
             // ideally we'd size this to the page height, but
             // in practice I find that a little constraining
             truncateAtJoined: INITIAL_LOAD_NUM_MEMBERS,
+            truncateAtDiscord: INITIAL_LOAD_NUM_DISCORD,
             truncateAtInvited: INITIAL_LOAD_NUM_INVITED,
             searchQuery: "",
         };
@@ -155,6 +165,7 @@ module.exports = React.createClass({
             members: this.roomMembers(),
         };
         newState.filteredJoinedMembers = this._filterMembers(newState.members, 'join', this.state.searchQuery);
+        newState.filteredDiscordMembers = this._filterMembers(newState.members, 'discord', this.state.searchQuery);
         newState.filteredInvitedMembers = this._filterMembers(newState.members, 'invite', this.state.searchQuery);
         this.setState(newState);
     }, 500),
@@ -209,6 +220,10 @@ module.exports = React.createClass({
         return this._createOverflowTile(overflowCount, totalCount, this._showMoreJoinedMemberList);
     },
 
+    _createOverflowTileDiscord: function(overflowCount, totalCount) {
+        return this._createOverflowTile(overflowCount, totalCount, this._showMoreDiscordMemberList);
+    },
+
     _createOverflowTileInvited: function(overflowCount, totalCount) {
         return this._createOverflowTile(overflowCount, totalCount, this._showMoreInvitedMemberList);
     },
@@ -229,6 +244,12 @@ module.exports = React.createClass({
     _showMoreJoinedMemberList: function() {
         this.setState({
             truncateAtJoined: this.state.truncateAtJoined + SHOW_MORE_INCREMENT,
+        });
+    },
+
+    _showMoreDiscordMemberList: function() {
+        this.setState({
+            truncateAtDiscord: this.state.truncateAtDiscord + SHOW_MORE_INCREMENT,
         });
     },
 
@@ -301,6 +322,7 @@ module.exports = React.createClass({
         this.setState({
             searchQuery: q,
             filteredJoinedMembers: this._filterMembers(this.state.members, 'join', q),
+            filteredDiscordMembers: this._filterMembers(this.state.members, 'discord', q),
             filteredInvitedMembers: this._filterMembers(this.state.members, 'invite', q),
         });
     },
@@ -319,7 +341,11 @@ module.exports = React.createClass({
                 }
             }
 
-            return m.membership === membership;
+            if (typeof m.events.member.event.content["uk.half-shot.discord.member"] != "undefined") {
+                return membership === 'discord';
+            } else {
+                return m.membership === membership;
+            }
         });
     },
 
@@ -384,6 +410,14 @@ module.exports = React.createClass({
         return this.state.filteredJoinedMembers.length;
     },
 
+    _getChildrenDiscord: function(start, end) {
+        return this._makeMemberTiles(this.state.filteredDiscordMembers.slice(start, end));
+    },
+
+    _getChildCountDiscord: function() {
+        return this.state.filteredDiscordMembers.length;
+    },
+
     _getChildrenInvited: function(start, end) {
         return this._makeMemberTiles(this.state.filteredInvitedMembers.slice(start, end), 'invite');
     },
@@ -412,6 +446,24 @@ module.exports = React.createClass({
             );
         }
 
+        let discordSection = null;
+        if (this._getChildCountDiscord() > 0) {
+            // TODO: make these styles part of the theme rather than hard-coded
+            // by giving it a unique class
+            discordSection = (
+                <div className="mx_MemberList_invited" style={{ marginTop: "8px", marginBottom: "8px", backgroundColor: "#23272A10", borderRadius: "10px", padding: "3px", boxShadow: "inset 0 0 5px #7289DA" }}>
+                    <h2 style={{ textAlign: "center" }}><img src="img/bridges/discordlogo.svg" style={{ verticalAlign: "middle", height: "40px", paddingRight: "5px" }} />{ _t("Discord Users") }</h2>
+                    <div className="mx_MemberList_wrapper">
+                        <TruncatedList className="mx_MemberList_wrapper" truncateAt={this.state.truncateAtDiscord}
+                                createOverflowElement={this._createOverflowTileDiscord}
+                                getChildren={this._getChildrenDiscord}
+                                getChildCount={this._getChildCountDiscord}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
         const inputBox = (
             <form autoComplete="off">
                 <input className="mx_MemberList_query" id="mx_MemberList_query" type="text"
@@ -429,6 +481,7 @@ module.exports = React.createClass({
                             getChildren={this._getChildrenJoined}
                             getChildCount={this._getChildCountJoined}
                     />
+                    { discordSection }
                     { invitedSection }
                 </GeminiScrollbarWrapper>
             </div>

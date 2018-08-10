@@ -15,6 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 import {_td} from '../languageHandler';
 import {
     AudioNotificationsEnabledController,
@@ -77,6 +84,36 @@ export const SETTINGS = {
     //     // level is always appended to the end.
     //     supportedLevelsAreOrdered: false,
     // },
+    "feature_round_avatars": {
+        isFeature: true,
+        displayName: _td("Round Avatars"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_no_discord_colours": {
+        isFeature: true,
+        displayName: _td("Disable Discord Colours"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_no_bridge_badges": {
+        isFeature: true,
+        displayName: _td("Disable Bridge Badges"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_nsfw_ponymotes": {
+        isFeature: true,
+        displayName: _td("NSFW Ponymotes"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_interplanetary_time": {
+        isFeature: true,
+        displayName: _td("IPT Format Timestamps"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
     "feature_pinning": {
         isFeature: true,
         displayName: _td("Message Pinning"),

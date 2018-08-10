@@ -15,6 +15,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 import SettingsStore, {SettingLevel} from "../../settings/SettingsStore";
 
 const React = require('react');
@@ -125,6 +133,7 @@ const THEMES = [
     { label: _td('Light theme'), value: 'light' },
     { label: _td('Dark theme'), value: 'dark' },
     { label: _td('Status.im theme'), value: 'status' },
+    { label: _td('Blueshine theme'), value: 'blueshine' },
 ];
 
 const IgnoredUser = React.createClass({

@@ -15,6 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 // @flow
 
 import type {Component} from 'react';
@@ -26,6 +33,7 @@ import RoomProvider from './RoomProvider';
 import UserProvider from './UserProvider';
 import EmojiProvider from './EmojiProvider';
 import NotifProvider from './NotifProvider';
+import PonymoteProvider from './PonymoteProvider';
 import Promise from 'bluebird';
 
 export type SelectionRange = {
@@ -52,6 +60,7 @@ const PROVIDERS = [
     CommandProvider,
     CommunityProvider,
     DuckDuckGoProvider,
+    PonymoteProvider,
 ];
 
 // Providers will get rejected if they take longer than this.

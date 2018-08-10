@@ -14,6 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
@@ -1133,6 +1141,14 @@ export default class MessageComposerInput extends React.Component {
                 contentText = this.plainWithPlainPills.serialize(editorState);
                 contentHTML = mdWithPills.toHTML();
             }
+        }
+
+        // replace emotes!
+        if (contentHTML) {
+            contentHTML = contentHTML.replace(
+                /<a\s+href="emote:\/\/([^"]+)"[^>]*>([^<]+)<\/a>/g,
+                '<img src="$1" height="32" alt="$2" />'
+            );
         }
 
         let sendHtmlFn = ContentHelpers.makeHtmlMessage;

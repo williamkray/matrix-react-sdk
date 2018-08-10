@@ -15,12 +15,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
+*/
+
 import React from 'react';
 import PropTypes from 'prop-types';
 import { MatrixClient } from 'matrix-js-sdk';
 import AvatarLogic from '../../../Avatar';
 import sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
+import SettingsStore from "../../../settings/SettingsStore"; 
 
 module.exports = React.createClass({
     displayName: 'BaseAvatar',
@@ -175,6 +183,11 @@ module.exports = React.createClass({
             ...otherProps
         } = this.props;
 
+        let imageClasses = 'mx_BaseAvatar_image';
+        if (SettingsStore.isFeatureEnabled("feature_round_avatars")) {
+            imageClasses += ' mx_RoundAvatar'
+        }
+
         if (imageUrl === this.state.defaultImageUrl) {
             const initialLetter = this._getInitialLetter(name);
             const textNode = (
@@ -187,13 +200,14 @@ module.exports = React.createClass({
                 </EmojiText>
             );
             const imgNode = (
-                <img className="mx_BaseAvatar_image" src={imageUrl}
+                <img className={imageClasses} src={imageUrl}
                     alt="" title={title} onError={this.onError}
                     width={width} height={height} />
             );
+            imageClasses = imageClasses.replace('mx_BaseAvatar_image', 'mx_BaseAvatar');
             if (onClick != null) {
                 return (
-                    <AccessibleButton element='span' className="mx_BaseAvatar"
+                    <AccessibleButton element='span' className={imageClasses}
                         onClick={onClick} {...otherProps}
                     >
                         { textNode }
@@ -202,16 +216,17 @@ module.exports = React.createClass({
                 );
             } else {
                 return (
-                    <span className="mx_BaseAvatar" {...otherProps}>
+                    <span className={imageClasses} {...otherProps}>
                         { textNode }
                         { imgNode }
                     </span>
                 );
             }
         }
+        imageClasses += ' mx_BaseAvatar';
         if (onClick != null) {
             return (
-                <AccessibleButton className="mx_BaseAvatar mx_BaseAvatar_image"
+                <AccessibleButton className={imageClasses}
                     element='img'
                     src={imageUrl}
                     onClick={onClick}
@@ -222,7 +237,7 @@ module.exports = React.createClass({
             );
         } else {
             return (
-                <img className="mx_BaseAvatar mx_BaseAvatar_image" src={imageUrl}
+                <img className={imageClasses} src={imageUrl}
                     onError={this.onError}
                     width={width} height={height}
                     title={title} alt=""
