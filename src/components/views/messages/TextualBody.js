@@ -199,7 +199,7 @@ module.exports = React.createClass({
                         inMessage={true}
                         room={room}
                         shouldShowPillAvatar={shouldShowPillAvatar}
-                        content={node.textContent}
+                        content={node.innerHTML}
                     />;
 
                     ReactDOM.render(pill, pillContainer);

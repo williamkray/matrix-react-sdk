@@ -216,7 +216,9 @@ const Pill = React.createClass({
         const resource = this.state.resourceId;
 
         let avatar = null;
-        let linkText = this.props.content;
+        // we set html here, as the props.content was already html escaped
+        // so it can contain things like <img> tags for emoji
+        let linkText = this.props.content ? <span dangerouslySetInnerHTML={{ __html: this.props.content }} /> : null;
         let pillClass;
         let userId;
         let href = this.props.url;
