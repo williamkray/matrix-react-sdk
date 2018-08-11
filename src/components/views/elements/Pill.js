@@ -1,6 +1,7 @@
 /*
 Copyright 2017 Vector Creations Ltd
 Copyright 2018 New Vector Ltd
+Copyright 2018 ponies.im
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,6 +14,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
 */
 import React from 'react';
 import sdk from '../../../index';
@@ -29,7 +35,7 @@ const REGEX_MATRIXTO = new RegExp(MATRIXTO_URL_PATTERN);
 
 // For URLs of matrix.to links in the timeline which have been reformatted by
 // HttpUtils transformTags to relative links. This excludes event URLs (with `[^\/]*`)
-const REGEX_LOCAL_MATRIXTO = /^#\/(?:user|room|group)\/(([#!@+])[^\/]*)$/;
+const REGEX_LOCAL_MATRIXTO = /^#\/(?:user|room|group)\/(([#!@+]).*)$/;
 
 const Pill = React.createClass({
     statics: {
@@ -64,6 +70,8 @@ const Pill = React.createClass({
         shouldShowPillAvatar: PropTypes.bool,
         // Whether to render this pill as if it were highlit by a selection
         isSelected: PropTypes.bool,
+        // the content the pill shall have
+        content: PropTypes.string,
     },
 
 
@@ -139,7 +147,7 @@ const Pill = React.createClass({
             case Pill.TYPE_ROOM_MENTION: {
                 const localRoom = resourceId[0] === '#' ?
                     MatrixClientPeg.get().getRooms().find((r) => {
-                        return r.getAliases().includes(resourceId);
+                        return r.getCanonicalAlias() == resourceId || r.getAliases().includes(resourceId);
                     }) : MatrixClientPeg.get().getRoom(resourceId);
                 room = localRoom;
                 if (!localRoom) {
@@ -208,7 +216,7 @@ const Pill = React.createClass({
         const resource = this.state.resourceId;
 
         let avatar = null;
-        let linkText = resource;
+        let linkText = this.props.content;
         let pillClass;
         let userId;
         let href = this.props.url;
@@ -231,7 +239,9 @@ const Pill = React.createClass({
                     if (member) {
                         userId = member.userId;
                         member.rawDisplayName = member.rawDisplayName || '';
-                        linkText = member.rawDisplayName.replace(' (IRC)', ''); // FIXME when groups are done
+                        if (!linkText) {
+                            linkText = member.rawDisplayName.replace(' (IRC)', ''); // FIXME when groups are done
+                        }
                         if (this.props.shouldShowPillAvatar) {
                             avatar = <MemberAvatar member={member} width={16} height={16} />;
                         }
@@ -244,7 +254,9 @@ const Pill = React.createClass({
             case Pill.TYPE_ROOM_MENTION: {
                 const room = this.state.room;
                 if (room) {
-                    linkText = (room ? getDisplayAliasForRoom(room) : null) || resource;
+                    if (!linkText) {
+                        linkText = (room ? getDisplayAliasForRoom(room) : null) || resource;
+                    }
                     if (this.props.shouldShowPillAvatar) {
                         avatar = <RoomAvatar room={room} width={16} height={16} />;
                     }
@@ -257,7 +269,9 @@ const Pill = React.createClass({
                     const {avatarUrl, groupId, name} = this.state.group;
                     const cli = MatrixClientPeg.get();
 
-                    linkText = groupId;
+                    if (!linkText) {
+                        linkText = groupId;
+                    }
                     if (this.props.shouldShowPillAvatar) {
                         avatar = <BaseAvatar name={name || groupId} width={16} height={16}
                                              url={avatarUrl ? cli.mxcUrlToHttp(avatarUrl, 16, 16) : null} />;
