@@ -1441,6 +1441,7 @@ export default class MessageComposerInput extends React.Component {
 
                 const shouldShowPillAvatar = !SettingsStore.getValue("Pill.shouldHidePillAvatar");
                 const Pill = sdk.getComponent('elements.Pill');
+                const Emote = sdk.getComponent('elements.Emote');
 
                 if (completion === '@room') {
                     return <Pill
@@ -1456,6 +1457,12 @@ export default class MessageComposerInput extends React.Component {
                             room={this.props.room}
                             shouldShowPillAvatar={shouldShowPillAvatar}
                             isSelected={isSelected}
+                            />;
+                }
+                else if (Emote.isEmoteUrl(url)) {
+                    return <Emote
+                            url={url}
+                            alt={completion}
                             />;
                 }
                 else {
