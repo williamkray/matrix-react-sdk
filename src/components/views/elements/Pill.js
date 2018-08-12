@@ -37,10 +37,12 @@ const REGEX_MATRIXTO = new RegExp(MATRIXTO_URL_PATTERN);
 // HttpUtils transformTags to relative links. This excludes event URLs (with `[^\/]*`)
 const REGEX_LOCAL_MATRIXTO = /^#\/(?:user|room|group)\/(([#!@+]).*)$/;
 
+const REGEX_EMOTE = /^emote:\/\/(.*)$/;
+
 const Pill = React.createClass({
     statics: {
         isPillUrl: (url) => {
-            return !!REGEX_MATRIXTO.exec(url);
+            return !!REGEX_MATRIXTO.exec(url) || !!REGEX_EMOTE.exec(url);
         },
         isMessagePillUrl: (url) => {
             return !!REGEX_LOCAL_MATRIXTO.exec(url);
@@ -55,6 +57,7 @@ const Pill = React.createClass({
         TYPE_ROOM_MENTION: 'TYPE_ROOM_MENTION',
         TYPE_GROUP_MENTION: 'TYPE_GROUP_MENTION',
         TYPE_AT_ROOM_MENTION: 'TYPE_AT_ROOM_MENTION', // '@room' mention
+        TYPE_EMOTE: 'TYPE_EMOTE',
     },
 
     props: {
@@ -118,6 +121,16 @@ const Pill = React.createClass({
 
             resourceId = matrixToMatch[1]; // The room/user ID
             prefix = matrixToMatch[2]; // The first character of prefix
+
+            // maybe we have an emote
+            if (!prefix) {
+                matrixToMatch = REGEX_EMOTE.exec(nextProps.url) || [];
+                console.log(matrixToMatch);
+                if (!!matrixToMatch) {
+                    resourceId = matrixToMatch[1];
+                    prefix = 'e';
+                }
+            }
         }
 
         const pillType = this.props.type || {
@@ -125,6 +138,7 @@ const Pill = React.createClass({
             '#': Pill.TYPE_ROOM_MENTION,
             '!': Pill.TYPE_ROOM_MENTION,
             '+': Pill.TYPE_GROUP_MENTION,
+            'e': Pill.TYPE_EMOTE,
         }[prefix];
 
         let member;
@@ -280,6 +294,12 @@ const Pill = React.createClass({
                     }
                     pillClass = 'mx_GroupPill';
                 }
+            }
+                break;
+            case Pill.TYPE_EMOTE: {
+                const cli = MatrixClientPeg.get();
+                const url = cli.mxcUrlToHttp(href.replace('emote://', ''), 800, 32);
+                return <img src={url} height={32} />
             }
                 break;
         }

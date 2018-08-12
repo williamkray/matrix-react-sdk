@@ -141,6 +141,8 @@ export default class PonymoteProvider extends AutocompleteProvider {
                 const completion = ':'+n+':';
                 return {
                     completion: completion,
+                    completionId: completion,
+                    suffix: ' ',
                     href: 'emote://'+mxc,
                     component: (
                         <PillCompletion initialComponent={<EmoteAvatar width={24} height={24} mxcUrl={mxc} name={n} />} title={n} />
