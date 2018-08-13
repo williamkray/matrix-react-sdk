@@ -33,6 +33,7 @@ import UserProvider from './UserProvider';
 import EmojiProvider from './EmojiProvider';
 import NotifProvider from './NotifProvider';
 import PonymoteProvider from './PonymoteProvider';
+import EmoteProvider from './EmoteProvider';
 import Promise from 'bluebird';
 
 export type SelectionRange = {
@@ -59,6 +60,7 @@ const PROVIDERS = [
     CommandProvider,
     CommunityProvider,
     DuckDuckGoProvider,
+    EmoteProvider,
     PonymoteProvider,
 ];
 
