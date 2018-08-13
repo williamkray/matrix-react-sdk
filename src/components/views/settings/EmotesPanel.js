@@ -34,6 +34,8 @@ export default class EmotesPanel extends React.Component {
         this._loadEmotes = this._loadEmotes.bind(this);
         this._onSubmit = this._onSubmit.bind(this);
         this._addEmote = this._addEmote.bind(this);
+        this._onFileSelected = this._onFileSelected.bind(this);
+        this._tryUpdate = this._tryUpdate.bind(this);
     }
 
     componentWillUnmount() {
@@ -42,6 +44,13 @@ export default class EmotesPanel extends React.Component {
 
     componentDidMount() {
         this._loadEmotes();
+    }
+
+    _tryUpdate() {
+        return MatrixClientPeg.get().setAccountData('im.ponies.user_emotes', this.emotes).catch((e) => {
+            console.error("Failed setting emotes");
+            throw new Error("Failed to set emotes");
+        });
     }
 
     _loadEmotes() {
@@ -70,10 +79,7 @@ export default class EmotesPanel extends React.Component {
 
     _onSubmit() {
         this._updateEmotesFromDOM();
-        return MatrixClientPeg.get().setAccountData('im.ponies.user_emotes', this.emotes).catch((e) => {
-            console.error("Failed setting emotes");
-            throw new Error("Failed to set emotes");
-        }).then(() => {
+        return this._tryUpdate().then(() => {
             this.forceUpdate();
         });
     }
@@ -81,12 +87,28 @@ export default class EmotesPanel extends React.Component {
     _addEmote() {
         this._updateEmotesFromDOM();
         this.emotes.short[""] = "";
-        return MatrixClientPeg.get().setAccountData('im.ponies.user_emotes', this.emotes).catch((e) => {
-            console.error("Failed setting emotes");
-            throw new Error("Failed to set emotes");
-        }).then(() => {
+        return this._tryUpdate().then(() => {
             this.forceUpdate();
         });
+    }
+
+    _onFileSelected(emote) {
+        return (ev) => {
+            const file = ev.target.files[0];
+
+            console.log("======");
+            console.log(ev);
+            console.log(emote);
+            
+            return MatrixClientPeg.get().uploadContent(file).then((url) => {
+                this._updateEmotesFromDOM();
+                console.log(url);
+                this.emotes.short[emote] = url;
+                return this._tryUpdate();
+            }).then(() => {
+                this.forceUpdate();
+            });
+        }
     }
 
     render() {
@@ -96,6 +118,11 @@ export default class EmotesPanel extends React.Component {
         const EditableTextContainer = sdk.getComponent('elements.EditableTextContainer');
         const Emote = sdk.getComponent('elements.Emote');
         const emoteEntries = [];
+        const click = (id) => {
+            return () => {
+                document.getElementById(id).click();
+            };
+        };
         if (this.emotes.short) {
             for (const emote of Object.keys(this.emotes.short)) {
                 let i = 0;
@@ -113,7 +140,16 @@ export default class EmotesPanel extends React.Component {
                                 initialValue={this.emotes.short[emote]}
                                 onSubmit={this._onSubmit}
                                 blurToSubmit={true}
-                                key={i}/>
+                                key={i} />
+                        </td>
+                        <td key={i++}>
+                            <button className="mx_textButton mx_AccessibleButton" onClick={click("mx_EmotesPanel_entry_file_"+emote)}>{"Chose File"}</button>
+                            <input
+                                id={"mx_EmotesPanel_entry_file_"+emote}
+                                type="file"
+                                accept="image/*"
+                                onChange={this._onFileSelected(emote)}
+                                style={{display: 'none'}} />
                         </td>
                         <td key={i++}>
                             <Emote url={this.emotes.short[emote]} alt={emote} key={i} />
@@ -130,6 +166,7 @@ export default class EmotesPanel extends React.Component {
                         <tr>
                             <th>{ _t('Emote Name') }</th>
                             <th>{ _t('Emote MXC URL') }</th>
+                            <th></th>
                             <th>{ _t('Emote Preview') }</th>
                         </tr>
                     </thead>
