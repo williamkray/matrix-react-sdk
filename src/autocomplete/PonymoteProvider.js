@@ -155,7 +155,7 @@ export default class PonymoteProvider extends AutocompleteProvider {
     }
 
     getName() {
-        return 'Ponymotes';
+        return _t('Ponymotes');
     }
 
     renderCompletions(completions: [React.Component]): ?React.Component {

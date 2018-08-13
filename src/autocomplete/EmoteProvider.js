@@ -125,7 +125,7 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     getName() {
-        return 'Emotes';
+        return _t('Emotes');
     }
 
     renderCompletions(completions: [React.Component]): ?React.Component {
