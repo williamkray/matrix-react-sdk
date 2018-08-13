@@ -886,6 +886,18 @@ module.exports = React.createClass({
         );
     },
 
+    _renderEmotesSettings: function() {
+        const EmotesPanel = sdk.getComponent('settings.EmotesPanel');
+        return (
+            <div>
+                <h3>{ _t("User Emotes") }</h3>
+                <div className="mx_UserSettings_section">
+                    <EmotesPanel />
+                </div>
+            </div>
+        );
+    },
+
     _renderDeactivateAccount: function() {
         return <div>
             <h3>{ _t("Deactivate Account") }</h3>
@@ -1330,6 +1342,7 @@ module.exports = React.createClass({
 
                 { this._renderUserInterfaceSettings() }
                 { this._renderLabs() }
+                { this._renderEmotesSettings() }
                 { this._renderWebRtcSettings() }
                 { this._renderDevicesPanel() }
                 { this._renderCryptoInfo() }
