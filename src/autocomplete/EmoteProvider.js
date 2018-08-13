@@ -44,6 +44,10 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     loadEmotes(event) {
+        if (!event) {
+            return;
+        }
+
         if (event.error) {
             return;
         }

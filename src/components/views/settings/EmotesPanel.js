@@ -55,7 +55,7 @@ export default class EmotesPanel extends React.Component {
 
     _loadEmotes() {
         const event = MatrixClientPeg.get().getAccountData('im.ponies.user_emotes');
-        if (!event.error && event.event.type == 'im.ponies.user_emotes' && event.event.content) {
+        if (event && !event.error && event.event.type == 'im.ponies.user_emotes' && event.event.content) {
             this.emotes = event.event.content;
         }
     }
@@ -123,7 +123,7 @@ export default class EmotesPanel extends React.Component {
                 document.getElementById(id).click();
             };
         };
-        if (this.emotes.short) {
+        if (this.emotes && this.emotes.short) {
             for (const emote of Object.keys(this.emotes.short)) {
                 let i = 0;
                 emoteEntries.push(
