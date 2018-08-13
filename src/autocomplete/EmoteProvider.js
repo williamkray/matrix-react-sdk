@@ -18,12 +18,11 @@ import React from 'react';
 import { _t } from '../languageHandler';
 import AutocompleteProvider from './AutocompleteProvider';
 import MatrixClientPeg from '../MatrixClientPeg';
-import FuzzyMatcher from './FuzzyMatcher';
 import {PillCompletion} from './Components';
 import sdk from '../index';
 import _sortBy from 'lodash/sortBy';
 
-const EMOTE_REGEX = /(:[^+\s:]+:?)/g;
+const EMOTE_REGEX = /(\S+)/g;
 const LIMIT = 20;
 
 function score(query, space) {
@@ -40,16 +39,8 @@ export default class EmoteProvider extends AutocompleteProvider {
         super(EMOTE_REGEX);
         this.client = MatrixClientPeg.get();
         this.emoteData = [];
-        this.loadMatcher();
         this.loadEmotes(this.client.getAccountData('im.ponies.user_emotes'));
         this.listenChanges();
-    }
-
-    loadMatcher() {
-        this.matcher = new FuzzyMatcher(this.emoteData, {
-            keys: 'code',
-            shouldMatchWordsOnly: false,
-        });
     }
 
     loadEmotes(event) {
@@ -74,7 +65,6 @@ export default class EmoteProvider extends AutocompleteProvider {
                 mxc: emote_data_content.short[emote],
             });
         }
-        this.loadMatcher();
     }
 
     listenChanges() {
@@ -83,22 +73,38 @@ export default class EmoteProvider extends AutocompleteProvider {
         });
     }
 
+    match(s) {
+        if (s.length == 0) {
+            return [];
+        }
+        s = s.toLowerCase();
+
+        const results = [];
+        this.emoteData.forEach((e) => {
+            const index = e.code.toLowerCase().indexOf(s);
+            if (index !== -1) {
+                results.push(e);
+            }
+        });
+        return results;
+    }
+
     async getCompletions(query: string, selection: {start: number, end: number}, force = false) {
         
         let completions = [];
         const {command, range} = this.getCurrentCommand(query, selection, force);
         if (command) {
             const EmoteAvatar = sdk.getComponent('views.avatars.EmoteAvatar');
-            
+
             const matchedString = command[1];
-            completions = this.matcher.match(matchedString);
+            completions = this.match(matchedString);
             try {
                 completions = _sortBy(completions, [
                     (c) => score(matchedString, c.code),
                     (c) => c.code.length,
                 ]).slice(0, LIMIT).map((result) => {
                     const mxc = result.mxc;
-                    const code = result.code + ':';
+                    const code = result.code;
                     return {
                         completion: code,
                         completionId: code,
