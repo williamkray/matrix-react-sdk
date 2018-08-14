@@ -35,12 +35,17 @@ the Cooperative Software License as distributed with this project.
 }
 
 .mx_BaseAvatar_image {
-    border-radius: 4px;
+    -webkit-mask-image: url(img/masks/squircle.png);
+    mask-image: url(img/masks/squircle.png);
+    -webkit-mask-size: 100%;
+    mask-size: 100%;
     vertical-align: top;
     background-color: $avatar-bg-color;
 }
 
 .mx_BaseAvatar_image.mx_RoundAvatar {
+    -webkit-mask-image: none;
+    mask-image: none;
     border-radius: 40px;
 }
 
