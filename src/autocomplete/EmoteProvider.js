@@ -44,11 +44,7 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     loadEmotes(event) {
-        if (!event) {
-            return;
-        }
-
-        if (event.error) {
+        if (!event || event.error) {
             return;
         }
 
@@ -86,7 +82,7 @@ export default class EmoteProvider extends AutocompleteProvider {
         const results = [];
         this.emoteData.forEach((e) => {
             const index = e.code.toLowerCase().indexOf(s);
-            if (index !== -1) {
+            if (index === 0) {
                 results.push(e);
             }
         });
