@@ -1146,7 +1146,7 @@ export default class MessageComposerInput extends React.Component {
         if (contentHTML) {
             contentHTML = contentHTML.replace(
                 /<a\s+href="emote:\/\/([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                '<img src="$1" height="32" alt="$2" />'
+                '<img src="$1" height="32" alt="$2" title="$2" />'
             );
         }
 

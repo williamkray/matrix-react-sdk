@@ -35,7 +35,7 @@ const Emote = React.createClass({
     render: function() {
         const cli = MatrixClientPeg.get();
         const url = cli.mxcUrlToHttp(this.props.url.replace('emote://', ''), 800, 32);
-        return <img src={url} height={32} alt={this.props.alt} />;
+        return <img src={url} height={32} alt={this.props.alt} title={this.props.alt} />;
     }
 });
 
