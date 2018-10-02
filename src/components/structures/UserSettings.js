@@ -904,6 +904,7 @@ module.exports = React.createClass({
                 </div>
             </div>
         );
+    },
 
     _onLazyLoadChanging: async function(enabling) {
         // don't prevent turning LL off when not supported
