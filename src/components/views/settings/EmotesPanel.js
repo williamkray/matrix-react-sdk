@@ -142,14 +142,13 @@ export default class EmotesPanel extends React.Component {
                                 blurToSubmit={true}
                                 key={i} />
                         </td>
-                        <td key={i++}>
+                        <td className="mx_EmotesPanel_file" key={i++}>
                             <button className="mx_textButton mx_AccessibleButton" onClick={click("mx_EmotesPanel_entry_file_"+emote)}>{"Chose File"}</button>
                             <input
                                 id={"mx_EmotesPanel_entry_file_"+emote}
                                 type="file"
                                 accept="image/*"
-                                onChange={this._onFileSelected(emote)}
-                                style={{display: 'none'}} />
+                                onChange={this._onFileSelected(emote)} />
                         </td>
                         <td key={i++}>
                             <Emote url={this.emotes.short[emote]} alt={emote} key={i} />
