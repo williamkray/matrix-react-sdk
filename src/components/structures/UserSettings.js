@@ -811,7 +811,7 @@ module.exports = React.createClass({
         }
         return (
             <div>
-                <h3>{ _t("Debug Logs Submission") }</h3>
+                <h3>{ _t("Submit Debug Logs") }</h3>
                 <div className="mx_UserSettings_section">
                     <p>{
                         _t( "If you've submitted a bug via GitHub, debug logs can help " +
@@ -852,8 +852,16 @@ module.exports = React.createClass({
         SettingsStore.getLabsFeatures().forEach((featureId) => {
             // TODO: this ought to be a separate component so that we don't need
             // to rebind the onChange each time we render
-            const onChange = (e) => {
-                SettingsStore.setFeatureEnabled(featureId, e.target.checked);
+            const onChange = async (e) => {
+                const checked = e.target.checked;
+                if (featureId === "feature_lazyloading") {
+                    const confirmed = await this._onLazyLoadChanging(checked);
+                    if (!confirmed) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                await SettingsStore.setFeatureEnabled(featureId, checked);
                 this.forceUpdate();
             };
 
@@ -863,7 +871,7 @@ module.exports = React.createClass({
                         type="checkbox"
                         id={featureId}
                         name={featureId}
-                        defaultChecked={SettingsStore.isFeatureEnabled(featureId)}
+                        checked={SettingsStore.isFeatureEnabled(featureId)}
                         onChange={onChange}
                     />
                     <label htmlFor={featureId}>{ SettingsStore.getDisplayName(featureId) }</label>
@@ -896,6 +904,29 @@ module.exports = React.createClass({
                 </div>
             </div>
         );
+
+    _onLazyLoadChanging: async function(enabling) {
+        // don't prevent turning LL off when not supported
+        if (enabling) {
+            const supported = await MatrixClientPeg.get().doesServerSupportLazyLoading();
+            if (!supported) {
+                await new Promise((resolve) => {
+                    const QuestionDialog = sdk.getComponent("dialogs.QuestionDialog");
+                    Modal.createDialog(QuestionDialog, {
+                        title: _t("Lazy loading members not supported"),
+                        description:
+                            <div>
+                         { _t("Lazy loading is not supported by your " +
+                            "current homeserver.") }
+                            </div>,
+                        button: _t("OK"),
+                        onFinished: resolve,
+                    });
+                });
+                return false;
+            }
+        }
+        return true;
     },
 
     _renderDeactivateAccount: function() {
@@ -907,6 +938,25 @@ module.exports = React.createClass({
                     </AccessibleButton>
                 </div>
         </div>;
+    },
+
+    _renderTermsAndConditionsLinks: function() {
+        if (SdkConfig.get().terms_and_conditions_links) {
+            const tncLinks = [];
+            for (const tncEntry of SdkConfig.get().terms_and_conditions_links) {
+                tncLinks.push(<div key={tncEntry.url}>
+                    <a href={tncEntry.url} rel="noopener" target="_blank">{tncEntry.text}</a>
+                </div>);
+            }
+            return <div>
+                <h3>{ _t("Legal") }</h3>
+                <div className="mx_UserSettings_section">
+                    {tncLinks}
+                </div>
+            </div>;
+        } else {
+            return null;
+        }
     },
 
     _renderClearCache: function() {
@@ -1395,6 +1445,8 @@ module.exports = React.createClass({
                 { this._renderClearCache() }
 
                 { this._renderDeactivateAccount() }
+
+                { this._renderTermsAndConditionsLinks() }
 
                 </GeminiScrollbarWrapper>
             </div>
