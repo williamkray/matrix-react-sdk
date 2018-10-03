@@ -129,11 +129,13 @@ module.exports = React.createClass({
             loading: false,
             members: members,
             filteredJoinedMembers: this._filterMembers(members, 'join'),
+            filteredDiscordMembers: this._filterMembers(members, 'discord'),
             filteredInvitedMembers: this._filterMembers(members, 'invite'),
 
             // ideally we'd size this to the page height, but
             // in practice I find that a little constraining
             truncateAtJoined: INITIAL_LOAD_NUM_MEMBERS,
+            truncateAtDiscord: INITIAL_LOAD_NUM_DISCORD,
             truncateAtInvited: INITIAL_LOAD_NUM_INVITED,
             searchQuery: "",
         };
