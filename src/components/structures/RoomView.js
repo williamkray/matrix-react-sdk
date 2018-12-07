@@ -27,6 +27,7 @@ const React = require("react");
 const ReactDOM = require("react-dom");
 import PropTypes from 'prop-types';
 import Promise from 'bluebird';
+import filesize from 'filesize';
 const classNames = require("classnames");
 import { _t } from '../../languageHandler';
 
@@ -88,6 +89,9 @@ module.exports = React.createClass({
 
         // is the RightPanel collapsed?
         collapsedRhs: PropTypes.bool,
+
+        // Servers the RoomView can use to try and assist joins
+        viaServers: PropTypes.arrayOf(PropTypes.string),
     },
 
     getInitialState: function() {
@@ -98,6 +102,10 @@ module.exports = React.createClass({
             roomLoading: true,
             peekLoading: false,
             shouldPeek: true,
+
+            // Media limits for uploading.
+            mediaConfig: undefined,
+
             // used to trigger a rerender in TimelinePanel once the members are loaded,
             // so RR are rendered again (now with the members available), ...
             membersLoaded: !llMembers,
@@ -153,12 +161,33 @@ module.exports = React.createClass({
         MatrixClientPeg.get().on("RoomState.members", this.onRoomStateMember);
         MatrixClientPeg.get().on("Room.myMembership", this.onMyMembership);
         MatrixClientPeg.get().on("accountData", this.onAccountData);
-
+        this._fetchMediaConfig();
         // Start listening for RoomViewStore updates
         this._roomStoreToken = RoomViewStore.addListener(this._onRoomViewStoreUpdate);
         this._onRoomViewStoreUpdate(true);
 
         WidgetEchoStore.on('update', this._onWidgetEchoStoreUpdate);
+    },
+
+    _fetchMediaConfig: function(invalidateCache: boolean = false) {
+        /// NOTE: Using global here so we don't make repeated requests for the
+        /// config every time we swap room.
+        if(global.mediaConfig !== undefined && !invalidateCache) {
+            this.setState({mediaConfig: global.mediaConfig});
+            return;
+        }
+        console.log("[Media Config] Fetching");
+        MatrixClientPeg.get().getMediaConfig().then((config) => {
+            console.log("[Media Config] Fetched config:", config);
+            return config;
+        }).catch(() => {
+            // Media repo can't or won't report limits, so provide an empty object (no limits).
+            console.log("[Media Config] Could not fetch config, so not limiting uploads.");
+            return {};
+        }).then((config) => {
+            global.mediaConfig = config;
+            this.setState({mediaConfig: config});
+        });
     },
 
     _onRoomViewStoreUpdate: function(initial) {
@@ -194,6 +223,8 @@ module.exports = React.createClass({
             showingPinned: SettingsStore.getValue("PinnedEvents.isOpen", RoomViewStore.getRoomId()),
             editingRoomSettings: RoomViewStore.isEditingSettings(),
         };
+
+        if (this.state.editingRoomSettings && !newState.editingRoomSettings) dis.dispatch({action: 'focus_composer'});
 
         // Temporary logging to diagnose https://github.com/vector-im/riot-web/issues/4307
         console.log(
@@ -494,6 +525,10 @@ module.exports = React.createClass({
                 break;
             case 'notifier_enabled':
             case 'upload_failed':
+                // 413: File was too big or upset the server in some way.
+                if(payload.error.http_status === 413) {
+                    this._fetchMediaConfig(true);
+                }
             case 'upload_started':
             case 'upload_finished':
                 this.forceUpdate();
@@ -676,8 +711,8 @@ module.exports = React.createClass({
         if (!room) return;
 
         console.log("Tinter.tint from updateTint");
-        const color_scheme = SettingsStore.getValue("roomColor", room.roomId);
-        Tinter.tint(color_scheme.primary_color, color_scheme.secondary_color);
+        const colorScheme = SettingsStore.getValue("roomColor", room.roomId);
+        Tinter.tint(colorScheme.primary_color, colorScheme.secondary_color);
     },
 
     onAccountData: function(event) {
@@ -692,10 +727,10 @@ module.exports = React.createClass({
         if (room.roomId == this.state.roomId) {
             const type = event.getType();
             if (type === "org.matrix.room.color_scheme") {
-                const color_scheme = event.getContent();
+                const colorScheme = event.getContent();
                 // XXX: we should validate the event
                 console.log("Tinter.tint from onRoomAccountData");
-                Tinter.tint(color_scheme.primary_color, color_scheme.secondary_color);
+                Tinter.tint(colorScheme.primary_color, colorScheme.secondary_color);
             } else if (type === "org.matrix.room.preview_urls" || type === "im.vector.web.settings") {
                 // non-e2ee url previews are stored in legacy event type `org.matrix.room.preview_urls`
                 this._updatePreviewUrlVisibility(room);
@@ -831,7 +866,7 @@ module.exports = React.createClass({
                 action: 'do_after_sync_prepared',
                 deferred_action: {
                     action: 'join_room',
-                    opts: { inviteSignUrl: signUrl },
+                    opts: { inviteSignUrl: signUrl, viaServers: this.props.viaServers },
                 },
             });
 
@@ -873,7 +908,7 @@ module.exports = React.createClass({
                 this.props.thirdPartyInvite.inviteSignUrl : undefined;
             dis.dispatch({
                 action: 'join_room',
-                opts: { inviteSignUrl: signUrl },
+                opts: { inviteSignUrl: signUrl, viaServers: this.props.viaServers },
             });
             return Promise.resolve();
         });
@@ -924,6 +959,15 @@ module.exports = React.createClass({
         ev.stopPropagation();
         ev.preventDefault();
         this.setState({ draggingFile: false });
+    },
+
+    isFileUploadAllowed(file) {
+        if (this.state.mediaConfig !== undefined &&
+            this.state.mediaConfig["m.upload.size"] !== undefined &&
+            file.size > this.state.mediaConfig["m.upload.size"]) {
+            return _t("File is too big. Maximum file size is %(fileSize)s", {fileSize: filesize(this.state.mediaConfig["m.upload.size"])});
+        }
+        return true;
     },
 
     uploadFile: async function(file) {
@@ -1512,6 +1556,7 @@ module.exports = React.createClass({
                                             canPreview={false} error={this.state.roomLoadError}
                                             roomAlias={roomAlias}
                                             spinner={this.state.joining}
+                                            spinnerState="joining"
                                             inviterName={inviterName}
                                             invitedEmail={invitedEmail}
                                             room={this.state.room}
@@ -1556,6 +1601,7 @@ module.exports = React.createClass({
                                             inviterName={inviterName}
                                             canPreview={false}
                                             spinner={this.state.joining}
+                                            spinnerState="joining"
                                             room={this.state.room}
                             />
                         </div>
@@ -1593,6 +1639,7 @@ module.exports = React.createClass({
                 atEndOfLiveTimeline={this.state.atEndOfLiveTimeline}
                 sentMessageAndIsAlone={this.state.isAlone}
                 hasActiveCall={inCall}
+                isPeeking={myMembership !== "join"}
                 onInviteClick={this.onInviteButtonClick}
                 onStopWarningClick={this.onStopAloneWarningClick}
                 onScrollToBottomClick={this.jumpToLiveTimeline}
@@ -1642,6 +1689,7 @@ module.exports = React.createClass({
                                 onForgetClick={this.onForgetClick}
                                 onRejectClick={this.onRejectThreepidInviteButtonClicked}
                                 spinner={this.state.joining}
+                                spinnerState="joining"
                                 inviterName={inviterName}
                                 invitedEmail={invitedEmail}
                                 canPreview={this.state.canPeek}
@@ -1664,10 +1712,10 @@ module.exports = React.createClass({
             </AuxPanel>
         );
 
-        let messageComposer, searchInfo;
+        let messageComposer; let searchInfo;
         const canSpeak = (
             // joined and not showing search results
-            myMembership == 'join' && !this.state.searchResults
+            myMembership === 'join' && !this.state.searchResults
         );
         if (canSpeak) {
             messageComposer =
@@ -1678,7 +1726,13 @@ module.exports = React.createClass({
                     callState={this.state.callState}
                     disabled={this.props.disabled}
                     showApps={this.state.showApps}
+                    uploadAllowed={this.isFileUploadAllowed}
                 />;
+        }
+
+        if (MatrixClientPeg.get().isGuest()) {
+            const LoginBox = sdk.getComponent('structures.LoginBox');
+            messageComposer = <LoginBox />;
         }
 
         // TODO: Why aren't we storing the term/scope/count in this format
@@ -1692,7 +1746,7 @@ module.exports = React.createClass({
         }
 
         if (inCall) {
-            let zoomButton, voiceMuteButton, videoMuteButton;
+            let zoomButton; let voiceMuteButton; let videoMuteButton;
 
             if (call.type === "video") {
                 zoomButton = (

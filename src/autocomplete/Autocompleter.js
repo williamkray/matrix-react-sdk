@@ -95,7 +95,7 @@ export default class Autocompleter {
                 provider
                     .getCompletions(query, selection, force)
                     .timeout(PROVIDER_COMPLETION_TIMEOUT)
-                    .reflect()
+                    .reflect(),
             ),
         );
 

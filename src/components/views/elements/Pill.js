@@ -35,7 +35,7 @@ const REGEX_MATRIXTO = new RegExp(MATRIXTO_URL_PATTERN);
 
 // For URLs of matrix.to links in the timeline which have been reformatted by
 // HttpUtils transformTags to relative links. This excludes event URLs (with `[^\/]*`)
-const REGEX_LOCAL_MATRIXTO = /^#\/(?:user|room|group)\/(([#!@+]).*)$/;
+const REGEX_LOCAL_MATRIXTO = /^#\/(?:user|room|group)\/(([#!@+])[^/]*)$/;
 
 const Pill = React.createClass({
     statics: {
@@ -147,7 +147,7 @@ const Pill = React.createClass({
             case Pill.TYPE_ROOM_MENTION: {
                 const localRoom = resourceId[0] === '#' ?
                     MatrixClientPeg.get().getRooms().find((r) => {
-                        return r.getCanonicalAlias() == resourceId || r.getAliases().includes(resourceId);
+                        return r.getAliases().includes(resourceId);
                     }) : MatrixClientPeg.get().getRoom(resourceId);
                 room = localRoom;
                 if (!localRoom) {
@@ -219,9 +219,7 @@ const Pill = React.createClass({
         const resource = this.state.resourceId;
 
         let avatar = null;
-        // we set html here, as the props.content was already html escaped
-        // so it can contain things like <img> tags for emoji
-        let linkText = this.props.content ? <span dangerouslySetInnerHTML={{ __html: this.props.content }} /> : null;
+        let linkText = resource;
         let pillClass;
         let userId;
         let href = this.props.url;
@@ -244,9 +242,7 @@ const Pill = React.createClass({
                     if (member) {
                         userId = member.userId;
                         member.rawDisplayName = member.rawDisplayName || '';
-                        if (!linkText) {
-                            linkText = member.rawDisplayName.replace(' (IRC)', ''); // FIXME when groups are done
-                        }
+                        linkText = member.rawDisplayName;
                         if (this.props.shouldShowPillAvatar) {
                             avatar = <MemberAvatar member={member} width={16} height={16} />;
                         }
@@ -259,9 +255,7 @@ const Pill = React.createClass({
             case Pill.TYPE_ROOM_MENTION: {
                 const room = this.state.room;
                 if (room) {
-                    if (!linkText) {
-                        linkText = (room ? getDisplayAliasForRoom(room) : null) || resource;
-                    }
+                    linkText = (room ? getDisplayAliasForRoom(room) : null) || resource;
                     if (this.props.shouldShowPillAvatar) {
                         avatar = <RoomAvatar room={room} width={16} height={16} />;
                     }
@@ -274,9 +268,7 @@ const Pill = React.createClass({
                     const {avatarUrl, groupId, name} = this.state.group;
                     const cli = MatrixClientPeg.get();
 
-                    if (!linkText) {
-                        linkText = groupId;
-                    }
+                    linkText = groupId;
                     if (this.props.shouldShowPillAvatar) {
                         avatar = <BaseAvatar name={name || groupId} width={16} height={16}
                                              url={avatarUrl ? cli.mxcUrlToHttp(avatarUrl, 16, 16) : null} />;

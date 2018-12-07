@@ -277,7 +277,11 @@ module.exports = withMatrixClient(React.createClass({
                     return false;
                 }
                 for (let j = 0; j < rA.length; j++) {
-                    if (rA[j].roomMember.userId !== rB[j].roomMember.userId) {
+                    if (rA[j].userId !== rB[j].userId) {
+                        return false;
+                    }
+                    // one has a member set and the other doesn't?
+                    if (rA[j].roomMember !== rB[j].roomMember) {
                         return false;
                     }
                 }
@@ -359,7 +363,7 @@ module.exports = withMatrixClient(React.createClass({
             // else set it proportional to index
             left = (hidden ? MAX_READ_AVATARS - 1 : i) * -receiptOffset;
 
-            const userId = receipt.roomMember.userId;
+            const userId = receipt.userId;
             let readReceiptInfo;
 
             if (this.props.readReceiptMap) {
@@ -373,6 +377,7 @@ module.exports = withMatrixClient(React.createClass({
             // add to the start so the most recent is on the end (ie. ends up rightmost)
             avatars.unshift(
                 <ReadReceiptMarker key={userId} member={receipt.roomMember}
+                    fallbackUserId={userId}
                     leftOffset={left} hidden={hidden}
                     readReceiptInfo={readReceiptInfo}
                     checkUnmounting={this.props.checkUnmounting}
@@ -411,11 +416,10 @@ module.exports = withMatrixClient(React.createClass({
     onCryptoClicked: function(e) {
         const event = this.props.mxEvent;
 
-        Modal.createTrackedDialogAsync('Encrypted Event Dialog', '', (cb) => {
-            require(['../../../async-components/views/dialogs/EncryptedEventDialog'], cb);
-        }, {
-            event: event,
-        });
+        Modal.createTrackedDialogAsync('Encrypted Event Dialog', '',
+            import('../../../async-components/views/dialogs/EncryptedEventDialog'),
+            {event},
+        );
     },
 
     onRequestKeysClick: function() {
