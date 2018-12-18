@@ -33,6 +33,7 @@ import AccessibleButton from '../elements/AccessibleButton';
 import ManageIntegsButton from '../elements/ManageIntegsButton';
 import {CancelButton} from './SimpleRoomHeader';
 import SettingsStore from "../../../settings/SettingsStore";
+import RoomHeaderButtons from '../right_panel/RoomHeaderButtons';
 
 linkifyMatrix(linkify);
 
@@ -302,18 +303,17 @@ module.exports = React.createClass({
                     topic = ev.getContent().topic;
                 }
             }
-            if (topic) {
-                topicElement =
-                    <div className="mx_RoomHeader_topic" ref="topic" title={topic} dir="auto">{ topic }</div>;
-            }
+            topicElement =
+                <div className="mx_RoomHeader_topic" ref="topic" title={topic} dir="auto">{ topic }</div>;
         }
 
         let roomAvatar = null;
+        const avatarSize = 28;
         if (canSetRoomAvatar) {
             roomAvatar = (
                 <div className="mx_RoomHeader_avatarPicker">
                     <div onClick={this.onAvatarPickerClick}>
-                        <ChangeAvatar ref="changeAvatar" room={this.props.room} showUploadSection={false} width={48} height={48} />
+                        <ChangeAvatar ref="changeAvatar" room={this.props.room} showUploadSection={false} width={avatarSize} height={avatarSize} />
                     </div>
                     <div className="mx_RoomHeader_avatarPicker_edit">
                         <label htmlFor="avatarInput" ref="file_label">
@@ -334,7 +334,7 @@ module.exports = React.createClass({
             );
         } else if (this.props.room || (this.props.oobData && this.props.oobData.name)) {
             roomAvatar = (
-                <RoomAvatar room={this.props.room} width={48} height={48} oobData={this.props.oobData}
+                <RoomAvatar room={this.props.room} width={avatarSize} height={avatarSize} oobData={this.props.oobData}
                     viewAvatarOnClick={true} />
             );
         }
@@ -382,7 +382,7 @@ module.exports = React.createClass({
         if (this.props.onSearchClick && this.props.inRoom) {
             searchButton =
                 <AccessibleButton className="mx_RoomHeader_button" onClick={this.props.onSearchClick} title={_t("Search")}>
-                    <TintableSvg src="img/icons-search.svg" width="35" height="35" />
+                    <TintableSvg src="img/icons-search.svg" width="16" height="16" />
                 </AccessibleButton>;
         }
 
@@ -397,7 +397,7 @@ module.exports = React.createClass({
         let rightPanelButtons;
         if (this.props.collapsedRhs) {
             rightPanelButtons =
-                <AccessibleButton className="mx_RoomHeader_button" onClick={this.onShowRhsClick} title={_t('Show panel')}>
+                <AccessibleButton className="mx_RoomHeader_button mx_RoomHeader_showPanel" onClick={this.onShowRhsClick} title={_t('Show panel')}>
                     <TintableSvg src="img/maximise.svg" width="10" height="16" />
                 </AccessibleButton>;
         }
@@ -412,7 +412,7 @@ module.exports = React.createClass({
 
         if (!this.props.editing) {
             rightRow =
-                <div className="mx_RoomHeader_rightRow">
+                <div className="mx_RoomHeader_buttons">
                     { settingsButton }
                     { pinnedEventsButton }
                     { shareRoomButton }
@@ -424,21 +424,16 @@ module.exports = React.createClass({
         }
 
         return (
-            <div className={"mx_RoomHeader " + (this.props.editing ? "mx_RoomHeader_editing" : "")}>
+            <div className={"mx_RoomHeader light-panel " + (this.props.editing ? "mx_RoomHeader_editing" : "")}>
                 <div className="mx_RoomHeader_wrapper">
-                    <div className="mx_RoomHeader_leftRow">
-                        <div className="mx_RoomHeader_avatar">
-                            { roomAvatar }
-                        </div>
-                        <div className="mx_RoomHeader_info">
-                            { name }
-                            { topicElement }
-                        </div>
-                    </div>
+                    <div className="mx_RoomHeader_avatar">{ roomAvatar }</div>
+                    { name }
+                    { topicElement }
                     { spinner }
                     { saveButton }
                     { cancelButton }
                     { rightRow }
+                    <RoomHeaderButtons />
                 </div>
             </div>
         );
