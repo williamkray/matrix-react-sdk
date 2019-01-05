@@ -92,25 +92,33 @@ export default React.createClass({
         });
     },
 
-    _createBackup: function() {
+    _createBackup: async function() {
         this.setState({
             phase: PHASE_BACKINGUP,
             error: null,
         });
-        this._createBackupPromise = MatrixClientPeg.get().createKeyBackupVersion(
-            this._keyBackupInfo,
-        ).then((info) => {
-            return MatrixClientPeg.get().backupAllGroupSessions(info.version);
-        }).then(() => {
+        let info;
+        try {
+            info = await MatrixClientPeg.get().createKeyBackupVersion(
+                this._keyBackupInfo,
+            );
+            await MatrixClientPeg.get().backupAllGroupSessions(info.version);
             this.setState({
                 phase: PHASE_DONE,
             });
-        }).catch(e => {
+        } catch (e) {
             console.log("Error creating key backup", e);
+            // TODO: If creating a version succeeds, but backup fails, should we
+            // delete the version, disable backup, or do nothing?  If we just
+            // disable without deleting, we'll enable on next app reload since
+            // it is trusted.
+            if (info) {
+                MatrixClientPeg.get().deleteKeyBackupVersion(info.version);
+            }
             this.setState({
                 error: e,
             });
-        });
+        }
     },
 
     _onCancel: function() {
@@ -172,7 +180,7 @@ export default React.createClass({
         });
     },
 
-    _onKeepItSafeGotItClick: function() {
+    _onKeepItSafeBackClick: function() {
         this.setState({
             phase: PHASE_SHOWKEY,
         });
@@ -231,17 +239,19 @@ export default React.createClass({
             <p>{_t("You'll need it if you log out or lose access to this device.")}</p>
 
             <div className="mx_CreateKeyBackupDialog_primaryContainer">
-                <div className="mx_CreateKeyBackupDialog_passPhraseHelp">
-                    {strengthMeter}
-                    {helpText}
+                <div className="mx_CreateKeyBackupDialog_passPhraseContainer">
+                    <input type="password"
+                        onChange={this._onPassPhraseChange}
+                        onKeyPress={this._onPassPhraseKeyPress}
+                        value={this.state.passPhrase}
+                        className="mx_CreateKeyBackupDialog_passPhraseInput"
+                        placeholder={_t("Enter a passphrase...")}
+                    />
+                    <div className="mx_CreateKeyBackupDialog_passPhraseHelp">
+                        {strengthMeter}
+                        {helpText}
+                    </div>
                 </div>
-                <input type="password"
-                    onChange={this._onPassPhraseChange}
-                    onKeyPress={this._onPassPhraseKeyPress}
-                    value={this.state.passPhrase}
-                    className="mx_CreateKeyBackupDialog_passPhraseInput"
-                    placeholder={_t("Enter a passphrase...")}
-                />
             </div>
 
             <DialogButtons primaryButton={_t('Next')}
@@ -251,7 +261,7 @@ export default React.createClass({
             />
 
             <p>{_t(
-                "If you don't want encrypted message history to be availble on other devices, "+
+                "If you don't want encrypted message history to be available on other devices, "+
                 "<button>opt out</button>.",
                 {},
                 {
@@ -309,16 +319,18 @@ export default React.createClass({
                 "somewhere safe.",
             )}</p>
             <div className="mx_CreateKeyBackupDialog_primaryContainer">
-                {passPhraseMatch}
-                <div>
-                    <input type="password"
-                        onChange={this._onPassPhraseConfirmChange}
-                        onKeyPress={this._onPassPhraseConfirmKeyPress}
-                        value={this.state.passPhraseConfirm}
-                        className="mx_CreateKeyBackupDialog_passPhraseInput"
-                        placeholder={_t("Repeat your passphrase...")}
-                        autoFocus={true}
-                    />
+                <div className="mx_CreateKeyBackupDialog_passPhraseContainer">
+                    <div>
+                        <input type="password"
+                            onChange={this._onPassPhraseConfirmChange}
+                            onKeyPress={this._onPassPhraseConfirmKeyPress}
+                            value={this.state.passPhraseConfirm}
+                            className="mx_CreateKeyBackupDialog_passPhraseInput"
+                            placeholder={_t("Repeat your passphrase...")}
+                            autoFocus={true}
+                        />
+                    </div>
+                    {passPhraseMatch}
                 </div>
             </div>
             <DialogButtons primaryButton={_t('Next')}
@@ -330,8 +342,6 @@ export default React.createClass({
     },
 
     _renderPhaseShowKey: function() {
-        const DialogButtons = sdk.getComponent('views.elements.DialogButtons');
-
         let bodyText;
         if (this.state.setPassPhrase) {
             bodyText = _t("As a safety net, you can use it to restore your encrypted message history if you forget your Recovery Passphrase.");
@@ -343,29 +353,23 @@ export default React.createClass({
             <p>{_t("Make a copy of this Recovery Key and keep it safe.")}</p>
             <p>{bodyText}</p>
             <p className="mx_CreateKeyBackupDialog_primaryContainer">
-                <div>{_t("Your Recovery Key")}</div>
-                <div className="mx_CreateKeyBackupDialog_recoveryKeyButtons">
-                    <button onClick={this._onCopyClick}>
-                        {_t("Copy to clipboard")}
-                    </button>
-                    {
-                        // FIXME REDESIGN: buttons should be adjacent but insufficient room in current design
-                    }
-                    <br /><br />
-                    <button onClick={this._onDownloadClick}>
-                        {_t("Download")}
-                    </button>
+                <div className="mx_CreateKeyBackupDialog_recoveryKeyHeader">
+                    {_t("Your Recovery Key")}
                 </div>
-                <div className="mx_CreateKeyBackupDialog_recoveryKey">
-                    <code ref={this._collectRecoveryKeyNode}>{this._keyBackupInfo.recovery_key}</code>
+                <div className="mx_CreateKeyBackupDialog_recoveryKeyContainer">
+                    <div className="mx_CreateKeyBackupDialog_recoveryKey">
+                        <code ref={this._collectRecoveryKeyNode}>{this._keyBackupInfo.recovery_key}</code>
+                    </div>
+                    <div className="mx_CreateKeyBackupDialog_recoveryKeyButtons">
+                        <button className="mx_Dialog_primary" onClick={this._onCopyClick}>
+                            {_t("Copy to clipboard")}
+                        </button>
+                        <button className="mx_Dialog_primary" onClick={this._onDownloadClick}>
+                            {_t("Download")}
+                        </button>
+                    </div>
                 </div>
             </p>
-            <br />
-            <DialogButtons primaryButton={_t("I've made a copy")}
-                onPrimaryButtonClick={this._createBackup}
-                hasCancel={false}
-                disabled={!this.state.copied && !this.state.downloaded}
-            />
         </div>;
     },
 
@@ -390,10 +394,11 @@ export default React.createClass({
                 <li>{_t("<b>Save it</b> on a USB key or backup drive", {}, {b: s => <b>{s}</b>})}</li>
                 <li>{_t("<b>Copy it</b> to your personal cloud storage", {}, {b: s => <b>{s}</b>})}</li>
             </ul>
-            <DialogButtons primaryButton={_t("Got it")}
-                onPrimaryButtonClick={this._onKeepItSafeGotItClick}
-                hasCancel={false}
-            />
+            <DialogButtons primaryButton={_t("OK")}
+                onPrimaryButtonClick={this._createBackup}
+                hasCancel={false}>
+                <button onClick={this._onKeepItSafeBackClick}>{_t("Back")}</button>
+            </DialogButtons>
         </div>;
     },
 
