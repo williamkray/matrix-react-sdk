@@ -12,6 +12,11 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
+ 
+ Additionally, original modifications by ponies.im are licensed under the CSL.
+ See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+ These modifications may only be redistributed and used within the terms of 
+ the Cooperative Software License as distributed with this project.
  */
 
 'use strict';
@@ -24,6 +29,7 @@ import Flair from '../elements/Flair.js';
 import FlairStore from '../../../stores/FlairStore';
 import { _t } from '../../../languageHandler';
 import {hashCode} from '../../../utils/FormattingUtils';
+import SettingsStore from "../../../settings/SettingsStore"; 
 
 export default React.createClass({
     displayName: 'SenderProfile',
@@ -119,9 +125,26 @@ export default React.createClass({
 
         const nameElem = <EmojiText key='name'>{ name || '' }</EmojiText>;
 
+        // do discord colors
+        let style = {};
+        let discordMember;
+        try {
+            // too lazy to check if all properties exist, thus try...catch
+            discordMember = mxEvent.sender.events.member.event.content["uk.half-shot.discord.member"];
+        } catch (e) {
+            console.error(e);
+            discordMember = undefined;
+        }
+        if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
+            const colorHex = discordMember.displayColor.toString(16);
+            const pad = "#000000";
+            const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
+            style.color = htmlColor;
+        }
+
         // Name + flair
         const nameFlair = <span>
-            <span className={`mx_SenderProfile_name mx_SenderProfile_color${colorNumber}`}>
+            <span className={`mx_SenderProfile_name mx_SenderProfile_color${colorNumber}`} style={style}>
                 { nameElem }
             </span>
             { flair }

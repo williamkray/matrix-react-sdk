@@ -13,6 +13,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
 */
 
 'use strict';
@@ -24,6 +29,7 @@ const MatrixClientPeg = require('../../../MatrixClientPeg');
 const sdk = require('../../../index');
 import AccessibleButton from '../elements/AccessibleButton';
 import { _t } from '../../../languageHandler';
+import SettingsStore from "../../../settings/SettingsStore"; 
 
 
 const PRESENCE_CLASS = {
@@ -115,6 +121,23 @@ const EntityTile = React.createClass({
         let nameEl;
         const {name} = this.props;
 
+        // do discord colors
+        let style = {}
+        let discordMember;
+        try {
+            // too lazy to check if all properties exist, thus try...catch
+            discordMember = this.props.member.events.member.event.content["uk.half-shot.discord.member"];
+        } catch (e) {
+            console.error(e);
+            discordMember = undefined;
+        }
+        if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
+            const colorHex = discordMember.displayColor.toString(16);
+            const pad = "#000000";
+            const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
+            style.color = htmlColor;
+        }
+
         const EmojiText = sdk.getComponent('elements.EmojiText');
         if (this.state.hover && !this.props.suppressOnHover) {
             const activeAgo = this.props.presenceLastActiveAgo ?
@@ -135,7 +158,7 @@ const EntityTile = React.createClass({
             }
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <EmojiText element="div" className={nameClasses} dir="auto">
+                    <EmojiText element="div" className={nameClasses} dir="auto" style={style}>
                         { name }
                     </EmojiText>
                     {presenceLabel}
@@ -144,7 +167,7 @@ const EntityTile = React.createClass({
         } else if (this.props.subtextLabel) {
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto">
+                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>
                         {name}
                     </EmojiText>
                     <span className="mx_EntityTile_subtext">{this.props.subtextLabel}</span>
@@ -152,7 +175,7 @@ const EntityTile = React.createClass({
             );
         } else {
             nameEl = (
-                <EmojiText element="div" className="mx_EntityTile_name" dir="auto">{ name }</EmojiText>
+                <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>{ name }</EmojiText>
             );
         }
 
