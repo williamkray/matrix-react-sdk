@@ -132,7 +132,6 @@ export default React.createClass({
             // too lazy to check if all properties exist, thus try...catch
             discordMember = mxEvent.sender.events.member.event.content["uk.half-shot.discord.member"];
         } catch (e) {
-            console.error(e);
             discordMember = undefined;
         }
         if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {

@@ -502,7 +502,7 @@ module.exports = React.createClass({
         let discordSection;
         if (this._getChildCountDiscord() > 0) {
             discordHeader = <h2 style={{ textAlign: "center" }}><img src="img/bridges/discordlogo.svg" style={{ verticalAlign: "middle", height: "40px", paddingRight: "5px" }} />{ _t("Discord Users") }</h2>;
-            discordSection = <TruncatedList className="mx_MemberList_section mx_MemberList_invited" truncateAt={this.state.truncateAtInvited}
+            discordSection = <TruncatedList className="mx_MemberList_section" truncateAt={this.state.truncateAtDiscord}
                         createOverflowElement={this._createOverflowTileDiscord}
                         getChildren={this._getChildrenDiscord}
                         getChildCount={this._getChildCountDiscord}

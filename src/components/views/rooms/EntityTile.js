@@ -128,7 +128,6 @@ const EntityTile = React.createClass({
             // too lazy to check if all properties exist, thus try...catch
             discordMember = this.props.member.events.member.event.content["uk.half-shot.discord.member"];
         } catch (e) {
-            console.error(e);
             discordMember = undefined;
         }
         if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
