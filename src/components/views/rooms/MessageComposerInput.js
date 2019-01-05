@@ -1483,6 +1483,11 @@ export default class MessageComposerInput extends React.Component {
                             isSelected={isSelected}
                             {...attributes}
                             />;
+                } else if (Emote.isEmoteUrl(url)) {
+                    return <Emote
+                            url={url}
+                            alt={completion}
+                            />;
                 } else {
                     const { text } = node;
                     return <a href={url} {...props.attributes}>
