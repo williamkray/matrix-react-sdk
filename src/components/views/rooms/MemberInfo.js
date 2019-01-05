@@ -13,6 +13,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
 */
 
 /*
@@ -929,6 +934,56 @@ module.exports = withMatrixClient(React.createClass({
         let roomMemberDetails = null;
         if (this.props.member.roomId) { // is in room
             const PowerSelector = sdk.getComponent('elements.PowerSelector');
+
+            // add discord stuff
+            let extraFields = [];
+            let discordMember;
+            try {
+                // too lazy to check if all properties exist, thus try...catch
+                discordMember = this.props.member.events.member.event.content["uk.half-shot.discord.member"];
+            } catch (e) {
+                discordMember = undefined;
+            }
+            if (discordMember) {
+                extraFields.push(<strong>Discord Information</strong>)
+                if (discordMember.username) {
+                    extraFields.push(<span>Username: <strong>{discordMember.username}</strong></span>);
+                }
+                if (discordMember.roles && Array.isArray(discordMember.roles)) {
+                    extraFields.push(<span>Roles:</span>);
+                    const discordRoleElements = [];
+                    discordMember.roles.sort((a, b) => {
+                        // we sort the roles backwards
+                        if (a.id < b.id) return 1;
+                        if (a.id > b.id) return -1;
+                        return 0;
+                    }).map(r => {
+                        if (r.position === 0 && r.name === "@everyone") {
+                            return;
+                        }
+                        const colorHex = r.color.toString(16);
+                        const pad = "#000000";
+                        const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
+                        // TODO: discord role pill, proper class etc.
+                        discordRoleElements.push(<span style={{
+                            color:htmlColor,
+                            borderColor:htmlColor,
+                            borderWidth:2,
+                            borderRadius:16,
+                            borderStyle:"solid",
+                            height:20,
+                            lineHeight:"20px",
+                            display:"inline-block",
+                            marginLeft:5,
+                            marginTop:5,
+                            fontSize:14,
+                            padding:"0 5px",
+                        }}>{r.name}</span>);
+                    });
+                    extraFields.push(<span>{discordRoleElements}</span>);
+                }
+            }
+
             roomMemberDetails = <div>
                 <div className="mx_MemberInfo_profileField">
                     { _t("Level:") } <b>
@@ -944,6 +999,7 @@ module.exports = withMatrixClient(React.createClass({
                     {presenceLabel}
                     {statusLabel}
                 </div>
+                {extraFields.map(f => <div className="mx_MemberInfo_profileField">{f}</div>)}
             </div>;
         }
 
