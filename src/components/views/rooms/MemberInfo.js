@@ -955,9 +955,7 @@ module.exports = withMatrixClient(React.createClass({
                     const discordRoleElements = [];
                     discordMember.roles.sort((a, b) => {
                         // we sort the roles backwards
-                        if (a.id < b.id) return 1;
-                        if (a.id > b.id) return -1;
-                        return 0;
+                        return b.position - a.position;
                     }).map(r => {
                         if (r.position === 0 && r.name === "@everyone") {
                             return;
