@@ -29,7 +29,8 @@ import Flair from '../elements/Flair.js';
 import FlairStore from '../../../stores/FlairStore';
 import { _t } from '../../../languageHandler';
 import {hashCode} from '../../../utils/FormattingUtils';
-import SettingsStore from "../../../settings/SettingsStore"; 
+import SettingsStore from "../../../settings/SettingsStore";
+import { discordColorToCssAdjust } from "../../../utils/poniesUtils";
 
 export default React.createClass({
     displayName: 'SenderProfile',
@@ -135,10 +136,7 @@ export default React.createClass({
             discordMember = undefined;
         }
         if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
-            const colorHex = discordMember.displayColor.toString(16);
-            const pad = "#000000";
-            const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
-            style.color = htmlColor;
+            style.color = discordColorToCssAdjust(discordMember.displayColor, "#ffffff");
         }
 
         // Name + flair

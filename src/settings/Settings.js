@@ -95,6 +95,12 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
+    "feature_no_colour_adjust": {
+        isFeature: true,
+        displayName: _td("Disable Colour Adjustment for higher contrast"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
     "feature_no_bridge_badges": {
         isFeature: true,
         displayName: _td("Disable Bridge Badges"),

@@ -29,7 +29,8 @@ const MatrixClientPeg = require('../../../MatrixClientPeg');
 const sdk = require('../../../index');
 import AccessibleButton from '../elements/AccessibleButton';
 import { _t } from '../../../languageHandler';
-import SettingsStore from "../../../settings/SettingsStore"; 
+import SettingsStore from "../../../settings/SettingsStore";
+import { discordColorToCssAdjust } from "../../../utils/poniesUtils";
 
 
 const PRESENCE_CLASS = {
@@ -131,10 +132,7 @@ const EntityTile = React.createClass({
             discordMember = undefined;
         }
         if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
-            const colorHex = discordMember.displayColor.toString(16);
-            const pad = "#000000";
-            const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
-            style.color = htmlColor;
+            style.color = discordColorToCssAdjust(discordMember.displayColor, "#f2f5f8");
         }
 
         const EmojiText = sdk.getComponent('elements.EmojiText');

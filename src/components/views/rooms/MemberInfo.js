@@ -48,6 +48,7 @@ import RoomViewStore from '../../../stores/RoomViewStore';
 import SdkConfig from '../../../SdkConfig';
 import MultiInviter from "../../../utils/MultiInviter";
 import SettingsStore from "../../../settings/SettingsStore";
+import { discordColorToCssAdjust } from "../../../utils/poniesUtils";
 
 module.exports = withMatrixClient(React.createClass({
     displayName: 'MemberInfo',
@@ -961,9 +962,7 @@ module.exports = withMatrixClient(React.createClass({
                         if (r.position === 0 && r.name === "@everyone") {
                             return;
                         }
-                        const colorHex = r.color.toString(16);
-                        const pad = "#000000";
-                        const htmlColor = pad.substring(0, pad.length - colorHex.length) + colorHex;
+                        const htmlColor = discordColorToCssAdjust(r.color, "#f2f5f8");
                         // TODO: discord role pill, proper class etc.
                         discordRoleElements.push(<span style={{
                             color:htmlColor,
