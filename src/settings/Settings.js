@@ -17,7 +17,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -89,12 +89,6 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
-    "feature_no_discord_colours": {
-        isFeature: true,
-        displayName: _td("Disable Discord Colours"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
     "feature_no_colour_adjust": {
         isFeature: true,
         displayName: _td("Disable Colour Adjustment for higher contrast"),
@@ -143,6 +137,10 @@ export const SETTINGS = {
         displayName: _td("Backup of encryption keys to server"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
+    },
+    "custom_colour_contrast_adjustment": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: "1",
     },
     "MessageComposerInput.dontSuggestEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,

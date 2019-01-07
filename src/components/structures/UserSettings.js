@@ -18,7 +18,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -255,6 +255,12 @@ module.exports = React.createClass({
 
         this.setState({
             language: languageHandler.getCurrentLanguage(),
+        });
+
+        this.setState({
+            activeContrastSetting: ["Disabled", "HSL Luma",
+            "Luv Luma", "HSL Loop", 
+            "RGB Loop"][SettingsStore.getValueAt(SettingLevel.ACCOUNT, 'custom_colour_contrast_adjustment')],
         });
 
         this._sessionStore = sessionStore;
@@ -671,6 +677,33 @@ module.exports = React.createClass({
         );
     },
 
+    _setContrastMode: function(newContrast) {
+        contrastIndex = ["Disabled", "HSL Luma",
+                         "Luv Luma", "HSL Loop",
+                         "RGB Loop"].indexOf(newContrast)
+        if (this.state.activeContrastSetting !== contrastIndex) {
+            SettingsStore.setValue("custom_colour_contrast_adjustment",
+                                   null, SettingLevel.ACCOUNT, contrastIndex);
+            this.setState({
+                activeContrastSetting: contrastIndex,
+            });
+            PlatformPeg.get().reload();
+        }
+    },
+
+    _renderContrastSetting: function() {
+        const Dropdown = sdk.getComponent('elements.Dropdown');
+        return <div>
+            <label>{ _t('Colour Adjustment Mode') }</label>
+            <Dropdown
+                className="mx_UserSettings_webRtcDevices_dropdown"
+                value={this.state.activeContrastSetting || defaultOutput}
+                onOptionChange={this._setContrastMode}>
+                { ["Disabled", "HSL Luma", "Luv Luma", "HSL Loop", "RGB Loop"] }
+            </Dropdown>
+        </div>;
+    },
+
     _renderAccountSetting: function(setting) {
         const SettingsFlag = sdk.getComponent("elements.SettingsFlag");
         return (
@@ -680,6 +713,7 @@ module.exports = React.createClass({
                                   level={SettingLevel.ACCOUNT}
                                   onChange={setting.fn} />
             </div>
+            { this._renderContrastSetting() }
         );
     },
 
