@@ -258,9 +258,7 @@ module.exports = React.createClass({
         });
 
         this.setState({
-            activeContrastSetting: ["Disabled", "HSL Luma",
-            "Luv Luma", "HSL Loop", 
-            "RGB Loop"][SettingsStore.getValueAt(SettingLevel.ACCOUNT, 'custom_colour_contrast_adjustment')],
+            activeContrastSetting: SettingsStore.getValueAt(SettingLevel.ACCOUNT, 'custom_colour_contrast_adjustment'),
         });
 
         this._sessionStore = sessionStore;
