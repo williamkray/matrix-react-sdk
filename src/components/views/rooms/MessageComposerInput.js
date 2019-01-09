@@ -48,8 +48,6 @@ import sdk from '../../../index';
 import { _t, _td } from '../../../languageHandler';
 import Analytics from '../../../Analytics';
 
-import dis from '../../../dispatcher';
-
 import * as RichText from '../../../RichText';
 import * as HtmlUtils from '../../../HtmlUtils';
 import Autocomplete from './Autocomplete';
@@ -65,7 +63,6 @@ import {asciiRegexp, unicodeRegexp, shortnameToUnicode, emojioneList, asciiList,
 import SettingsStore, {SettingLevel} from "../../../settings/SettingsStore";
 import {makeUserPermalink} from "../../../matrix-to";
 import ReplyPreview from "./ReplyPreview";
-import RoomViewStore from '../../../stores/RoomViewStore';
 import ReplyThread from "../elements/ReplyThread";
 import {ContentHelpers} from 'matrix-js-sdk';
 
@@ -128,7 +125,7 @@ function onSendMessageFailed(err, room) {
     // XXX: temporary logging to try to diagnose
     // https://github.com/vector-im/riot-web/issues/3148
     console.log('MessageComposer got send failure: ' + err.name + '('+err+')');
-    dis.dispatch({
+    this.props.roomViewStore.getDispatcher().dispatch({
         action: 'message_send_failed',
     });
 }
@@ -141,6 +138,18 @@ function rangeEquals(a: Range, b: Range): boolean {
         && a.isFocused === b.isFocused
         && a.isBackward === b.isBackward);
 }
+
+class NoopHistoryManager {
+    getItem() {}
+    save() {}
+
+    get currentIndex() { return 0; }
+    set currentIndex(_) {}
+
+    get history() { return []; }
+    set history(_) {}
+}
+
 
 /*
  * The textInput part of the MessageComposer
@@ -157,6 +166,7 @@ export default class MessageComposerInput extends React.Component {
         onFilesPasted: PropTypes.func,
 
         onInputStateChanged: PropTypes.func,
+        roomViewStore: PropTypes.object.isRequired,
     };
 
     client: MatrixClient;
@@ -351,12 +361,16 @@ export default class MessageComposerInput extends React.Component {
     }
 
     componentWillMount() {
-        this.dispatcherRef = dis.register(this.onAction);
-        this.historyManager = new ComposerHistoryManager(this.props.room.roomId, 'mx_slate_composer_history_');
+        this.dispatcherRef = this.props.roomViewStore.getDispatcher().register(this.onAction);
+        if (this.props.isGrid) {
+            this.historyManager = new NoopHistoryManager();
+        } else {
+            this.historyManager = new ComposerHistoryManager(this.props.room.roomId, 'mx_slate_composer_history_');
+        }
     }
 
     componentWillUnmount() {
-        dis.unregister(this.dispatcherRef);
+        this.props.roomViewStore.getDispatcher().unregister(this.dispatcherRef);
     }
 
     _collectEditor = (e) => {
@@ -1127,7 +1141,7 @@ export default class MessageComposerInput extends React.Component {
             return true;
         }
 
-        const replyingToEv = RoomViewStore.getQuotingEvent();
+        const replyingToEv = this.props.roomViewStore.getQuotingEvent();
         const mustSendHTML = Boolean(replyingToEv);
 
         if (this.state.isRichTextEnabled) {
@@ -1223,14 +1237,14 @@ export default class MessageComposerInput extends React.Component {
 
             // Clear reply_to_event as we put the message into the queue
             // if the send fails, retry will handle resending.
-            dis.dispatch({
+            this.props.roomViewStore.getDispatcher().dispatch({
                 action: 'reply_to_event',
                 event: null,
             });
         }
 
         this.client.sendMessage(this.props.room.roomId, content).then((res) => {
-            dis.dispatch({
+            this.props.roomViewStore.getDispatcher().dispatch({
                 action: 'message_sent',
             });
         }).catch((e) => {
@@ -1610,7 +1624,7 @@ export default class MessageComposerInput extends React.Component {
         return (
             <div className="mx_MessageComposer_input_wrapper" onClick={this.focusComposer}>
                 <div className="mx_MessageComposer_autocomplete_wrapper">
-                    <ReplyPreview />
+                    <ReplyPreview roomViewStore={this.props.roomViewStore} />
                     <Autocomplete
                         ref={(e) => this.autocomplete = e}
                         room={this.props.room}
