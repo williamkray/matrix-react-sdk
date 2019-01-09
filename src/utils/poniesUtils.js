@@ -37,9 +37,6 @@ export function discordColorToCss(color) {
 
 export function discordColorToCssAdjust(color, base) {
 	const c = discordColorToCss(color);
-	if (SettingsStore.isFeatureEnabled("feature_no_colour_adjust")) {
-		return c;
-	}
 	const adjuster = getColorAdjuster(base.toLowerCase());
 	const res = adjuster.process(c);
 	if (res === null) {

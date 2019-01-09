@@ -89,9 +89,9 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
-    "feature_no_colour_adjust": {
+    "feature_no_discord_colours": {
         isFeature: true,
-        displayName: _td("Disable Colour Adjustment for higher contrast"),
+        displayName: _td("Disable Discord Colours"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
