@@ -147,6 +147,7 @@ export const SETTINGS = {
     "custom_colour_contrast_adjustment": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         default: "1",
+    },
     "MessageComposerInput.dontSuggestEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td('Disable Emoji suggestions while typing'),
