@@ -710,8 +710,8 @@ module.exports = React.createClass({
                                   label={setting.label}
                                   level={SettingLevel.ACCOUNT}
                                   onChange={setting.fn} />
+                { this._renderContrastSetting() }
             </div>
-            { this._renderContrastSetting() }
         );
     },
 
