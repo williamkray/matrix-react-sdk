@@ -654,6 +654,7 @@ module.exports = React.createClass({
                 <h3>{ _t("User Interface") }</h3>
                 <div className="mx_UserSettings_section">
                     { SIMPLE_SETTINGS.map( this._renderAccountSetting ) }
+                    { this._renderContrastSetting() }
                     { THEMES.map( this._renderThemeOption ) }
                     <table>
                         <tbody>
@@ -710,7 +711,6 @@ module.exports = React.createClass({
                                   label={setting.label}
                                   level={SettingLevel.ACCOUNT}
                                   onChange={setting.fn} />
-                { this._renderContrastSetting() }
             </div>
         );
     },
