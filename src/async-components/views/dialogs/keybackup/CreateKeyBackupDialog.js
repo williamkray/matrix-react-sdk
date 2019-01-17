@@ -1,5 +1,5 @@
 /*
-Copyright 2018 New Vector Ltd
+Copyright 2018, 2019 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ const PHASE_DONE = 5;
 const PHASE_OPTOUT_CONFIRM = 6;
 
 const PASSWORD_MIN_SCORE = 4; // So secure, many characters, much complex, wow, etc, etc.
+const PASSPHRASE_FEEDBACK_DELAY = 500; // How long after keystroke to offer passphrase feedback, ms.
 
 // XXX: copied from ShareDialog: factor out into utils
 function selectText(target) {
@@ -63,6 +64,13 @@ export default React.createClass({
     componentWillMount: function() {
         this._recoveryKeyNode = null;
         this._keyBackupInfo = null;
+        this._setZxcvbnResultTimeout = null;
+    },
+
+    componentWillUnmount: function() {
+        if (this._setZxcvbnResultTimeout !== null) {
+            clearTimeout(this._setZxcvbnResultTimeout);
+        }
     },
 
     _collectRecoveryKeyNode: function(n) {
@@ -150,9 +158,23 @@ export default React.createClass({
         this.setState({phase: PHASE_PASSPHRASE_CONFIRM});
     },
 
-    _onPassPhraseKeyPress: function(e) {
-        if (e.key === 'Enter' && this._passPhraseIsValid()) {
-            this._onPassPhraseNextClick();
+    _onPassPhraseKeyPress: async function(e) {
+        if (e.key === 'Enter') {
+            // If we're waiting for the timeout before updating the result at this point,
+            // skip ahead and do it now, otherwise we'll deny the attempt to proceed
+            // even if the user entered a valid passphrase
+            if (this._setZxcvbnResultTimeout !== null) {
+                clearTimeout(this._setZxcvbnResultTimeout);
+                this._setZxcvbnResultTimeout = null;
+                await new Promise((resolve) => {
+                    this.setState({
+                        zxcvbnResult: scorePassword(this.state.passPhrase),
+                    }, resolve);
+                });
+            }
+            if (this._passPhraseIsValid()) {
+                this._onPassPhraseNextClick();
+            }
         }
     },
 
@@ -177,6 +199,7 @@ export default React.createClass({
             passPhrase: '',
             passPhraseConfirm: '',
             phase: PHASE_PASSPHRASE,
+            zxcvbnResult: null,
         });
     },
 
@@ -189,11 +212,20 @@ export default React.createClass({
     _onPassPhraseChange: function(e) {
         this.setState({
             passPhrase: e.target.value,
-            // precompute this and keep it in state: zxcvbn is fast but
-            // we use it in a couple of different places so no point recomputing
-            // it unnecessarily.
-            zxcvbnResult: scorePassword(e.target.value),
         });
+
+        if (this._setZxcvbnResultTimeout !== null) {
+            clearTimeout(this._setZxcvbnResultTimeout);
+        }
+        this._setZxcvbnResultTimeout = setTimeout(() => {
+            this._setZxcvbnResultTimeout = null;
+            this.setState({
+                // precompute this and keep it in state: zxcvbn is fast but
+                // we use it in a couple of different places so no point recomputing
+                // it unnecessarily.
+                zxcvbnResult: scorePassword(this.state.passPhrase),
+            });
+        }, PASSPHRASE_FEEDBACK_DELAY);
     },
 
     _onPassPhraseConfirmChange: function(e) {
@@ -246,6 +278,7 @@ export default React.createClass({
                         value={this.state.passPhrase}
                         className="mx_CreateKeyBackupDialog_passPhraseInput"
                         placeholder={_t("Enter a passphrase...")}
+                        autoFocus={true}
                     />
                     <div className="mx_CreateKeyBackupDialog_passPhraseHelp">
                         {strengthMeter}
@@ -294,14 +327,22 @@ export default React.createClass({
     _renderPhasePassPhraseConfirm: function() {
         const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
 
+        let matchText;
+        if (this.state.passPhraseConfirm === this.state.passPhrase) {
+            matchText = _t("That matches!");
+        } else if (!this.state.passPhrase.startsWith(this.state.passPhraseConfirm)) {
+            // only tell them they're wrong if they've actually gone wrong.
+            // Security concious readers will note that if you left riot-web unattended
+            // on this screen, this would make it easy for a malicious person to guess
+            // your passphrase one letter at a time, but they could get this faster by
+            // just opening the browser's developer tools and reading it.
+            // Note that not having typed anything at all will not hit this clause and
+            // fall through so empty box === no hint.
+            matchText = _t("That doesn't match.");
+        }
+
         let passPhraseMatch = null;
-        if (this.state.passPhraseConfirm.length > 0) {
-            let matchText;
-            if (this.state.passPhraseConfirm === this.state.passPhrase) {
-                matchText = _t("That matches!");
-            } else {
-                matchText = _t("That doesn't match.");
-            }
+        if (matchText) {
             passPhraseMatch = <div className="mx_CreateKeyBackupDialog_passPhraseMatch">
                 <div>{matchText}</div>
                 <div>
@@ -509,7 +550,7 @@ export default React.createClass({
             <BaseDialog className='mx_CreateKeyBackupDialog'
                 onFinished={this.props.onFinished}
                 title={this._titleForPhase(this.state.phase)}
-                hasCancel={[PHASE_DONE].includes(this.state.phase)}
+                hasCancel={[PHASE_PASSPHRASE, PHASE_DONE].includes(this.state.phase)}
             >
             <div>
                 {content}

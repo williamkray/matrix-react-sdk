@@ -1,5 +1,5 @@
 /*
-Copyright 2018 New Vector Ltd
+Copyright 2019 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import FixedDistributor from "./distributors/fixed";
-import CollapseDistributor from "./distributors/collapse";
-import RoomSubListDistributor from "./distributors/roomsublist";
-import Resizer from "./resizer";
+import SettingController from "./SettingController";
+import dis from "../../dispatcher";
 
-module.exports = {
-    Resizer,
-    FixedDistributor,
-    CollapseDistributor,
-    RoomSubListDistributor,
-};
+export default class CustomStatusController extends SettingController {
+    onChange(level, roomId, newValue) {
+        // Dispatch setting change so that some components that are still visible when the
+        // Settings page is open (such as RoomTiles) can reflect the change.
+        dis.dispatch({
+            action: "feature_custom_status_changed",
+        });
+    }
+}

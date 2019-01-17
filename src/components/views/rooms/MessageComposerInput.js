@@ -22,13 +22,11 @@ the Cooperative Software License as distributed with this project.
 */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import type SyntheticKeyboardEvent from 'react/lib/SyntheticKeyboardEvent';
 
 import { Editor } from 'slate-react';
 import { getEventTransfer } from 'slate-react';
-import { Value, Document, Block, Inline, Text, Range, Node } from 'slate';
+import { Value, Block, Inline, Range } from 'slate';
 import type { Change } from 'slate';
 
 import Html from 'slate-html-serializer';
@@ -37,7 +35,6 @@ import Plain from 'slate-plain-serializer';
 import PlainWithPillsSerializer from "../../../autocomplete/PlainWithPillsSerializer";
 
 import classNames from 'classnames';
-import Promise from 'bluebird';
 
 import MatrixClientPeg from '../../../MatrixClientPeg';
 import type {MatrixClient} from 'matrix-js-sdk/lib/matrix';
@@ -45,7 +42,7 @@ import {processCommandInput} from '../../../SlashCommands';
 import { KeyCode, isOnlyCtrlOrCmdKeyEvent } from '../../../Keyboard';
 import Modal from '../../../Modal';
 import sdk from '../../../index';
-import { _t, _td } from '../../../languageHandler';
+import { _t } from '../../../languageHandler';
 import Analytics from '../../../Analytics';
 
 import * as RichText from '../../../RichText';
@@ -56,26 +53,23 @@ import Markdown from '../../../Markdown';
 import ComposerHistoryManager from '../../../ComposerHistoryManager';
 import MessageComposerStore from '../../../stores/MessageComposerStore';
 
-import {MATRIXTO_MD_LINK_PATTERN, MATRIXTO_URL_PATTERN} from '../../../linkify-matrix';
-const REGEX_MATRIXTO_MARKDOWN_GLOBAL = new RegExp(MATRIXTO_MD_LINK_PATTERN, 'g');
+import {MATRIXTO_URL_PATTERN} from '../../../linkify-matrix';
 
-import {asciiRegexp, unicodeRegexp, shortnameToUnicode, emojioneList, asciiList, mapUnicodeToShort, toShort} from 'emojione';
+import {
+    asciiRegexp, unicodeRegexp, shortnameToUnicode,
+    asciiList, mapUnicodeToShort, toShort,
+} from 'emojione';
 import SettingsStore, {SettingLevel} from "../../../settings/SettingsStore";
 import {makeUserPermalink} from "../../../matrix-to";
 import ReplyPreview from "./ReplyPreview";
 import ReplyThread from "../elements/ReplyThread";
 import {ContentHelpers} from 'matrix-js-sdk';
 
-const EMOJI_SHORTNAMES = Object.keys(emojioneList);
 const EMOJI_UNICODE_TO_SHORTNAME = mapUnicodeToShort();
 const REGEX_EMOJI_WHITESPACE = new RegExp('(?:^|\\s)(' + asciiRegexp + ')\\s$');
 const EMOJI_REGEX = new RegExp(unicodeRegexp, 'g');
 
 const TYPING_USER_TIMEOUT = 10000; const TYPING_SERVER_TIMEOUT = 30000;
-
-const ENTITY_TYPES = {
-    AT_ROOM_PILL: 'ATROOMPILL',
-};
 
 // the Slate node type to default to for unstyled text
 const DEFAULT_NODE = 'paragraph';
@@ -120,15 +114,6 @@ const SLATE_SCHEMA = {
         },
     },
 };
-
-function onSendMessageFailed(err, room) {
-    // XXX: temporary logging to try to diagnose
-    // https://github.com/vector-im/riot-web/issues/3148
-    console.log('MessageComposer got send failure: ' + err.name + '('+err+')');
-    this.props.roomViewStore.getDispatcher().dispatch({
-        action: 'message_send_failed',
-    });
-}
 
 function rangeEquals(a: Range, b: Range): boolean {
     return (a.anchor.key === b.anchor.key
@@ -377,8 +362,16 @@ export default class MessageComposerInput extends React.Component {
         this._editor = e;
     }
 
+    onSendMessageFailed = (err, room) => {
+        // XXX: temporary logging to try to diagnose
+        // https://github.com/vector-im/riot-web/issues/3148
+        console.log('MessageComposer got send failure: ' + err.name + '('+err+')');
+        this.props.roomViewStore.getDispatcher().dispatch({
+            action: 'message_send_failed',
+        });
+    }
+
     onAction = (payload) => {
-        const editor = this._editor;
         const editorState = this.state.editorState;
 
         switch (payload.action) {
@@ -875,7 +868,7 @@ export default class MessageComposerInput extends React.Component {
             return true;
         }
 
-        const newState: ?Value = null;
+        //const newState: ?Value = null;
 
         // Draft handles rich text mode commands by default but we need to do it ourselves for Markdown.
         if (this.state.isRichTextEnabled) {
@@ -1126,7 +1119,9 @@ export default class MessageComposerInput extends React.Component {
                     const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
                     Modal.createTrackedDialog('Server error', '', ErrorDialog, {
                         title: _t("Server error"),
-                        description: ((err && err.message) ? err.message : _t("Server unavailable, overloaded, or something else went wrong.")),
+                        description: ((err && err.message) ? err.message : _t(
+                            "Server unavailable, overloaded, or something else went wrong.",
+                        )),
                     });
                 });
             } else if (cmd.error) {
@@ -1248,7 +1243,7 @@ export default class MessageComposerInput extends React.Component {
                 action: 'message_sent',
             });
         }).catch((e) => {
-            onSendMessageFailed(e, this.props.room);
+            this.onSendMessageFailed(e, this.props.room);
         });
 
         this.setState({
@@ -1289,7 +1284,7 @@ export default class MessageComposerInput extends React.Component {
         }
     };
 
-    selectHistory = async(up) => {
+    selectHistory = async (up) => {
         const delta = up ? -1 : 1;
 
         // True if we are not currently selecting history, but composing a message
@@ -1337,7 +1332,7 @@ export default class MessageComposerInput extends React.Component {
         return true;
     };
 
-    onTab = async(e) => {
+    onTab = async (e) => {
         this.setState({
             someCompletions: null,
         });
@@ -1359,7 +1354,7 @@ export default class MessageComposerInput extends React.Component {
         up ? this.autocomplete.onUpArrow() : this.autocomplete.onDownArrow();
     };
 
-    onEscape = async(e) => {
+    onEscape = async (e) => {
         e.preventDefault();
         if (this.autocomplete) {
             this.autocomplete.onEscape(e);
@@ -1378,7 +1373,7 @@ export default class MessageComposerInput extends React.Component {
     /* If passed null, restores the original editor content from state.originalEditorState.
      * If passed a non-null displayedCompletion, modifies state.originalEditorState to compute new state.editorState.
      */
-    setDisplayedCompletion = async(displayedCompletion: ?Completion): boolean => {
+    setDisplayedCompletion = async (displayedCompletion: ?Completion): boolean => {
         const activeEditorState = this.state.originalEditorState || this.state.editorState;
 
         if (displayedCompletion == null) {
@@ -1519,7 +1514,9 @@ export default class MessageComposerInput extends React.Component {
                 });
                 const style = {};
                 if (props.selected) style.border = '1px solid blue';
-                return <img className={ className } src={ uri } title={ shortname } alt={ emojiUnicode } style={style} />;
+                return <img className={ className } src={ uri }
+                    title={ shortname } alt={ emojiUnicode } style={style}
+                />;
             }
         }
     };
@@ -1573,7 +1570,6 @@ export default class MessageComposerInput extends React.Component {
 
     getSelectionRange(editorState: Value) {
         let beginning = false;
-        const query = this.getAutocompleteQuery(editorState);
         const firstChild = editorState.document.nodes.get(0);
         const firstGrandChild = firstChild && firstChild.nodes.get(0);
         beginning = (firstChild && firstGrandChild &&
