@@ -92,7 +92,7 @@ const SIMPLE_SETTINGS = [
     { id: "pinMentionedRooms" },
     { id: "pinUnreadRooms" },
     { id: "showDeveloperTools" },
-    { id: "alwaysInviteUnknownUsers" },
+    { id: "promptBeforeInviteUnknownUsers" },
 ];
 
 // These settings must be defined in SettingsStore
@@ -617,7 +617,7 @@ module.exports = React.createClass({
             <div>
                 <h3>Referral</h3>
                 <div className="mx_UserSettings_section">
-                    { _t("Refer a friend to Riot:") } <a href={href}>{ href }</a>
+                    { _t("Refer a friend to Riot:") } <a href={href} target="_blank" rel="noopener">{ href }</a>
                 </div>
             </div>
         );
@@ -649,12 +649,15 @@ module.exports = React.createClass({
         // to rebind the onChange each time we render
         const onChange = (e) =>
             SettingsStore.setValue("autocompleteDelay", null, SettingLevel.DEVICE, e.target.value);
+        // HACK: Lack of translations for themes header. We're removing this view in the very near future,
+        // and the header is really only there to maintain some semblance of the UX the section once was.
         return (
             <div>
                 <h3>{ _t("User Interface") }</h3>
                 <div className="mx_UserSettings_section">
                     { SIMPLE_SETTINGS.map( this._renderAccountSetting ) }
                     { this._renderContrastSetting() }
+                    <div><b>Themes</b></div>
                     { THEMES.map( this._renderThemeOption ) }
                     <table>
                         <tbody>
@@ -716,18 +719,12 @@ module.exports = React.createClass({
     },
 
     _renderThemeOption: function(setting) {
-        const SettingsFlag = sdk.getComponent("elements.SettingsFlag");
-        const onChange = (v) => dis.dispatch({action: 'set_theme', value: setting.value});
-        return (
-            <div className="mx_UserSettings_toggle" key={setting.id + '_' + setting.value}>
-                <SettingsFlag name="theme"
-                                  label={setting.label}
-                                  level={SettingLevel.ACCOUNT}
-                                  onChange={onChange}
-                                  group="theme"
-                                  value={setting.value} />
-            </div>
-        );
+        // HACK: Temporary disablement of theme selection.
+        // We don't support changing themes on experimental anyways, and radio groups aren't
+        // a thing anymore for setting flags. We're also dropping this view in the very near
+        // future, so just replace the theme selection with placeholder text.
+        const currentTheme = SettingsStore.getValue("theme");
+        return <div>{_t(setting.label)} {currentTheme === setting.value ? '(current)' : null}</div>;
     },
 
     _renderCryptoInfo: function() {
@@ -1279,7 +1276,7 @@ module.exports = React.createClass({
                         />
                     </div>
                     <div className="mx_UserSettings_threepidButton mx_filterFlipColor">
-                        <AccessibleButton element="img" src="img/cancel-small.svg" width="14" height="14" alt={_t("Remove")}
+                        <AccessibleButton element="img" src={require("../../../res/img/cancel-small.svg")} width="14" height="14" alt={_t("Remove")}
                             onClick={onRemoveClick} />
                     </div>
                 </div>
@@ -1304,7 +1301,7 @@ module.exports = React.createClass({
                             onValueChanged={this._onAddEmailEditFinished} />
                     </div>
                     <div className="mx_UserSettings_threepidButton mx_filterFlipColor">
-                         <AccessibleButton element="img" src="img/plus.svg" width="14" height="14" alt={_t("Add")} onClick={this._addEmail} />
+                         <AccessibleButton element="img" src={require("../../../res/img/plus.svg")} width="14" height="14" alt={_t("Add")} onClick={this._addEmail} />
                     </div>
                 </div>
             );
@@ -1320,9 +1317,7 @@ module.exports = React.createClass({
                 <ChangePassword
                         className="mx_UserSettings_accountTable"
                         rowClassName="mx_UserSettings_profileTableRow"
-                        rowLabelClassName="mx_UserSettings_profileLabelCell"
-                        rowInputClassName="mx_UserSettings_profileInputCell"
-                        buttonClassName="mx_UserSettings_button mx_UserSettings_changePasswordButton"
+                        buttonClassName="mx_UserSettings_button"
                         onError={this.onPasswordChangeError}
                         onFinished={this.onPasswordChanged} />
         );
@@ -1374,7 +1369,7 @@ module.exports = React.createClass({
 
                     <div className="mx_UserSettings_avatarPicker">
                         <AccessibleButton className="mx_UserSettings_avatarPicker_remove" onClick={this.onAvatarRemoveClick}>
-                            <img src="img/cancel.svg"
+                            <img src={require("../../../res/img/cancel.svg")}
                                 width="15" height="15"
                                 className="mx_filterFlipColor"
                                 alt={_t("Remove avatar")}
@@ -1386,7 +1381,7 @@ module.exports = React.createClass({
                         </div>
                         <div className="mx_UserSettings_avatarPicker_edit">
                             <label htmlFor="avatarInput" ref="file_label">
-                                <img src="img/camera.svg" className="mx_filterFlipColor"
+                                <img src={require("../../../res/img/camera.svg")} className="mx_filterFlipColor"
                                     alt={_t("Upload avatar")} title={_t("Upload avatar")}
                                     width="17" height="15" />
                             </label>

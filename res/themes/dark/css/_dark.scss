@@ -149,8 +149,8 @@ $event-redacted-border-color: #000000;
 // event timestamp
 $event-timestamp-color: #acacac;
 
-$edit-button-url: "../../img/icon_context_message_dark.svg";
-$copy-button-url: "../../img/icon_copy_message_dark.svg";
+$edit-button-url: "$(res)/img/icon_context_message_dark.svg";
+$copy-button-url: "$(res)/img/icon_copy_message_dark.svg";
 
 // e2e
 $e2e-verified-color: #76cfa5; // N.B. *NOT* the same as $accent-color
@@ -161,10 +161,6 @@ $e2e-warning-color: #ba6363;
 $lightbox-bg-color: #454545;
 $lightbox-fg-color: #ffffff;
 $lightbox-border-color: #ffffff;
-
-/*** GroupGridView ***/
-$gridview-focus-border-glow-color: rgba(134, 193, 165, 0.5);
-$gridview-focus-border-color: rgba(134, 193, 165, 1);
 
 $imagebody-giflabel: rgba(1, 1, 1, 0.7);
 $imagebody-giflabel-border: rgba(1, 1, 1, 0.2);

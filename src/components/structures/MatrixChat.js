@@ -183,7 +183,7 @@ export default React.createClass({
             register_is_url: null,
             register_id_sid: null,
 
-            // Parameters used for setting up the login/registration views
+            // Parameters used for setting up the authentication views
             defaultServerName: this.props.config.default_server_name,
             defaultHsUrl: this.props.config.default_hs_url,
             defaultIsUrl: this.props.config.default_is_url,
@@ -302,7 +302,10 @@ export default React.createClass({
             // will check their settings.
             this.setState({
                 defaultServerName: null, // To un-hide any secrets people might be keeping
-                defaultServerDiscoveryError: _t("Invalid configuration: Cannot supply a default homeserver URL and a default server name"),
+                defaultServerDiscoveryError: _t(
+                    "Invalid configuration: Cannot supply a default homeserver URL and " +
+                    "a default server name",
+                ),
             });
         }
 
@@ -607,7 +610,17 @@ export default React.createClass({
             case 'view_indexed_room':
                 this._viewIndexedRoom(payload.roomIndex);
                 break;
-            case 'view_user_settings':
+            case 'view_user_settings': {
+                if (SettingsStore.isFeatureEnabled("feature_tabbed_settings")) {
+                    const UserSettingsDialog = sdk.getComponent("dialogs.UserSettingsDialog");
+                    Modal.createTrackedDialog('User settings', '', UserSettingsDialog, {}, 'mx_SettingsDialog');
+                } else {
+                    this._setPage(PageTypes.UserSettings);
+                    this.notifyNewScreen('settings');
+                }
+                break;
+            }
+            case 'view_old_user_settings':
                 this._setPage(PageTypes.UserSettings);
                 this.notifyNewScreen('settings');
                 break;
@@ -650,9 +663,6 @@ export default React.createClass({
                 break;
             case 'view_group':
                 this._viewGroup(payload);
-                break;
-            case 'group_grid_view':
-                this._viewGroupGrid(payload);
                 break;
             case 'view_home_page':
                 this._viewHome();
@@ -865,7 +875,6 @@ export default React.createClass({
     //                               room name and avatar from an invite email)
     _viewRoom: function(roomInfo) {
         this.focusComposer = true;
-        console.log("!!! MatrixChat._viewRoom", roomInfo);
 
         const newState = {
             currentRoomId: roomInfo.room_id || null,
@@ -914,9 +923,6 @@ export default React.createClass({
             if (roomInfo.event_id && roomInfo.highlighted) {
                 presentedId += "/" + roomInfo.event_id;
             }
-
-
-            // TODO: only emit this when we're not in grid mode?
             this.notifyNewScreen('room/' + presentedId);
             newState.ready = true;
             this.setState(newState);
@@ -931,11 +937,6 @@ export default React.createClass({
         });
         this._setPage(PageTypes.GroupView);
         this.notifyNewScreen('group/' + groupId);
-    },
-
-    _viewGroupGrid: function(payload) {
-        this._setPage(PageTypes.GroupGridView);
-        // this.notifyNewScreen('grid/' + payload.group_id);
     },
 
     _viewHome: function() {
@@ -1845,7 +1846,11 @@ export default React.createClass({
     render: function() {
         // console.log(`Rendering MatrixChat with view ${this.state.view}`);
 
-        if (this.state.view === VIEWS.LOADING || this.state.view === VIEWS.LOGGING_IN || this.state.loadingDefaultHomeserver) {
+        if (
+            this.state.view === VIEWS.LOADING ||
+            this.state.view === VIEWS.LOGGING_IN ||
+            this.state.loadingDefaultHomeserver
+        ) {
             const Spinner = sdk.getComponent('elements.Spinner');
             return (
                 <div className="mx_MatrixChat_splash">
@@ -1856,7 +1861,7 @@ export default React.createClass({
 
         // needs to be before normal PageTypes as you are logged in technically
         if (this.state.view === VIEWS.POST_REGISTRATION) {
-            const PostRegistration = sdk.getComponent('structures.login.PostRegistration');
+            const PostRegistration = sdk.getComponent('structures.auth.PostRegistration');
             return (
                 <PostRegistration
                     onComplete={this.onFinishPostRegistration} />
@@ -1911,7 +1916,7 @@ export default React.createClass({
         }
 
         if (this.state.view === VIEWS.REGISTER) {
-            const Registration = sdk.getComponent('structures.login.Registration');
+            const Registration = sdk.getComponent('structures.auth.Registration');
             return (
                 <Registration
                     clientSecret={this.state.register_client_secret}
@@ -1940,7 +1945,7 @@ export default React.createClass({
 
 
         if (this.state.view === VIEWS.FORGOT_PASSWORD) {
-            const ForgotPassword = sdk.getComponent('structures.login.ForgotPassword');
+            const ForgotPassword = sdk.getComponent('structures.auth.ForgotPassword');
             return (
                 <ForgotPassword
                     defaultServerName={this.getDefaultServerName()}
@@ -1950,13 +1955,12 @@ export default React.createClass({
                     customHsUrl={this.getCurrentHsUrl()}
                     customIsUrl={this.getCurrentIsUrl()}
                     onComplete={this.onLoginClick}
-                    onRegisterClick={this.onRegisterClick}
                     onLoginClick={this.onLoginClick} />
             );
         }
 
         if (this.state.view === VIEWS.LOGIN) {
-            const Login = sdk.getComponent('structures.login.Login');
+            const Login = sdk.getComponent('structures.auth.Login');
             return (
                 <Login
                     onLoggedIn={Lifecycle.setLoggedIn}

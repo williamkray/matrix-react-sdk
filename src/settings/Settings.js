@@ -120,6 +120,12 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
+    "feature_tabbed_settings": {
+        isFeature: true,
+        displayName: _td("Tabbed settings"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
     "feature_custom_status": {
         isFeature: true,
         displayName: _td("Custom user status messages"),
@@ -143,12 +149,6 @@ export const SETTINGS = {
     "feature_state_counters": {
         isFeature: true,
         displayName: _td("Render simple counters in room header"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_gridview": {
-        isFeature: true,
-        displayName: _td("Allow up to 6 rooms in a community to be shown simultaneously in a grid via the context menu"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
@@ -366,10 +366,10 @@ export const SETTINGS = {
         supportedLevels: ['room-device'],
         default: false,
     },
-    "alwaysInviteUnknownUsers": {
+    "promptBeforeInviteUnknownUsers": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Always invite users which may not exist'),
-        default: false,
+        displayName: _td('Prompt before sending invites to potentially invalid matrix IDs'),
+        default: true,
     },
     "showDeveloperTools": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,

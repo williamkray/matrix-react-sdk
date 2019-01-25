@@ -53,10 +53,6 @@ limitations under the License.
 .mx_MemberList_query,
 .mx_GroupMemberList_query,
 .mx_GroupRoomList_query {
-    flex: 0 0 auto;
-}
-
-.mx_MemberList .gm-scrollbar-container {
     flex: 1 1 0;
 }
 
@@ -87,7 +83,7 @@ limitations under the License.
 
 .mx_MemberList_invite span {
     margin: 0 auto;
-    background-image: url('../../img/feather-icons/user-add.svg');
+    background-image: url('$(res)/img/feather-icons/user-add.svg');
     background-repeat: no-repeat;
     background-position: center left;
     padding-left: 25px;

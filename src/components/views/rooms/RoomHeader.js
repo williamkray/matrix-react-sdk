@@ -24,7 +24,6 @@ import { _t } from '../../../languageHandler';
 import MatrixClientPeg from '../../../MatrixClientPeg';
 import Modal from "../../../Modal";
 import RateLimitedFunc from '../../../ratelimitedfunc';
-import dis from '../../../dispatcher';
 
 import * as linkify from 'linkifyjs';
 import linkifyElement from 'linkifyjs/element';
@@ -151,14 +150,6 @@ module.exports = React.createClass({
         Modal.createTrackedDialog('share room dialog', '', ShareDialog, {
             target: this.props.room,
         });
-    },
-
-    onToggleRightPanelClick: function(ev) {
-        if (this.props.collapsedRhs) {
-            dis.dispatch({action: "show_right_panel"});
-        } else {
-            dis.dispatch({action: "hide_right_panel"});
-        }
     },
 
     _hasUnreadPins: function() {
@@ -321,14 +312,14 @@ module.exports = React.createClass({
                     </div>
                     <div className="mx_RoomHeader_avatarPicker_edit">
                         <label htmlFor="avatarInput" ref="file_label">
-                            <img src="img/camera.svg"
+                            <img src={require("../../../../res/img/camera.svg")}
                                  alt={_t("Upload avatar")} title={_t("Upload avatar")}
                                  width="17" height="15" />
                         </label>
                         <input id="avatarInput" type="file" onChange={this.onAvatarSelected} />
                     </div>
                     <div className="mx_RoomHeader_avatarPicker_remove" onClick={this.onAvatarRemoveClick}>
-                        <img src="img/cancel.svg"
+                        <img src={require("../../../../res/img/cancel.svg")}
                             className="mx_filterFlipColor"
                             width="10"
                             alt={_t("Remove avatar")}
@@ -346,7 +337,7 @@ module.exports = React.createClass({
         if (this.props.onSettingsClick) {
             settingsButton =
                 <AccessibleButton className="mx_RoomHeader_button" onClick={this.props.onSettingsClick} title={_t("Settings")}>
-                    <TintableSvg src="img/feather-icons/settings.svg" width="20" height="20" />
+                    <TintableSvg src={require("../../../../res/img/feather-icons/settings.svg")} width="20" height="20" />
                 </AccessibleButton>;
         }
 
@@ -362,7 +353,7 @@ module.exports = React.createClass({
                 <AccessibleButton className="mx_RoomHeader_button mx_RoomHeader_pinnedButton"
                                   onClick={this.props.onPinnedClick} title={_t("Pinned Messages")}>
                     { pinsIndicator }
-                    <TintableSvg src="img/icons-pin.svg" width="16" height="16" />
+                    <TintableSvg src={require("../../../../res/img/icons-pin.svg")} width="16" height="16" />
                 </AccessibleButton>;
         }
 
@@ -370,7 +361,7 @@ module.exports = React.createClass({
 //        if (this.props.onLeaveClick) {
 //            leave_button =
 //                <div className="mx_RoomHeader_button" onClick={this.props.onLeaveClick} title="Leave room">
-//                    <TintableSvg src="img/leave.svg" width="26" height="20"/>
+//                    <TintableSvg src={require("../../../../res/img/leave.svg")} width="26" height="20"/>
 //                </div>;
 //        }
 
@@ -378,7 +369,7 @@ module.exports = React.createClass({
         if (this.props.onForgetClick) {
             forgetButton =
                 <AccessibleButton className="mx_RoomHeader_button" onClick={this.props.onForgetClick} title={_t("Forget room")}>
-                    <TintableSvg src="img/leave.svg" width="26" height="20" />
+                    <TintableSvg src={require("../../../../res/img/leave.svg")} width="26" height="20" />
                 </AccessibleButton>;
         }
 
@@ -386,7 +377,7 @@ module.exports = React.createClass({
         if (this.props.onSearchClick && this.props.inRoom) {
             searchButton =
                 <AccessibleButton className="mx_RoomHeader_button" onClick={this.props.onSearchClick} title={_t("Search")}>
-                    <TintableSvg src="img/feather-icons/search.svg" width="20" height="20" />
+                    <TintableSvg src={require("../../../../res/img/feather-icons/search.svg")} width="20" height="20" />
                 </AccessibleButton>;
         }
 
@@ -394,7 +385,7 @@ module.exports = React.createClass({
         if (this.props.inRoom) {
             shareRoomButton =
                 <AccessibleButton className="mx_RoomHeader_button" onClick={this.onShareRoomClick} title={_t('Share room')}>
-                    <TintableSvg src="img/feather-icons/share.svg" width="20" height="20" />
+                    <TintableSvg src={require("../../../../res/img/feather-icons/share.svg")} width="20" height="20" />
                 </AccessibleButton>;
         }
 
@@ -418,17 +409,6 @@ module.exports = React.createClass({
                 </div>;
         }
 
-        let toggleRightPanelButton;
-        if (this.props.isGrid) {
-            toggleRightPanelButton =
-                <AccessibleButton
-                    className="mx_RoomHeader_button"
-                    onClick={this.onToggleRightPanelClick}
-                    title={_t('Toggle right panel')}>
-                    <TintableSvg src="img/feather-icons/toggle-right-panel.svg" width="20" height="20" />
-                </AccessibleButton>;
-        }
-
         return (
             <div className={"mx_RoomHeader light-panel " + (this.props.editing ? "mx_RoomHeader_editing" : "")}>
                 <div className="mx_RoomHeader_wrapper">
@@ -439,8 +419,7 @@ module.exports = React.createClass({
                     { saveButton }
                     { cancelButton }
                     { rightRow }
-                    { !this.props.isGrid ? <RoomHeaderButtons collapsedRhs={this.props.collapsedRhs} /> : undefined }
-                    { toggleRightPanelButton }
+                    <RoomHeaderButtons collapsedRhs={this.props.collapsedRhs} />
                 </div>
             </div>
         );
