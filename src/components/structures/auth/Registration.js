@@ -23,14 +23,21 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import sdk from '../../../index';
-import MatrixClientPeg from '../../../MatrixClientPeg';
-import RegistrationForm from '../../views/auth/RegistrationForm';
-import RtsClient from '../../../RtsClient';
 import { _t, _td } from '../../../languageHandler';
 import SdkConfig from '../../../SdkConfig';
 import { messageForResourceLimitError } from '../../../utils/ErrorUtils';
+import * as ServerType from '../../views/auth/ServerTypeSelector';
 
 const MIN_PASSWORD_LENGTH = 6;
+
+// Phases
+// Show controls to configure server details
+const PHASE_SERVER_DETAILS = 0;
+// Show the appropriate registration flow(s) for the server
+const PHASE_REGISTRATION = 1;
+
+// Enable phases for registration
+const PHASES_ENABLED = true;
 
 module.exports = React.createClass({
     displayName: 'Registration',
@@ -48,13 +55,6 @@ module.exports = React.createClass({
         brand: PropTypes.string,
         email: PropTypes.string,
         referrer: PropTypes.string,
-        teamServerConfig: PropTypes.shape({
-            // Email address to request new teams
-            supportEmail: PropTypes.string.isRequired,
-            // URL of the riot-team-server to get team configurations and track referrals
-            teamServerURL: PropTypes.string.isRequired,
-        }),
-        teamSelected: PropTypes.object,
 
         // The default server name to use when the user hasn't specified
         // one. This is used when displaying the defaultHsUrl in the UI.
@@ -70,18 +70,11 @@ module.exports = React.createClass({
         onLoginClick: PropTypes.func.isRequired,
         onCancelClick: PropTypes.func,
         onServerConfigChange: PropTypes.func.isRequired,
-
-        rtsClient: PropTypes.shape({
-            getTeamsConfig: PropTypes.func.isRequired,
-            trackReferral: PropTypes.func.isRequired,
-            getTeam: PropTypes.func.isRequired,
-        }),
     },
 
     getInitialState: function() {
         return {
             busy: false,
-            teamServerBusy: false,
             errorText: null,
             // We remember the values entered by the user because
             // the registration form will be unmounted during the
@@ -98,6 +91,7 @@ module.exports = React.createClass({
             // If we've been given a session ID, we're resuming
             // straight back into UI auth
             doingUIAuth: Boolean(this.props.sessionId),
+            serverType: null,
             hsUrl: this.props.customHsUrl,
             isUrl: this.props.customIsUrl,
             flows: null,
@@ -106,37 +100,7 @@ module.exports = React.createClass({
 
     componentWillMount: function() {
         this._unmounted = false;
-
         this._replaceClient();
-
-        if (
-            this.props.teamServerConfig &&
-            this.props.teamServerConfig.teamServerURL &&
-            !this._rtsClient
-        ) {
-            this._rtsClient = this.props.rtsClient || new RtsClient(this.props.teamServerConfig.teamServerURL);
-
-            this.setState({
-                teamServerBusy: true,
-            });
-            // GET team configurations including domains, names and icons
-            this._rtsClient.getTeamsConfig().then((data) => {
-                const teamsConfig = {
-                    teams: data,
-                    supportEmail: this.props.teamServerConfig.supportEmail,
-                };
-                console.log('Setting teams config to ', teamsConfig);
-                this.setState({
-                    teamsConfig: teamsConfig,
-                    teamServerBusy: false,
-                });
-            }, (err) => {
-                console.error('Error retrieving config for teams', err);
-                this.setState({
-                    teamServerBusy: false,
-                });
-            });
-        }
     },
 
     onServerConfigChange: function(config) {
@@ -151,6 +115,39 @@ module.exports = React.createClass({
         this.setState(newState, () => {
             this._replaceClient();
         });
+    },
+
+    onServerTypeChange(type) {
+        this.setState({
+            serverType: type,
+        });
+
+        // When changing server types, set the HS / IS URLs to reasonable defaults for the
+        // the new type.
+        switch (type) {
+            case ServerType.FREE: {
+                const { hsUrl, isUrl } = ServerType.TYPES.FREE;
+                this.onServerConfigChange({
+                    hsUrl,
+                    isUrl,
+                });
+                // Move directly to the registration phase since the server details are fixed.
+                this.setState({
+                    phase: PHASE_REGISTRATION,
+                });
+                break;
+            }
+            case ServerType.PREMIUM:
+            case ServerType.ADVANCED:
+                this.onServerConfigChange({
+                    hsUrl: this.props.defaultHsUrl,
+                    isUrl: this.props.defaultIsUrl,
+                });
+                this.setState({
+                    phase: PHASE_SERVER_DETAILS,
+                });
+                break;
+        }
     },
 
     _replaceClient: async function() {
@@ -191,7 +188,7 @@ module.exports = React.createClass({
         });
     },
 
-    _onUIAuthFinished: function(success, response, extra) {
+    _onUIAuthFinished: async function(success, response, extra) {
         if (!success) {
             let msg = response.message || response.toString();
             // can we give a better error message?
@@ -240,58 +237,15 @@ module.exports = React.createClass({
             doingUIAuth: false,
         });
 
-        // Done regardless of `teamSelected`. People registering with non-team emails
-        // will just nop. The point of this being we might not have the email address
-        // that the user registered with at this stage (depending on whether this
-        // is the client they initiated registration).
-        let trackPromise = Promise.resolve(null);
-        if (this._rtsClient && extra.emailSid) {
-            // Track referral if this.props.referrer set, get team_token in order to
-            // retrieve team config and see welcome page etc.
-            trackPromise = this._rtsClient.trackReferral(
-                this.props.referrer || '', // Default to empty string = not referred
-                extra.emailSid,
-                extra.clientSecret,
-            ).then((data) => {
-                const teamToken = data.team_token;
-                // Store for use /w welcome pages
-                window.localStorage.setItem('mx_team_token', teamToken);
-
-                this._rtsClient.getTeam(teamToken).then((team) => {
-                    console.log(
-                        `User successfully registered with team ${team.name}`,
-                    );
-                    if (!team.rooms) {
-                        return;
-                    }
-                    // Auto-join rooms
-                    team.rooms.forEach((room) => {
-                        if (room.auto_join && room.room_id) {
-                            console.log(`Auto-joining ${room.room_id}`);
-                            MatrixClientPeg.get().joinRoom(room.room_id);
-                        }
-                    });
-                }, (err) => {
-                    console.error('Error getting team config', err);
-                });
-
-                return teamToken;
-            }, (err) => {
-                console.error('Error tracking referral', err);
-            });
-        }
-
-        trackPromise.then((teamToken) => {
-            return this.props.onLoggedIn({
-                userId: response.user_id,
-                deviceId: response.device_id,
-                homeserverUrl: this._matrixClient.getHomeserverUrl(),
-                identityServerUrl: this._matrixClient.getIdentityServerUrl(),
-                accessToken: response.access_token,
-            }, teamToken);
-        }).then((cli) => {
-            return this._setupPushers(cli);
+        const cli = await this.props.onLoggedIn({
+            userId: response.user_id,
+            deviceId: response.device_id,
+            homeserverUrl: this._matrixClient.getHomeserverUrl(),
+            identityServerUrl: this._matrixClient.getIdentityServerUrl(),
+            accessToken: response.access_token,
         });
+
+        this._setupPushers(cli);
     },
 
     _setupPushers: function(matrixClient) {
@@ -344,7 +298,7 @@ module.exports = React.createClass({
                 errMsg = _t("Only use lower case letters, numbers and '=_-./'");
                 break;
             case "RegistrationForm.ERR_USERNAME_BLANK":
-                errMsg = _t('You need to enter a user name.');
+                errMsg = _t('You need to enter a username.');
                 break;
             default:
                 console.error("Unknown error code: %s", errCode);
@@ -356,16 +310,25 @@ module.exports = React.createClass({
         });
     },
 
-    onTeamSelected: function(teamSelected) {
-        if (!this._unmounted) {
-            this.setState({ teamSelected });
-        }
-    },
-
     onLoginClick: function(ev) {
         ev.preventDefault();
         ev.stopPropagation();
         this.props.onLoginClick();
+    },
+
+    onServerDetailsNextPhaseClick(ev) {
+        ev.stopPropagation();
+        this.setState({
+            phase: PHASE_REGISTRATION,
+        });
+    },
+
+    onEditServerDetailsClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.setState({
+            phase: PHASE_SERVER_DETAILS,
+        });
     },
 
     _makeRegisterRequest: function(auth) {
@@ -395,65 +358,127 @@ module.exports = React.createClass({
         };
     },
 
+    renderServerComponent() {
+        const ServerTypeSelector = sdk.getComponent("auth.ServerTypeSelector");
+        const ServerConfig = sdk.getComponent("auth.ServerConfig");
+        const ModularServerConfig = sdk.getComponent("auth.ModularServerConfig");
+        const AccessibleButton = sdk.getComponent("elements.AccessibleButton");
+
+        // TODO: May need to adjust the behavior of this config option
+        if (SdkConfig.get()['disable_custom_urls']) {
+            return null;
+        }
+
+        // If we're on a different phase, we only show the server type selector,
+        // which is always shown if we allow custom URLs at all.
+        if (PHASES_ENABLED && this.state.phase !== PHASE_SERVER_DETAILS) {
+            return <div>
+                <ServerTypeSelector
+                    defaultHsUrl={this.props.defaultHsUrl}
+                    onChange={this.onServerTypeChange}
+                />
+            </div>;
+        }
+
+        let serverDetails = null;
+        switch (this.state.serverType) {
+            case ServerType.FREE:
+                break;
+            case ServerType.PREMIUM:
+                serverDetails = <ModularServerConfig
+                    customHsUrl={this.state.discoveredHsUrl || this.props.customHsUrl}
+                    defaultHsUrl={this.props.defaultHsUrl}
+                    defaultIsUrl={this.props.defaultIsUrl}
+                    onServerConfigChange={this.onServerConfigChange}
+                    delayTimeMs={1000}
+                />;
+                break;
+            case ServerType.ADVANCED:
+                serverDetails = <ServerConfig
+                    customHsUrl={this.state.discoveredHsUrl || this.props.customHsUrl}
+                    customIsUrl={this.state.discoveredIsUrl || this.props.customIsUrl}
+                    defaultHsUrl={this.props.defaultHsUrl}
+                    defaultIsUrl={this.props.defaultIsUrl}
+                    onServerConfigChange={this.onServerConfigChange}
+                    delayTimeMs={1000}
+                />;
+                break;
+        }
+
+        let nextButton = null;
+        if (PHASES_ENABLED) {
+            nextButton = <AccessibleButton className="mx_Login_submit"
+                onClick={this.onServerDetailsNextPhaseClick}
+            >
+                {_t("Next")}
+            </AccessibleButton>;
+        }
+
+        return <div>
+            <ServerTypeSelector
+                defaultHsUrl={this.props.defaultHsUrl}
+                onChange={this.onServerTypeChange}
+            />
+            {serverDetails}
+            {nextButton}
+        </div>;
+    },
+
+    renderRegisterComponent() {
+        if (PHASES_ENABLED && this.state.phase !== PHASE_REGISTRATION) {
+            return null;
+        }
+
+        const InteractiveAuth = sdk.getComponent('structures.InteractiveAuth');
+        const Spinner = sdk.getComponent('elements.Spinner');
+        const RegistrationForm = sdk.getComponent('auth.RegistrationForm');
+
+        if (this.state.doingUIAuth) {
+            return <InteractiveAuth
+                matrixClient={this._matrixClient}
+                makeRequest={this._makeRegisterRequest}
+                onAuthFinished={this._onUIAuthFinished}
+                inputs={this._getUIAuthInputs()}
+                makeRegistrationUrl={this.props.makeRegistrationUrl}
+                sessionId={this.props.sessionId}
+                clientSecret={this.props.clientSecret}
+                emailSid={this.props.idSid}
+                poll={true}
+            />;
+        } else if (this.state.busy || !this.state.flows) {
+            return <Spinner />;
+        } else {
+            let onEditServerDetailsClick = null;
+            // If custom URLs are allowed and we haven't selected the Free server type, wire
+            // up the server details edit link.
+            if (
+                PHASES_ENABLED &&
+                !SdkConfig.get()['disable_custom_urls'] &&
+                this.state.serverType !== ServerType.FREE
+            ) {
+                onEditServerDetailsClick = this.onEditServerDetailsClick;
+            }
+            return <RegistrationForm
+                defaultUsername={this.state.formVals.username}
+                defaultEmail={this.state.formVals.email}
+                defaultPhoneCountry={this.state.formVals.phoneCountry}
+                defaultPhoneNumber={this.state.formVals.phoneNumber}
+                defaultPassword={this.state.formVals.password}
+                minPasswordLength={MIN_PASSWORD_LENGTH}
+                onError={this.onFormValidationFailed}
+                onRegisterClick={this.onFormSubmit}
+                onEditServerDetailsClick={onEditServerDetailsClick}
+                flows={this.state.flows}
+                hsUrl={this.state.hsUrl}
+                hsName={this.props.defaultServerName}
+            />;
+        }
+    },
+
     render: function() {
         const AuthHeader = sdk.getComponent('auth.AuthHeader');
         const AuthBody = sdk.getComponent("auth.AuthBody");
         const AuthPage = sdk.getComponent('auth.AuthPage');
-        const InteractiveAuth = sdk.getComponent('structures.InteractiveAuth');
-        const Spinner = sdk.getComponent("elements.Spinner");
-        const ServerConfig = sdk.getComponent('views.auth.ServerConfig');
-
-        let registerBody;
-        if (this.state.doingUIAuth) {
-            registerBody = (
-                <InteractiveAuth
-                    matrixClient={this._matrixClient}
-                    makeRequest={this._makeRegisterRequest}
-                    onAuthFinished={this._onUIAuthFinished}
-                    inputs={this._getUIAuthInputs()}
-                    makeRegistrationUrl={this.props.makeRegistrationUrl}
-                    sessionId={this.props.sessionId}
-                    clientSecret={this.props.clientSecret}
-                    emailSid={this.props.idSid}
-                    poll={true}
-                />
-            );
-        } else if (this.state.busy || this.state.teamServerBusy || !this.state.flows) {
-            registerBody = <Spinner />;
-        } else {
-            let serverConfigSection;
-            if (!SdkConfig.get()['disable_custom_urls']) {
-                serverConfigSection = (
-                    <ServerConfig ref="serverConfig"
-                        withToggleButton={true}
-                        customHsUrl={this.props.customHsUrl}
-                        customIsUrl={this.props.customIsUrl}
-                        defaultHsUrl={this.props.defaultHsUrl}
-                        defaultIsUrl={this.props.defaultIsUrl}
-                        onServerConfigChange={this.onServerConfigChange}
-                        delayTimeMs={1000}
-                    />
-                );
-            }
-            registerBody = (
-                <div>
-                    <RegistrationForm
-                        defaultUsername={this.state.formVals.username}
-                        defaultEmail={this.state.formVals.email}
-                        defaultPhoneCountry={this.state.formVals.phoneCountry}
-                        defaultPhoneNumber={this.state.formVals.phoneNumber}
-                        defaultPassword={this.state.formVals.password}
-                        teamsConfig={this.state.teamsConfig}
-                        minPasswordLength={MIN_PASSWORD_LENGTH}
-                        onError={this.onFormValidationFailed}
-                        onRegisterClick={this.onFormSubmit}
-                        onTeamSelected={this.onTeamSelected}
-                        flows={this.state.flows}
-                    />
-                    { serverConfigSection }
-                </div>
-            );
-        }
 
         let errorText;
         const err = this.state.errorText || this.props.defaultServerDiscoveryError;
@@ -472,17 +497,13 @@ module.exports = React.createClass({
 
         return (
             <AuthPage>
-                <AuthHeader
-                    icon={this.state.teamSelected ?
-                        this.props.teamServerConfig.teamServerURL + "/static/common/" +
-                        this.state.teamSelected.domain + "/icon.png" :
-                        null}
-                />
+                <AuthHeader />
                 <AuthBody>
                     <h2>{ _t('Create your account') }</h2>
-                    { registerBody }
-                    { signIn }
                     { errorText }
+                    { this.renderServerComponent() }
+                    { this.renderRegisterComponent() }
+                    { signIn }
                 </AuthBody>
             </AuthPage>
         );

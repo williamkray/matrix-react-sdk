@@ -1,5 +1,6 @@
 /*
 Copyright 2015, 2016 OpenMarket Ltd
+Copyright 2019 New Vector Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,21 +15,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-'use strict';
-
-const React = require('react');
+import React from 'react';
 import PropTypes from 'prop-types';
-const Modal = require('../../../Modal');
-const sdk = require('../../../index');
+import Modal from '../../../Modal';
+import sdk from '../../../index';
 import { _t } from '../../../languageHandler';
 
-/**
+/*
  * A pure UI component which displays the HS and IS to use.
  */
-module.exports = React.createClass({
-    displayName: 'ServerConfig',
 
-    propTypes: {
+export default class ServerConfig extends React.PureComponent {
+    static propTypes = {
         onServerConfigChange: PropTypes.func,
 
         // default URLs are defined in config.json (or the hardcoded defaults)
@@ -45,155 +43,103 @@ module.exports = React.createClass({
         customHsUrl: PropTypes.string,
         customIsUrl: PropTypes.string,
 
-        withToggleButton: PropTypes.bool,
         delayTimeMs: PropTypes.number, // time to wait before invoking onChanged
-    },
+    }
 
-    getDefaultProps: function() {
-        return {
-            onServerConfigChange: function() {},
-            customHsUrl: "",
-            customIsUrl: "",
-            withToggleButton: false,
-            delayTimeMs: 0,
+    static defaultProps = {
+        onServerConfigChange: function() {},
+        customHsUrl: "",
+        customIsUrl: "",
+        delayTimeMs: 0,
+    }
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            hsUrl: props.customHsUrl,
+            isUrl: props.customIsUrl,
         };
-    },
+    }
 
-    getInitialState: function() {
-        return {
-            hs_url: this.props.customHsUrl,
-            is_url: this.props.customIsUrl,
-            // if withToggleButton is false, then show the config all the time given we have no way otherwise of making it visible
-            configVisible: !this.props.withToggleButton ||
-                           (this.props.customHsUrl !== this.props.defaultHsUrl) ||
-                           (this.props.customIsUrl !== this.props.defaultIsUrl),
-        };
-    },
-
-    componentWillReceiveProps: function(newProps) {
-        if (newProps.customHsUrl === this.state.hs_url &&
-            newProps.customIsUrl === this.state.is_url) return;
+    componentWillReceiveProps(newProps) {
+        if (newProps.customHsUrl === this.state.hsUrl &&
+            newProps.customIsUrl === this.state.isUrl) return;
 
         this.setState({
-            hs_url: newProps.customHsUrl,
-            is_url: newProps.customIsUrl,
-            configVisible: !newProps.withToggleButton ||
-                (newProps.customHsUrl !== newProps.defaultHsUrl) ||
-                (newProps.customIsUrl !== newProps.defaultIsUrl),
+            hsUrl: newProps.customHsUrl,
+            isUrl: newProps.customIsUrl,
         });
         this.props.onServerConfigChange({
             hsUrl: newProps.customHsUrl,
             isUrl: newProps.customIsUrl,
         });
-    },
+    }
 
-    onHomeserverChanged: function(ev) {
-        this.setState({hs_url: ev.target.value}, () => {
+    onHomeserverChanged = (ev) => {
+        this.setState({hsUrl: ev.target.value}, () => {
             this._hsTimeoutId = this._waitThenInvoke(this._hsTimeoutId, () => {
-                let hsUrl = this.state.hs_url.trim().replace(/\/$/, "");
+                let hsUrl = this.state.hsUrl.trim().replace(/\/$/, "");
                 if (hsUrl === "") hsUrl = this.props.defaultHsUrl;
                 this.props.onServerConfigChange({
-                    hsUrl: this.state.hs_url,
-                    isUrl: this.state.is_url,
+                    hsUrl: this.state.hsUrl,
+                    isUrl: this.state.isUrl,
                 });
             });
         });
-    },
+    }
 
-    onIdentityServerChanged: function(ev) {
-        this.setState({is_url: ev.target.value}, () => {
+    onIdentityServerChanged = (ev) => {
+        this.setState({isUrl: ev.target.value}, () => {
             this._isTimeoutId = this._waitThenInvoke(this._isTimeoutId, () => {
-                let isUrl = this.state.is_url.trim().replace(/\/$/, "");
+                let isUrl = this.state.isUrl.trim().replace(/\/$/, "");
                 if (isUrl === "") isUrl = this.props.defaultIsUrl;
                 this.props.onServerConfigChange({
-                    hsUrl: this.state.hs_url,
-                    isUrl: this.state.is_url,
+                    hsUrl: this.state.hsUrl,
+                    isUrl: this.state.isUrl,
                 });
             });
         });
-    },
+    }
 
-    _waitThenInvoke: function(existingTimeoutId, fn) {
+    _waitThenInvoke(existingTimeoutId, fn) {
         if (existingTimeoutId) {
             clearTimeout(existingTimeoutId);
         }
         return setTimeout(fn.bind(this), this.props.delayTimeMs);
-    },
+    }
 
-    onServerConfigVisibleChange: function(visible, ev) {
-        this.setState({
-            configVisible: visible,
-        });
-        if (!visible) {
-            this.props.onServerConfigChange({
-                hsUrl: this.props.defaultHsUrl,
-                isUrl: this.props.defaultIsUrl,
-            });
-        } else {
-            this.props.onServerConfigChange({
-                hsUrl: this.state.hs_url,
-                isUrl: this.state.is_url,
-            });
-        }
-    },
-
-    showHelpPopup: function() {
+    showHelpPopup = () => {
         const CustomServerDialog = sdk.getComponent('auth.CustomServerDialog');
         Modal.createTrackedDialog('Custom Server Dialog', '', CustomServerDialog);
-    },
+    }
 
-    render: function() {
-        const serverConfigStyle = {};
-        serverConfigStyle.display = this.state.configVisible ? 'block' : 'none';
-
-        let toggleButton;
-        if (this.props.withToggleButton) {
-            toggleButton = (
-                <div className="mx_ServerConfig_selector">
-                    <input className="mx_Login_radio" id="basic" name="configVisible" type="radio"
-                        checked={!this.state.configVisible}
-                        onChange={this.onServerConfigVisibleChange.bind(this, false)} />
-                    <label className="mx_Login_label" htmlFor="basic">
-                        { _t("Default server") }
-                    </label>
-                    &nbsp;&nbsp;
-                    <input className="mx_Login_radio" id="advanced" name="configVisible" type="radio"
-                        checked={this.state.configVisible}
-                        onChange={this.onServerConfigVisibleChange.bind(this, true)} />
-                    <label className="mx_Login_label" htmlFor="advanced">
-                        { _t("Custom server") }
-                    </label>
-                </div>
-            );
-        }
+    render() {
+        const Field = sdk.getComponent('elements.Field');
 
         return (
-        <div>
-            { toggleButton }
-            <div style={serverConfigStyle}>
-                <div className="mx_ServerConfig">
-                    <label className="mx_Login_label mx_ServerConfig_hslabel" htmlFor="hsurl">
-                        { _t("Home server URL") }
-                    </label>
-                    <input className="mx_Login_field" id="hsurl" type="text"
+            <div className="mx_ServerConfig">
+                <h3>{_t("Other servers")}</h3>
+                {_t("Enter custom server URLs <a>What does this mean?</a>", {}, {
+                    a: sub => <a className="mx_ServerConfig_help" href="#" onClick={this.showHelpPopup}>
+                        { sub }
+                    </a>,
+                })}
+                <div className="mx_ServerConfig_fields">
+                    <Field id="mx_ServerConfig_hsUrl"
+                        label={_t("Homeserver URL")}
                         placeholder={this.props.defaultHsUrl}
-                        disabled={!this.props.withToggleButton}
-                        value={this.state.hs_url}
-                        onChange={this.onHomeserverChanged} />
-                    <label className="mx_Login_label mx_ServerConfig_islabel" htmlFor="isurl">
-                        { _t("Identity server URL") }
-                    </label>
-                    <input className="mx_Login_field" id="isurl" type="text"
+                        value={this.state.hsUrl}
+                        onChange={this.onHomeserverChanged}
+                    />
+                    <Field id="mx_ServerConfig_isUrl"
+                        label={_t("Identity Server URL")}
                         placeholder={this.props.defaultIsUrl}
-                        disabled={!this.props.withToggleButton}
-                        value={this.state.is_url}
-                        onChange={this.onIdentityServerChanged} />
-                    <a className="mx_ServerConfig_help" href="#" onClick={this.showHelpPopup}>
-                        { _t("What does this mean?") }
-                    </a>
+                        value={this.state.isUrl}
+                        onChange={this.onIdentityServerChanged}
+                    />
                 </div>
             </div>
-        </div>
         );
-    },
-});
+    }
+}

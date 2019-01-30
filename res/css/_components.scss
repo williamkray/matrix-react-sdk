@@ -30,9 +30,11 @@
 @import "./views/auth/_AuthHeader.scss";
 @import "./views/auth/_AuthHeaderLogo.scss";
 @import "./views/auth/_AuthPage.scss";
+@import "./views/auth/_CountryDropdown.scss";
 @import "./views/auth/_InteractiveAuthEntryComponents.scss";
 @import "./views/auth/_LanguageSelector.scss";
 @import "./views/auth/_ServerConfig.scss";
+@import "./views/auth/_ServerTypeSelector.scss";
 @import "./views/avatars/_BaseAvatar.scss";
 @import "./views/avatars/_MemberStatusMessageAvatar.scss";
 @import "./views/context_menus/_MessageContextMenu.scss";
@@ -52,6 +54,7 @@
 @import "./views/dialogs/_EncryptedEventDialog.scss";
 @import "./views/dialogs/_GroupAddressPicker.scss";
 @import "./views/dialogs/_RestoreKeyBackupDialog.scss";
+@import "./views/dialogs/_RoomSettingsDialog.scss";
 @import "./views/dialogs/_RoomUpgradeDialog.scss";
 @import "./views/dialogs/_SetEmailDialog.scss";
 @import "./views/dialogs/_SetMxIdDialog.scss";
@@ -71,6 +74,7 @@
 @import "./views/elements/_Dropdown.scss";
 @import "./views/elements/_EditableItemList.scss";
 @import "./views/elements/_Field.scss";
+@import "./views/elements/_HexVerify.scss";
 @import "./views/elements/_ImageView.scss";
 @import "./views/elements/_InlineSpinner.scss";
 @import "./views/elements/_MemberEventListSummary.scss";
@@ -137,9 +141,13 @@
 @import "./views/settings/_Notifications.scss";
 @import "./views/settings/_PhoneNumbers.scss";
 @import "./views/settings/_ProfileSettings.scss";
-@import "./views/settings/tabs/_GeneralSettingsTab.scss";
+@import "./views/settings/tabs/_GeneralRoomSettingsTab.scss";
+@import "./views/settings/tabs/_GeneralUserSettingsTab.scss";
 @import "./views/settings/tabs/_HelpSettingsTab.scss";
+@import "./views/settings/tabs/_NotificationSettingsTab.scss";
 @import "./views/settings/tabs/_PreferencesSettingsTab.scss";
+@import "./views/settings/tabs/_RolesRoomSettingsTab.scss";
+@import "./views/settings/tabs/_SecurityRoomSettingsTab.scss";
 @import "./views/settings/tabs/_SecuritySettingsTab.scss";
 @import "./views/settings/tabs/_SettingsTab.scss";
 @import "./views/settings/tabs/_VoiceSettingsTab.scss";

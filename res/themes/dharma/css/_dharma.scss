@@ -5,7 +5,6 @@
    horizontal mess.  Arial empirically gets it right, hence prioritising
    Arial here. */
 $font-family: 'Nunito', Arial, Helvetica, Sans-Serif;
-$font-family-semibold: 'Nunito SemiBold', Arial, Helvetica, Sans-Serif;
 
 // typical text (dark-on-white in light skin)
 $primary-fg-color: #454545;
@@ -86,7 +85,9 @@ $strong-input-border-color: #c7c7c7;
 // used for UserSettings EditableText
 $input-underline-color: rgba(151, 151, 151, 0.5);
 $input-fg-color: rgba(74, 74, 74, 0.9);
-
+// scrollbars
+$scrollbar-thumb-color: rgba(0, 0, 0, 0.2);
+$scrollbar-track-color: transparent;
 // context menus
 $menu-border-color: #ebedf8;
 $menu-bg-color: #fff;
@@ -241,18 +242,20 @@ $authpage-body-color: #61708b;
 // it has the appearance of a text box so the controls
 // appear to be part of the input
 
-.mx_MatrixChat {
+.mx_Dialog, .mx_MatrixChat {
 
-    :not(.mx_textinput):not(.mx_Field) > input[type=text],
-    :not(.mx_textinput):not(.mx_Field) > input[type=search],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=text],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=search],
     .mx_textinput {
         display: block;
-        margin: 9px;
         box-sizing: border-box;
         background-color: transparent;
         color: $input-darker-fg-color;
         border-radius: 4px;
         border: 1px solid #c1c1c1;
+        // these things should probably not be defined
+        // globally
+        margin: 9px;
         flex: 0 0 auto;
     }
 
@@ -288,8 +291,8 @@ input[type=password] {
 }
 
 .dark-panel {
-    :not(.mx_textinput):not(.mx_Field) > input[type=text],
-    :not(.mx_textinput):not(.mx_Field) > input[type=search],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=text],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=search],
     .mx_textinput {
         color: $input-darker-fg-color;
         background-color: $input-darker-bg-color;
@@ -298,8 +301,8 @@ input[type=password] {
 }
 
 .light-panel {
-    :not(.mx_textinput):not(.mx_Field) > input[type=text],
-    :not(.mx_textinput):not(.mx_Field) > input[type=search],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=text],
+    :not(.mx_textinput):not(.mx_Field):not(.mx_no_textinput) > input[type=search],
     .mx_textinput {
         color: $input-lighter-fg-color;
         background-color: $input-lighter-bg-color;

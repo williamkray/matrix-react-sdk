@@ -20,6 +20,7 @@ import React from "react";
 // Copyright (c) Noel Delgado <pixelia.me@gmail.com> (pixelia.me)
 function getScrollbarWidth(alternativeOverflow) {
     const div = document.createElement('div');
+    div.className = 'mx_AutoHideScrollbar'; //to get width of css scrollbar
     div.style.position = 'absolute';
     div.style.top = '-9999px';
     div.style.width = '100px';
@@ -101,10 +102,6 @@ export default class AutoHideScrollbar extends React.Component {
         installBodyClassesIfNeeded();
         this._needsOverflowListener =
             document.body.classList.contains("mx_scrollbar_nooverlay");
-        if (this._needsOverflowListener) {
-            this.containerRef.addEventListener("overflow", this.onOverflow);
-            this.containerRef.addEventListener("underflow", this.onUnderflow);
-        }
         this.checkOverflow();
     }
 
@@ -114,13 +111,6 @@ export default class AutoHideScrollbar extends React.Component {
         }
         if (this.props.wrappedRef) {
             this.props.wrappedRef(ref);
-        }
-    }
-
-    componentWillUnmount() {
-        if (this._needsOverflowListener && this.containerRef) {
-            this.containerRef.removeEventListener("overflow", this.onOverflow);
-            this.containerRef.removeEventListener("underflow", this.onUnderflow);
         }
     }
 

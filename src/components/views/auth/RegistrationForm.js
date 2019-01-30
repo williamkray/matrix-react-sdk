@@ -46,20 +46,10 @@ module.exports = React.createClass({
         defaultPhoneNumber: PropTypes.string,
         defaultUsername: PropTypes.string,
         defaultPassword: PropTypes.string,
-        teamsConfig: PropTypes.shape({
-            // Email address to request new teams
-            supportEmail: PropTypes.string,
-            teams: PropTypes.arrayOf(PropTypes.shape({
-                // The displayed name of the team
-                "name": PropTypes.string,
-                // The domain of team email addresses
-                "domain": PropTypes.string,
-            })).required,
-        }),
-
         minPasswordLength: PropTypes.number,
         onError: PropTypes.func,
         onRegisterClick: PropTypes.func.isRequired, // onRegisterClick(Object) => ?Promise
+        onEditServerDetailsClick: PropTypes.func,
         flows: PropTypes.arrayOf(PropTypes.object).isRequired,
     },
 
@@ -75,7 +65,6 @@ module.exports = React.createClass({
     getInitialState: function() {
         return {
             fieldValid: {},
-            selectedTeam: null,
             // The ISO2 country code selected in the phone number entry
             phoneCountry: this.props.defaultPhoneCountry,
         };
@@ -150,10 +139,6 @@ module.exports = React.createClass({
         return true;
     },
 
-    _isUniEmail: function(email) {
-        return email.endsWith('.ac.uk') || email.endsWith('.edu') || email.endsWith('matrix.org');
-    },
-
     validateField: function(fieldID) {
         const pwd1 = this.refs.password.value.trim();
         const pwd2 = this.refs.passwordConfirm.value.trim();
@@ -161,24 +146,6 @@ module.exports = React.createClass({
         switch (fieldID) {
             case FIELD_EMAIL: {
                 const email = this.refs.email.value;
-                if (this.props.teamsConfig && this._isUniEmail(email)) {
-                    const matchingTeam = this.props.teamsConfig.teams.find(
-                        (team) => {
-                            return email.split('@').pop() === team.domain;
-                        },
-                    ) || null;
-                    this.setState({
-                        selectedTeam: matchingTeam,
-                        showSupportEmail: !matchingTeam,
-                    });
-                    this.props.onTeamSelected(matchingTeam);
-                } else {
-                    this.props.onTeamSelected(null);
-                    this.setState({
-                        selectedTeam: null,
-                        showSupportEmail: false,
-                    });
-                }
                 const emailValid = email === '' || Email.looksValid(email);
                 if (this._authStepIsRequired('m.login.email.identity') && (!emailValid || email === '')) {
                     this.markFieldValid(fieldID, false, "RegistrationForm.ERR_MISSING_EMAIL");
@@ -290,9 +257,34 @@ module.exports = React.createClass({
     render: function() {
         const self = this;
 
+        let yourMatrixAccountText = _t('Create your account');
+        if (this.props.hsName) {
+            yourMatrixAccountText = _t('Create your %(serverName)s account', {
+                serverName: this.props.hsName,
+            });
+        } else {
+            try {
+                const parsedHsUrl = new URL(this.props.hsUrl);
+                yourMatrixAccountText = _t('Create your %(serverName)s account', {
+                    serverName: parsedHsUrl.hostname,
+                });
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        let editLink = null;
+        if (this.props.onEditServerDetailsClick) {
+            editLink = <a className="mx_Auth_editServerDetails"
+                href="#" onClick={this.props.onEditServerDetailsClick}
+            >
+                {_t('Edit')}
+            </a>;
+        }
+
         const emailPlaceholder = this._authStepIsRequired('m.login.email.identity') ?
-            _t("Email address") :
-            _t("Email address (optional)");
+            _t("Email") :
+            _t("Email (optional)");
 
         const emailSection = (
             <div>
@@ -304,37 +296,13 @@ module.exports = React.createClass({
                     value={self.state.email} />
             </div>
         );
-        let belowEmailSection;
-        if (this.props.teamsConfig) {
-            if (this.props.teamsConfig.supportEmail && this.state.showSupportEmail) {
-                belowEmailSection = (
-                    <p className="mx_Login_support">
-                        Sorry, but your university is not registered with us just yet.&nbsp;
-                        Email us on&nbsp;
-                        <a href={"mailto:" + this.props.teamsConfig.supportEmail}>
-                            { this.props.teamsConfig.supportEmail }
-                        </a>&nbsp;
-                        to get your university signed up.
-                        Or continue to register with Riot to enjoy our open source platform.
-                    </p>
-                );
-            } else if (this.state.selectedTeam) {
-                belowEmailSection = (
-                    <p className="mx_Login_support">
-                        {_t("You are registering with %(SelectedTeamName)s", {
-                            SelectedTeamName: this.state.selectedTeam.name,
-                        })}
-                    </p>
-                );
-            }
-        }
 
         const CountryDropdown = sdk.getComponent('views.auth.CountryDropdown');
         let phoneSection;
         if (!SdkConfig.get().disable_3pid_login) {
             const phonePlaceholder = this._authStepIsRequired('m.login.msisdn') ?
-                _t("Mobile phone number") :
-                _t("Mobile phone number (optional)");
+                _t("Phone") :
+                _t("Phone (optional)");
             phoneSection = (
                 <div className="mx_Login_phoneSection">
                     <CountryDropdown ref="phone_country" onOptionChange={this._onPhoneCountryChange}
@@ -363,30 +331,40 @@ module.exports = React.createClass({
             <input className="mx_Login_submit" type="submit" value={_t("Register")} />
         );
 
-        const placeholderUserName = _t("User name");
+        const placeholderUsername = _t("Username");
 
         return (
             <div>
+                <h3>
+                    {yourMatrixAccountText}
+                    {editLink}
+                </h3>
                 <form onSubmit={this.onSubmit}>
-                    { emailSection }
-                    { belowEmailSection }
-                    { phoneSection }
-                    <input type="text" ref="username"
-                        placeholder={placeholderUserName} defaultValue={this.props.defaultUsername}
-                        className={this._classForField(FIELD_USERNAME, 'mx_Login_field')}
-                        onBlur={function() {self.validateField(FIELD_USERNAME);}} />
-                    <br />
-                    <input type="password" ref="password"
-                        className={this._classForField(FIELD_PASSWORD, 'mx_Login_field')}
-                        onBlur={function() {self.validateField(FIELD_PASSWORD);}}
-                        placeholder={_t("Password")} defaultValue={this.props.defaultPassword} />
-                    <br />
-                    <input type="password" ref="passwordConfirm"
-                        placeholder={_t("Confirm password")}
-                        className={this._classForField(FIELD_PASSWORD_CONFIRM, 'mx_Login_field')}
-                        onBlur={function() {self.validateField(FIELD_PASSWORD_CONFIRM);}}
-                        defaultValue={this.props.defaultPassword} />
-                    <br />
+                    <div className="mx_Auth_fieldRow">
+                        <input type="text" ref="username"
+                            placeholder={placeholderUsername} defaultValue={this.props.defaultUsername}
+                            className={this._classForField(FIELD_USERNAME, 'mx_Login_field')}
+                            onBlur={function() {self.validateField(FIELD_USERNAME);}} />
+                    </div>
+                    <div className="mx_Auth_fieldRow">
+                        <input type="password" ref="password"
+                            className={this._classForField(FIELD_PASSWORD, 'mx_Login_field')}
+                            onBlur={function() {self.validateField(FIELD_PASSWORD);}}
+                            placeholder={_t("Password")} defaultValue={this.props.defaultPassword} />
+                        <input type="password" ref="passwordConfirm"
+                            placeholder={_t("Confirm")}
+                            className={this._classForField(FIELD_PASSWORD_CONFIRM, 'mx_Login_field')}
+                            onBlur={function() {self.validateField(FIELD_PASSWORD_CONFIRM);}}
+                            defaultValue={this.props.defaultPassword} />
+                    </div>
+                    <div className="mx_Auth_fieldRow">
+                        { emailSection }
+                        { phoneSection }
+                    </div>
+                    {_t(
+                        "Use an email address to receover your account. Other users " +
+                        "can invite you to rooms using your contact details.",
+                    )}
                     { registerButton }
                 </form>
             </div>

@@ -19,7 +19,7 @@ import PropTypes from 'prop-types';
 import {Tab, TabbedView} from "../../structures/TabbedView";
 import {_t, _td} from "../../../languageHandler";
 import AccessibleButton from "../elements/AccessibleButton";
-import GeneralSettingsTab from "../settings/tabs/GeneralSettingsTab";
+import GeneralUserSettingsTab from "../settings/tabs/GeneralUserSettingsTab";
 import dis from '../../../dispatcher';
 import SettingsStore from "../../../settings/SettingsStore";
 import LabsSettingsTab from "../settings/tabs/LabsSettingsTab";
@@ -28,6 +28,7 @@ import NotificationSettingsTab from "../settings/tabs/NotificationSettingsTab";
 import PreferencesSettingsTab from "../settings/tabs/PreferencesSettingsTab";
 import VoiceSettingsTab from "../settings/tabs/VoiceSettingsTab";
 import HelpSettingsTab from "../settings/tabs/HelpSettingsTab";
+import FlairSettingsTab from "../settings/tabs/FlairSettingsTab";
 
 // TODO: Ditch this whole component
 export class TempTab extends React.Component {
@@ -56,7 +57,12 @@ export default class UserSettingsDialog extends React.Component {
         tabs.push(new Tab(
             _td("General"),
             "mx_UserSettingsDialog_settingsIcon",
-            <GeneralSettingsTab />,
+            <GeneralUserSettingsTab />,
+        ));
+        tabs.push(new Tab(
+            _td("Flair"),
+            "mx_UserSettingsDialog_flairIcon",
+            <FlairSettingsTab />,
         ));
         tabs.push(new Tab(
             _td("Notifications"),

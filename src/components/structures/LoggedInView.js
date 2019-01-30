@@ -63,7 +63,6 @@ const LoggedInView = React.createClass({
         // transitioned to PWLU)
         onRegistered: PropTypes.func,
         collapsedRhs: PropTypes.bool,
-        teamToken: PropTypes.string,
 
         // Used by the RoomView to handle joining rooms
         viaServers: PropTypes.arrayOf(PropTypes.string),
@@ -324,8 +323,6 @@ const LoggedInView = React.createClass({
     _onScrollKeyPressed: function(ev) {
         if (this.refs.roomView) {
             this.refs.roomView.handleScrollKey(ev);
-        } else if (this.refs.roomDirectory) {
-            this.refs.roomDirectory.handleScrollKey(ev);
         }
     },
 
@@ -423,7 +420,6 @@ const LoggedInView = React.createClass({
         const LeftPanel = sdk.getComponent('structures.LeftPanel');
         const RoomView = sdk.getComponent('structures.RoomView');
         const UserSettings = sdk.getComponent('structures.UserSettings');
-        const RoomDirectory = sdk.getComponent('structures.RoomDirectory');
         const HomePage = sdk.getComponent('structures.HomePage');
         const GroupView = sdk.getComponent('structures.GroupView');
         const MyGroups = sdk.getComponent('structures.MyGroups');
@@ -457,8 +453,6 @@ const LoggedInView = React.createClass({
                 pageElement = <UserSettings
                     onClose={this.props.onCloseAllSettings}
                     brand={this.props.config.brand}
-                    referralBaseUrl={this.props.config.referralBaseUrl}
-                    teamToken={this.props.teamToken}
                 />;
                 break;
 
@@ -467,23 +461,12 @@ const LoggedInView = React.createClass({
                 break;
 
             case PageTypes.RoomDirectory:
-                pageElement = <RoomDirectory
-                    ref="roomDirectory"
-                    config={this.props.config.roomDirectory}
-                />;
+                // handled by MatrixChat for now
                 break;
 
             case PageTypes.HomePage:
                 {
-                    // If team server config is present, pass the teamServerURL. props.teamToken
-                    // must also be set for the team page to be displayed, otherwise the
-                    // welcomePageUrl is used (which might be undefined).
-                    const teamServerUrl = this.props.config.teamServerConfig ?
-                        this.props.config.teamServerConfig.teamServerURL : null;
-
                     pageElement = <HomePage
-                        teamServerUrl={teamServerUrl}
-                        teamToken={this.props.teamToken}
                         homePageUrl={this.props.config.welcomePageUrl}
                     />;
                 }
@@ -556,6 +539,7 @@ const LoggedInView = React.createClass({
                 <DragDropContext onDragEnd={this._onDragEnd}>
                     <div ref={this._setResizeContainerRef} className={bodyClasses}>
                         <LeftPanel
+                            toolbarShown={!!topBar}
                             collapsed={this.props.collapseLhs || this.state.collapseLhs || false}
                             disabled={this.props.leftDisabled}
                         />
