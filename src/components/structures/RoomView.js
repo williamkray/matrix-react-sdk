@@ -78,7 +78,7 @@ module.exports = React.createClass({
         // * invitedEmail (string) The email address that was invited to this room
         thirdPartyInvite: PropTypes.object,
 
-        // Any data about the room that would normally come from the Home Server
+        // Any data about the room that would normally come from the homeserver
         // but has been passed out-of-band, eg. the room name and avatar URL
         // from an email invite (a workaround for the fact that we can't
         // get this information from the HS using an email invite).
@@ -168,6 +168,7 @@ module.exports = React.createClass({
         MatrixClientPeg.get().on("Room.myMembership", this.onMyMembership);
         MatrixClientPeg.get().on("accountData", this.onAccountData);
         MatrixClientPeg.get().on("crypto.keyBackupStatus", this.onKeyBackupStatus);
+        MatrixClientPeg.get().on("deviceVerificationChanged", this.onDeviceVerificationChanged);
         this._fetchMediaConfig();
         // Start listening for RoomViewStore updates
         this._roomStoreToken = RoomViewStore.addListener(this._onRoomViewStoreUpdate);
@@ -457,6 +458,7 @@ module.exports = React.createClass({
             MatrixClientPeg.get().removeListener("RoomState.members", this.onRoomStateMember);
             MatrixClientPeg.get().removeListener("accountData", this.onAccountData);
             MatrixClientPeg.get().removeListener("crypto.keyBackupStatus", this.onKeyBackupStatus);
+            MatrixClientPeg.get().removeListener("deviceVerificationChanged", this.onDeviceVerificationChanged);
         }
 
         window.removeEventListener('beforeunload', this.onPageUnload);
@@ -589,6 +591,10 @@ module.exports = React.createClass({
             this._updatePreviewUrlVisibility(room);
         }
 
+        if (ev.getType() === "m.room.encryption") {
+            this._updateE2EStatus(room);
+        }
+
         // ignore anything but real-time updates at the end of the room:
         // updates from pagination will happen when the paginate completes.
         if (toStartOfTimeline || !data || !data.liveEvent) return;
@@ -637,11 +643,11 @@ module.exports = React.createClass({
     // called when state.room is first initialised (either at initial load,
     // after a successful peek, or after we join the room).
     _onRoomLoaded: function(room) {
-        this._warnAboutEncryption(room);
         this._calculatePeekRules(room);
         this._updatePreviewUrlVisibility(room);
         this._loadMembersIfJoined(room);
         this._calculateRecommendedVersion(room);
+        this._updateE2EStatus(room);
     },
 
     _calculateRecommendedVersion: async function(room) {
@@ -667,34 +673,6 @@ module.exports = React.createClass({
                     console.error(err);
                 }
             }
-        }
-    },
-
-    _warnAboutEncryption: function(room) {
-        if (!MatrixClientPeg.get().isRoomEncrypted(room.roomId)) {
-            return;
-        }
-        let userHasUsedEncryption = false;
-        if (localStorage) {
-            userHasUsedEncryption = localStorage.getItem('mx_user_has_used_encryption');
-        }
-        if (!userHasUsedEncryption) {
-            const QuestionDialog = sdk.getComponent("dialogs.QuestionDialog");
-            Modal.createTrackedDialog('E2E Warning', '', QuestionDialog, {
-                title: _t("Warning!"),
-                hasCancelButton: false,
-                description: (
-                    <div>
-                        <p>{ _t("End-to-end encryption is in beta and may not be reliable") }.</p>
-                        <p>{ _t("You should not yet trust it to secure data") }.</p>
-                        <p>{ _t("Devices will not yet be able to decrypt history from before they joined the room") }.</p>
-                        <p>{ _t("Encrypted messages will not be visible on clients that do not yet implement encryption") }.</p>
-                    </div>
-                ),
-            });
-        }
-        if (localStorage) {
-            localStorage.setItem('mx_user_has_used_encryption', true);
         }
     },
 
@@ -730,6 +708,23 @@ module.exports = React.createClass({
             room: room,
         }, () => {
             this._onRoomLoaded(room);
+        });
+    },
+
+    onDeviceVerificationChanged: function(userId, device) {
+        const room = this.state.room;
+        if (!room.currentState.getMember(userId)) {
+            return;
+        }
+        this._updateE2EStatus(room);
+    },
+
+    _updateE2EStatus: function(room) {
+        if (!MatrixClientPeg.get().isRoomEncrypted(room.roomId)) {
+            return;
+        }
+        room.hasUnverifiedDevices().then((hasUnverifiedDevices) => {
+            this.setState({e2eStatus: hasUnverifiedDevices ? "warning" : "verified"});
         });
     },
 
@@ -892,53 +887,58 @@ module.exports = React.createClass({
             dis.dispatch({
                 action: 'do_after_sync_prepared',
                 deferred_action: {
-                    action: 'join_room',
-                    opts: { inviteSignUrl: signUrl, viaServers: this.props.viaServers },
+                    action: 'view_room',
+                    room_id: this.state.room.roomId,
                 },
             });
 
             // Don't peek whilst registering otherwise getPendingEventList complains
             // Do this by indicating our intention to join
-            dis.dispatch({
-                action: 'will_join',
-            });
 
-            const SetMxIdDialog = sdk.getComponent('views.dialogs.SetMxIdDialog');
-            const close = Modal.createTrackedDialog('Set MXID', '', SetMxIdDialog, {
-                homeserverUrl: cli.getHomeserverUrl(),
-                onFinished: (submitted, credentials) => {
-                    if (submitted) {
-                        this.props.onRegistered(credentials);
-                    } else {
-                        dis.dispatch({
-                            action: 'cancel_after_sync_prepared',
-                        });
-                        dis.dispatch({
-                            action: 'cancel_join',
-                        });
-                    }
-                },
-                onDifferentServerClicked: (ev) => {
-                    dis.dispatch({action: 'start_registration'});
-                    close();
-                },
-                onLoginClick: (ev) => {
-                    dis.dispatch({action: 'start_login'});
-                    close();
-                },
-            }).close;
-            return;
+            // XXX: ILAG is disabled for now,
+            // see https://github.com/vector-im/riot-web/issues/8222
+            dis.dispatch({action: 'require_registration'});
+            // dis.dispatch({
+            //     action: 'will_join',
+            // });
+
+            // const SetMxIdDialog = sdk.getComponent('views.dialogs.SetMxIdDialog');
+            // const close = Modal.createTrackedDialog('Set MXID', '', SetMxIdDialog, {
+            //     homeserverUrl: cli.getHomeserverUrl(),
+            //     onFinished: (submitted, credentials) => {
+            //         if (submitted) {
+            //             this.props.onRegistered(credentials);
+            //         } else {
+            //             dis.dispatch({
+            //                 action: 'cancel_after_sync_prepared',
+            //             });
+            //             dis.dispatch({
+            //                 action: 'cancel_join',
+            //             });
+            //         }
+            //     },
+            //     onDifferentServerClicked: (ev) => {
+            //         dis.dispatch({action: 'start_registration'});
+            //         close();
+            //     },
+            //     onLoginClick: (ev) => {
+            //         dis.dispatch({action: 'start_login'});
+            //         close();
+            //     },
+            // }).close;
+            // return;
+        } else {
+            Promise.resolve().then(() => {
+                const signUrl = this.props.thirdPartyInvite ?
+                    this.props.thirdPartyInvite.inviteSignUrl : undefined;
+                dis.dispatch({
+                    action: 'join_room',
+                    opts: { inviteSignUrl: signUrl, viaServers: this.props.viaServers },
+                });
+                return Promise.resolve();
+            });
         }
 
-        Promise.resolve().then(() => {
-            const signUrl = this.props.thirdPartyInvite ?
-                this.props.thirdPartyInvite.inviteSignUrl : undefined;
-            dis.dispatch({
-                action: 'join_room',
-                opts: { inviteSignUrl: signUrl, viaServers: this.props.viaServers },
-            });
-            return Promise.resolve();
-        });
     },
 
     onMessageListScroll: function(ev) {
@@ -1570,6 +1570,7 @@ module.exports = React.createClass({
                             room={this.state.room}
                             oobData={this.props.oobData}
                             collapsedRhs={this.props.collapsedRhs}
+                            e2eStatus={this.state.e2eStatus}
                         />
                         <div className="mx_RoomView_body">
                             <div className="mx_RoomView_auxPanel">
@@ -1617,6 +1618,7 @@ module.exports = React.createClass({
                             ref="header"
                             room={this.state.room}
                             collapsedRhs={this.props.collapsedRhs}
+                            e2eStatus={this.state.e2eStatus}
                         />
                         <div className="mx_RoomView_body">
                             <div className="mx_RoomView_auxPanel">
@@ -1762,6 +1764,7 @@ module.exports = React.createClass({
                     disabled={this.props.disabled}
                     showApps={this.state.showApps}
                     uploadAllowed={this.isFileUploadAllowed}
+                    e2eStatus={this.state.e2eStatus}
                 />;
         }
 
@@ -1912,6 +1915,7 @@ module.exports = React.createClass({
                     onCancelClick={(aux && !hideCancel) ? this.onCancelClick : null}
                     onForgetClick={(myMembership === "leave") ? this.onForgetClick : null}
                     onLeaveClick={(myMembership === "join") ? this.onLeaveClick : null}
+                    e2eStatus={this.state.e2eStatus}
                 />
                 <MainSplit panel={rightPanel} collapsedRhs={this.props.collapsedRhs}>
                     <div className={fadableSectionClasses}>
