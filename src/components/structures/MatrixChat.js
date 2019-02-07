@@ -136,10 +136,6 @@ export default React.createClass({
         appConfig: PropTypes.object,
     },
 
-    AuxPanel: {
-        RoomSettings: "room_settings",
-    },
-
     getChildContext: function() {
         return {
             appConfig: this.props.config,
@@ -572,40 +568,16 @@ export default React.createClass({
                 this._viewIndexedRoom(payload.roomIndex);
                 break;
             case 'view_user_settings': {
-                if (true || SettingsStore.isFeatureEnabled("feature_tabbed_settings")) {
-                    const UserSettingsDialog = sdk.getComponent("dialogs.UserSettingsDialog");
-                    Modal.createTrackedDialog('User settings', '', UserSettingsDialog, {}, 'mx_SettingsDialog');
-                } else {
-                    this._setPage(PageTypes.UserSettings);
-                    this.notifyNewScreen('settings');
+                const UserSettingsDialog = sdk.getComponent("dialogs.UserSettingsDialog");
+                Modal.createTrackedDialog('User settings', '', UserSettingsDialog, {}, 'mx_SettingsDialog');
+
+                // View the home page if we need something to look at
+                if (!this.state.currentGroupId && !this.state.currentRoomId) {
+                    this._setPage(PageTypes.HomePage);
+                    this.notifyNewScreen('home');
                 }
                 break;
             }
-            case 'view_old_user_settings':
-                this._setPage(PageTypes.UserSettings);
-                this.notifyNewScreen('settings');
-                break;
-            case 'close_settings':
-                this.setState({
-                    leftDisabled: false,
-                    rightDisabled: false,
-                    middleDisabled: false,
-                });
-                if (this.state.page_type === PageTypes.UserSettings) {
-                    // We do this to get setPage and notifyNewScreen
-                    if (this.state.currentRoomId) {
-                        this._viewRoom({
-                            room_id: this.state.currentRoomId,
-                        });
-                    } else if (this.state.currentGroupId) {
-                        this._viewGroup({
-                            group_id: this.state.currentGroupId,
-                        });
-                    } else {
-                        this._viewHome();
-                    }
-                }
-                break;
             case 'view_create_room':
                 this._createRoom();
                 break;
@@ -1063,7 +1035,6 @@ export default React.createClass({
                         modal.close();
                         if (this.state.currentRoomId === roomId) {
                             dis.dispatch({action: 'view_next_room'});
-                            dis.dispatch({action: 'close_room_settings'});
                         }
                     }, (err) => {
                         modal.close();
@@ -1676,11 +1647,6 @@ export default React.createClass({
         this.showScreen("forgot_password");
     },
 
-    onReturnToAppClick: function() {
-        // treat it the same as if the user had completed the login
-        this._onLoggedIn();
-    },
-
     // returns a promise which resolves to the new MatrixClient
     onRegistered: function(credentials) {
         // XXX: This should be in state or ideally store(s) because we risk not
@@ -1891,7 +1857,6 @@ export default React.createClass({
                     sessionId={this.state.register_session_id}
                     idSid={this.state.register_id_sid}
                     email={this.props.startingFragmentQueryParams.email}
-                    referrer={this.props.startingFragmentQueryParams.referrer}
                     defaultServerDiscoveryError={this.state.defaultServerDiscoveryError}
                     defaultHsUrl={this.getDefaultHsUrl()}
                     defaultIsUrl={this.getDefaultIsUrl()}
@@ -1899,11 +1864,8 @@ export default React.createClass({
                     customHsUrl={this.getCurrentHsUrl()}
                     customIsUrl={this.getCurrentIsUrl()}
                     makeRegistrationUrl={this._makeRegistrationUrl}
-                    defaultDeviceDisplayName={this.props.defaultDeviceDisplayName}
                     onLoggedIn={this.onRegistered}
                     onLoginClick={this.onLoginClick}
-                    onRegisterClick={this.onRegisterClick}
-                    onCancelClick={MatrixClientPeg.get() ? this.onReturnToAppClick : null}
                     onServerConfigChange={this.onServerConfigChange}
                     />
             );
@@ -1940,7 +1902,6 @@ export default React.createClass({
                     defaultDeviceDisplayName={this.props.defaultDeviceDisplayName}
                     onForgotPasswordClick={this.onForgotPasswordClick}
                     enableGuest={this.props.enableGuest}
-                    onCancelClick={MatrixClientPeg.get() ? this.onReturnToAppClick : null}
                     onServerConfigChange={this.onServerConfigChange}
                 />
             );
