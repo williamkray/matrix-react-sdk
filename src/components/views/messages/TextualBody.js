@@ -28,9 +28,6 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import highlight from 'highlight.js';
 import * as HtmlUtils from '../../../HtmlUtils';
-import * as linkify from 'linkifyjs';
-import linkifyElement from 'linkifyjs/element';
-import linkifyMatrix from '../../../linkify-matrix';
 import sdk from '../../../index';
 import ScalarAuthClient from '../../../ScalarAuthClient';
 import Modal from '../../../Modal';
@@ -43,8 +40,6 @@ import SettingsStore from "../../../settings/SettingsStore";
 import PushProcessor from 'matrix-js-sdk/lib/pushprocessor';
 import ReplyThread from "../elements/ReplyThread";
 import {host as matrixtoHost} from '../../../matrix-to';
-
-linkifyMatrix(linkify);
 
 module.exports = React.createClass({
     displayName: 'TextualBody',
@@ -104,7 +99,7 @@ module.exports = React.createClass({
         // are still sent as plaintext URLs. If these are ever pillified in the composer,
         // we should be pillify them here by doing the linkifying BEFORE the pillifying.
         this.pillifyLinks(this.refs.content.children);
-        linkifyElement(this.refs.content, linkifyMatrix.options);
+        HtmlUtils.linkifyElement(this.refs.content);
         this.calculateUrlPreview();
 
         if (this.props.mxEvent.getContent().format === "org.matrix.custom.html") {

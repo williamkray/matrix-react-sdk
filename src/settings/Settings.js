@@ -27,7 +27,6 @@ import {
     NotificationBodyEnabledController,
     NotificationsEnabledController,
 } from "./controllers/NotificationControllers";
-import LazyLoadingController from "./controllers/LazyLoadingController";
 import CustomStatusController from "./controllers/CustomStatusController";
 
 // These are just a bunch of helper arrays to avoid copy/pasting a bunch of times
@@ -136,16 +135,9 @@ export const SETTINGS = {
         default: false,
         controller: new CustomStatusController(),
     },
-    "feature_lazyloading": {
+    "feature_custom_tags": {
         isFeature: true,
-        displayName: _td("Increase performance by only loading room members on first view"),
-        supportedLevels: LEVELS_FEATURE,
-        controller: new LazyLoadingController(),
-        default: true,
-    },
-    "feature_keybackup": {
-        isFeature: true,
-        displayName: _td("Backup of encryption keys to server"),
+        displayName: _td("Group & filter rooms by custom tags (refresh to apply changes)"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
@@ -158,12 +150,6 @@ export const SETTINGS = {
     "custom_colour_contrast_adjustment": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         default: "1",
-    },
-    "feature_sas": {
-        isFeature: true,
-        displayName: _td("Two-way device verification using short text"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
     },
     "MessageComposerInput.suggestEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,

@@ -1,5 +1,5 @@
 /*
-Copyright 2018 New Vector Ltd
+Copyright 2019 New Vector Ltd.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,30 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-.mx_RoomRecoveryReminder {
+.mx_LeftPanel_tagPanelContainer {
     display: flex;
     flex-direction: column;
-    text-align: center;
-    background-color: $room-warning-bg-color;
-    padding: 20px;
-    border: 1px solid $primary-hairline-color;
-    border-bottom: unset;
 }
 
-.mx_RoomRecoveryReminder_header {
-    font-weight: bold;
-    margin-bottom: 1em;
+.mx_CustomRoomTagPanel {
+    background-color: $tagpanel-bg-color;
+    max-height: 40vh;
 }
 
-.mx_RoomRecoveryReminder_body {
-    margin-bottom: 1em;
+.mx_CustomRoomTagPanel_scroller {
+    max-height: inherit;
 }
 
-.mx_RoomRecoveryReminder_button {
-    @mixin mx_DialogButton;
-    margin: 0 10px;
+.mx_CustomRoomTagPanel .mx_AccessibleButton {
+    margin: 9px auto;
+    width: 40px;
 }
 
-.mx_RoomRecoveryReminder_secondary {
-    font-size: 90%;
+.mx_CustomRoomTagPanel .mx_BaseAvatar_image {
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+}
+
+.mx_CustomRoomTagPanel .mx_AccessibleButton.CustomRoomTagPanel_tileSelected .mx_BaseAvatar_image {
+    border: 3px solid $warning-color;
+    border-radius: 40px;
 }

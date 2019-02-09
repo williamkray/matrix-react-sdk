@@ -25,17 +25,13 @@ import MatrixClientPeg from '../../../MatrixClientPeg';
 import Modal from "../../../Modal";
 import RateLimitedFunc from '../../../ratelimitedfunc';
 
-import * as linkify from 'linkifyjs';
-import linkifyElement from 'linkifyjs/element';
-import linkifyMatrix from '../../../linkify-matrix';
+import { linkifyElement } from '../../../HtmlUtils';
 import AccessibleButton from '../elements/AccessibleButton';
 import ManageIntegsButton from '../elements/ManageIntegsButton';
 import {CancelButton} from './SimpleRoomHeader';
 import SettingsStore from "../../../settings/SettingsStore";
 import RoomHeaderButtons from '../right_panel/RoomHeaderButtons';
 import E2EIcon from './E2EIcon';
-
-linkifyMatrix(linkify);
 
 module.exports = React.createClass({
     displayName: 'RoomHeader',
@@ -76,7 +72,7 @@ module.exports = React.createClass({
 
     componentDidUpdate: function() {
         if (this.refs.topic) {
-            linkifyElement(this.refs.topic, linkifyMatrix.options);
+            linkifyElement(this.refs.topic);
         }
     },
 
@@ -213,10 +209,15 @@ module.exports = React.createClass({
         const topicElement =
             <div className="mx_RoomHeader_topic" ref="topic" title={topic} dir="auto">{ topic }</div>;
         const avatarSize = 28;
-        const roomAvatar = (
-            <RoomAvatar room={this.props.room} width={avatarSize} height={avatarSize} oobData={this.props.oobData}
-                viewAvatarOnClick={true} />
-        );
+        let roomAvatar;
+        if (this.props.room) {
+            roomAvatar = (<RoomAvatar
+                room={this.props.room}
+                width={avatarSize}
+                height={avatarSize}
+                oobData={this.props.oobData}
+                viewAvatarOnClick={true} />);
+        }
 
         if (this.props.onSettingsClick) {
             settingsButton =
