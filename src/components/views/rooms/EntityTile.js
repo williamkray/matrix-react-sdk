@@ -30,7 +30,7 @@ const sdk = require('../../../index');
 import AccessibleButton from '../elements/AccessibleButton';
 import { _t } from '../../../languageHandler';
 import SettingsStore from "../../../settings/SettingsStore";
-import { discordColorToCssAdjust } from "../../../utils/poniesUtils";
+import { discordColorToCssAdjust, getMembersBgColorForTheme } from "../../../utils/poniesUtils";
 
 
 const PRESENCE_CLASS = {
@@ -132,7 +132,7 @@ const EntityTile = React.createClass({
             discordMember = undefined;
         }
         if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
-            style.color = discordColorToCssAdjust(discordMember.displayColor, "#f2f5f8");
+            style.color = discordColorToCssAdjust(discordMember.displayColor, getMembersBgColorForTheme());
         }
 
         const EmojiText = sdk.getComponent('elements.EmojiText');

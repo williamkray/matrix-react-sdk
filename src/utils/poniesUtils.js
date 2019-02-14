@@ -21,6 +21,30 @@ import SettingsStore from "../settings/SettingsStore";
 
 let colorAdjuster = {};
 
+function getColorForTheme(colors) {
+	let theme = SettingsStore.getValue("theme");
+	if (!colors[theme]) {
+		theme = "light";
+	}
+	return colors[theme];
+}
+
+export function getBodyBgColorForTheme() {
+	const colors = {
+		light: "#ffffff",
+		dark: "#181b21",
+	};
+	return getColorForTheme(colors);
+}
+
+export function getMembersBgColorForTheme() {
+	const colors = {
+		light: "#f2f5f8",
+		dark: "#22262e",
+	};
+	return getColorForTheme(colors);
+}
+
 function getColorAdjuster(base) {
 	if (!colorAdjuster[base]) {
 		colorAdjuster[base] = new ColorAdjuster(base, 1);
