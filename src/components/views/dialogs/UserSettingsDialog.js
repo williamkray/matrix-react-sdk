@@ -27,6 +27,7 @@ import PreferencesSettingsTab from "../settings/tabs/PreferencesSettingsTab";
 import VoiceSettingsTab from "../settings/tabs/VoiceSettingsTab";
 import HelpSettingsTab from "../settings/tabs/HelpSettingsTab";
 import FlairSettingsTab from "../settings/tabs/FlairSettingsTab";
+import EmotesPanel from "../settings/EmotesPanel";
 import sdk from "../../../index";
 
 export default class UserSettingsDialog extends React.Component {
@@ -67,6 +68,11 @@ export default class UserSettingsDialog extends React.Component {
             "mx_UserSettingsDialog_securityIcon",
             <SecuritySettingsTab />,
         ));
+        tabs.push(new Tab(
+            _td("Emotes"),
+            "mx_MessageComposer_stickers",
+            <EmotesPanel />,
+        ))
         if (SettingsStore.getLabsFeatures().length > 0) {
             tabs.push(new Tab(
                 _td("Labs"),

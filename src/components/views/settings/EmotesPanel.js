@@ -95,10 +95,6 @@ export default class EmotesPanel extends React.Component {
     _onFileSelected(emote) {
         return (ev) => {
             const file = ev.target.files[0];
-
-            console.log("======");
-            console.log(ev);
-            console.log(emote);
             
             return MatrixClientPeg.get().uploadContent(file).then((url) => {
                 this._updateEmotesFromDOM();
@@ -113,8 +109,6 @@ export default class EmotesPanel extends React.Component {
 
     render() {
         this._loadEmotes();
-        console.log("==========");
-        console.log(this.emotes);
         const EditableTextContainer = sdk.getComponent('elements.EditableTextContainer');
         const Emote = sdk.getComponent('elements.Emote');
         const emoteEntries = [];
