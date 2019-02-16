@@ -118,7 +118,7 @@ function matchPonymotes(s) {
             if (index !== -1) {
                 results.push({
                     n: key,
-                    mxc: 'mxc://ponies.im/bpm.'+key
+                    mxc: 'mxc://ponies.im/ms.'+key
                 });
             }
         });
