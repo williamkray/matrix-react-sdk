@@ -19,7 +19,7 @@ limitations under the License.
 import React from 'react';
 import { _t } from '../languageHandler';
 import AutocompleteProvider from './AutocompleteProvider';
-import {shortnameToUnicode, asciiRegexp, unicodeRegexp} from 'emojione';
+import {shortnameToUnicode, asciiRegexp, unicodeRegexp} from 'twemoji';
 import QueryMatcher from './QueryMatcher';
 import sdk from '../index';
 import {PillCompletion} from './Components';
@@ -44,7 +44,7 @@ const CATEGORY_ORDER = [
     'modifier',
 ];
 
-// Match for ":wink:" or ascii-style ";-)" provided by emojione
+// Match for ":wink:" or ascii-style ";-)" provided by twemoji
 // (^|\s|(emojiUnicode)) to make sure we're either at the start of the string or there's a
 // whitespace character or an emoji before the emoji. The reason for unicodeRegexp is
 // that we need to support inputting multiple emoji with no space between them.

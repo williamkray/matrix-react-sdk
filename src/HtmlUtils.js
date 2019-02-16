@@ -27,36 +27,36 @@ import linkifyMatrix from './linkify-matrix';
 import _linkifyElement from 'linkifyjs/element';
 import _linkifyString from 'linkifyjs/string';
 import escape from 'lodash/escape';
-import emojione from 'emojione';
+import twemoji from 'twemoji';
 import classNames from 'classnames';
 import MatrixClientPeg from './MatrixClientPeg';
 import url from 'url';
 
 linkifyMatrix(linkify);
 
-emojione.imagePathSVG = 'emojione/svg/';
+twemoji.imagePathSVG = 'twemoji/svg/';
 // Store PNG path for displaying many flags at once (for increased performance over SVG)
-emojione.imagePathPNG = 'emojione/png/';
+twemoji.imagePathPNG = 'twemoji/png/';
 // Use SVGs for emojis
-emojione.imageType = 'svg';
+twemoji.imageType = 'svg';
 
 // Anything outside the basic multilingual plane will be a surrogate pair
 const SURROGATE_PAIR_PATTERN = /([\ud800-\udbff])([\udc00-\udfff])/;
-// And there a bunch more symbol characters that emojione has within the
+// And there a bunch more symbol characters that twemoji has within the
 // BMP, so this includes the ranges from 'letterlike symbols' to
 // 'miscellaneous symbols and arrows' which should catch all of them
 // (with plenty of false positives, but that's OK)
 const SYMBOL_PATTERN = /([\u2100-\u2bff])/;
 
-// And this is emojione's complete regex
-const EMOJI_REGEX = new RegExp(emojione.unicodeRegexp+"+", "gi");
+// And this is twemoji's complete regex
+const EMOJI_REGEX = new RegExp(twemoji.unicodeRegexp+"+", "gi");
 const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 const PERMITTED_URL_SCHEMES = ['http', 'https', 'ftp', 'mailto', 'magnet'];
 
 /*
  * Return true if the given string contains emoji
- * Uses a much, much simpler regex than emojione's so will give false
+ * Uses a much, much simpler regex than twemoji's so will give false
  * positives, but useful for fast-path testing strings to see if they
  * need emojification.
  * unicodeToImage uses this function.
@@ -65,34 +65,34 @@ export function containsEmoji(str) {
     return SURROGATE_PAIR_PATTERN.test(str) || SYMBOL_PATTERN.test(str);
 }
 
-/* modified from https://github.com/Ranks/emojione/blob/master/lib/js/emojione.js
+/* modified from https://github.com/Ranks/twemoji/blob/master/lib/js/twemoji.js
  * because we want to include emoji shortnames in title text
  */
 function unicodeToImage(str, addAlt) {
     if (addAlt === undefined) addAlt = true;
 
     let replaceWith; let unicode; let short; let fname;
-    const mappedUnicode = emojione.mapUnicodeToShort();
+    const mappedUnicode = twemoji.mapUnicodeToShort();
 
-    str = str.replace(emojione.regUnicode, function(unicodeChar) {
-        if ( (typeof unicodeChar === 'undefined') || (unicodeChar === '') || (!(unicodeChar in emojione.jsEscapeMap)) ) {
+    str = str.replace(twemoji.regUnicode, function(unicodeChar) {
+        if ( (typeof unicodeChar === 'undefined') || (unicodeChar === '') || (!(unicodeChar in twemoji.jsEscapeMap)) ) {
             // if the unicodeChar doesnt exist just return the entire match
             return unicodeChar;
         } else {
             // get the unicode codepoint from the actual char
-            unicode = emojione.jsEscapeMap[unicodeChar];
+            unicode = twemoji.jsEscapeMap[unicodeChar];
 
             short = mappedUnicode[unicode];
-            fname = emojione.emojioneList[short].fname;
+            fname = twemoji.twemojiList[short].fname;
 
             // depending on the settings, we'll either add the native unicode as the alt tag, otherwise the shortname
             const title = mappedUnicode[unicode];
 
             if (addAlt) {
-                const alt = (emojione.unicodeAlt) ? emojione.convert(unicode.toUpperCase()) : mappedUnicode[unicode];
-                replaceWith = `<img class="mx_emojione" title="${title}" alt="${alt}" src="${emojione.imagePathSVG}${fname}.svg${emojione.cacheBustParam}"/>`;
+                const alt = (twemoji.unicodeAlt) ? twemoji.convert(unicode.toUpperCase()) : mappedUnicode[unicode];
+                replaceWith = `<img class="mx_twemoji" title="${title}" alt="${alt}" src="${twemoji.imagePathSVG}${fname}.svg${twemoji.cacheBustParam}"/>`;
             } else {
-                replaceWith = `<img class="mx_emojione" src="${emojione.imagePathSVG}${fname}.svg${emojione.cacheBustParam}"/>`;
+                replaceWith = `<img class="mx_twemoji" src="${twemoji.imagePathSVG}${fname}.svg${twemoji.cacheBustParam}"/>`;
             }
             return replaceWith;
         }
@@ -115,11 +115,11 @@ export function charactersToImageNode(alt, useSvg, ...unicode) {
     const fileName = unicode.map((u) => {
         return u.toString(16);
     }).join('-');
-    const path = useSvg ? emojione.imagePathSVG : emojione.imagePathPNG;
+    const path = useSvg ? twemoji.imagePathSVG : twemoji.imagePathPNG;
     const fileType = useSvg ? 'svg' : 'png';
     return <img
         alt={alt}
-        src={`${path}${fileName}.${fileType}${emojione.cacheBustParam}`}
+        src={`${path}${fileName}.${fileType}${twemoji.cacheBustParam}`}
     />;
 }
 

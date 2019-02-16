@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const EMOJI_DATA = require('emojione/emoji.json');
-const EMOJI_SUPPORTED = Object.keys(require('emojione').emojioneList);
+const EMOJI_DATA = require('twemoji/emoji.json');
+const EMOJI_SUPPORTED = Object.keys(require('twemoji').twemojiList);
 const fs = require('fs');
 
 const output = Object.keys(EMOJI_DATA).map(
