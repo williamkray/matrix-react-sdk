@@ -36,6 +36,7 @@ import SettingsStore from "../settings/SettingsStore";
 
 import PonymoteDataClean from '../ponymotes_clean.json';
 import PonymoteDataNSFW from '../ponymotes_nsfw.json';
+import MutantStandardData from '../mutant_standard.json';
 
 const PONYMOTE_REGEX = /:([^+\s:]+):?/g;
 const LIMIT = 20;
@@ -110,6 +111,18 @@ function matchPonymotes(s) {
             }
         });
     }
+
+    if (!SettingsStore.isFeatureEnabled("feature_disable_mutant_standard")) {
+        MutantStandardData.forEach((key) => {
+            const index = key.toLowerCase().indexOf(s);
+            if (index !== -1) {
+                results.push({
+                    n: key,
+                    mxc: 'mxc://ponies.im/bpm.'+key
+                });
+            }
+        });
+    }
     return results;
 }
 
@@ -155,7 +168,7 @@ export default class PonymoteProvider extends AutocompleteProvider {
     }
 
     getName() {
-        return _t('Ponymotes');
+        return _t('Additional Emotes');
     }
 
     renderCompletions(completions: [React.Component]): ?React.Component {
