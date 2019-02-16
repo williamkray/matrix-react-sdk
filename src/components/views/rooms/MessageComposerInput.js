@@ -60,7 +60,7 @@ import {MATRIXTO_URL_PATTERN} from '../../../linkify-matrix';
 import {
     asciiRegexp, unicodeRegexp, shortnameToUnicode,
     asciiList, mapUnicodeToShort, toShort,
-} from 'twemoji';
+} from 'emojione';
 import SettingsStore, {SettingLevel} from "../../../settings/SettingsStore";
 import {makeUserPermalink} from "../../../matrix-to";
 import ReplyPreview from "./ReplyPreview";
@@ -572,7 +572,7 @@ export default class MessageComposerInput extends React.Component {
             }
         }
 
-        // twemojiify any emoji
+        // emojioneify any emoji
         let foundEmoji;
         do {
             foundEmoji = false;
@@ -1495,8 +1495,8 @@ export default class MessageComposerInput extends React.Component {
                 const emojiUnicode = data.get('emojiUnicode');
                 const uri = RichText.unicodeToEmojiUri(emojiUnicode);
                 const shortname = toShort(emojiUnicode);
-                const className = classNames('mx_twemoji', {
-                    mx_twemoji_selected: isSelected,
+                const className = classNames('mx_emojione', {
+                    mx_emojione_selected: isSelected,
                 });
                 const style = {};
                 if (props.selected) style.border = '1px solid blue';

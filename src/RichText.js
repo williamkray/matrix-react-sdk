@@ -16,25 +16,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import * as twemoji from 'twemoji';
+import * as emojione from 'emojione';
 
 
 export function unicodeToEmojiUri(str) {
-    const mappedUnicode = twemoji.mapUnicodeToShort();
+    const mappedUnicode = emojione.mapUnicodeToShort();
 
-    // remove any zero width joiners/spaces used in conjugate emojis as the twemoji URIs don't contain them
-    return str.replace(twemoji.regUnicode, function(unicodeChar) {
-        if ((typeof unicodeChar === 'undefined') || (unicodeChar === '') || (!(unicodeChar in twemoji.jsEscapeMap))) {
+    // remove any zero width joiners/spaces used in conjugate emojis as the emojione URIs don't contain them
+    return str.replace(emojione.regUnicode, function(unicodeChar) {
+        if ((typeof unicodeChar === 'undefined') || (unicodeChar === '') || (!(unicodeChar in emojione.jsEscapeMap))) {
             // if the unicodeChar doesn't exist just return the entire match
             return unicodeChar;
         } else {
             // get the unicode codepoint from the actual char
-            const unicode = twemoji.jsEscapeMap[unicodeChar];
+            const unicode = emojione.jsEscapeMap[unicodeChar];
 
             const short = mappedUnicode[unicode];
-            const fname = twemoji.twemojiList[short].fname;
+            const fname = emojione.emojioneList[short].fname;
 
-            return twemoji.imagePathSVG+fname+'.svg'+twemoji.cacheBustParam;
+            return emojione.imagePathSVG+fname+'.svg'+emojione.cacheBustParam;
         }
     });
 }
