@@ -90,15 +90,18 @@ function matchPonymotes(s) {
     }
     s = s.toLowerCase();
     const results = [];
-    PonymoteDataClean.forEach((key) => {
-        const index = key.toLowerCase().indexOf(s);
-        if (index !== -1) {
-            results.push({
-                n: key,
-                mxc: 'mxc://ponies.im/bpm.'+key
-            });
-        }
-    });
+
+    if (!SettingsStore.isFeatureEnabled("feature_disable_ponymotes")) {
+        PonymoteDataClean.forEach((key) => {
+            const index = key.toLowerCase().indexOf(s);
+            if (index !== -1) {
+                results.push({
+                    n: key,
+                    mxc: 'mxc://ponies.im/bpm.'+key
+                });
+            }
+        });
+    }
 
     if (SettingsStore.isFeatureEnabled("feature_nsfw_ponymotes")) {
         PonymoteDataNSFW.forEach((key) => {

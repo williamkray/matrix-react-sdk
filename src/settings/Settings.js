@@ -117,6 +117,12 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
+    "feature_disable_ponymotes": {
+        isFeature: true,
+        displayName: _td("Disable Ponymotes"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
     "feature_disable_mutant_standard": {
         isFeature: true,
         displayName: _td("Disable Mutant Standard Emotes"),
