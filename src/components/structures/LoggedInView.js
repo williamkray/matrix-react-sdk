@@ -89,6 +89,7 @@ const LoggedInView = React.createClass({
         return {
             // use compact timeline view
             useCompactLayout: SettingsStore.getValue('useCompactLayout'),
+            useSuperCompactLayout: SettingsStore.isFeatureEnabled("feature_super_compact"),
             // any currently active server notice events
             serverNoticeEvents: [],
         };
@@ -527,6 +528,9 @@ const LoggedInView = React.createClass({
         }
         if (this.state.useCompactLayout) {
             bodyClasses += ' mx_MatrixChat_useCompactLayout';
+        }
+        if (this.state.useSuperCompactLayout) {
+            bodyClasses += ' mx_MatrixChat_useSuperCompactLayout';
         }
 
         return (

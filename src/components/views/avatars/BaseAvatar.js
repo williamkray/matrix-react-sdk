@@ -17,7 +17,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -27,7 +27,7 @@ import { MatrixClient } from 'matrix-js-sdk';
 import AvatarLogic from '../../../Avatar';
 import sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
-import SettingsStore from "../../../settings/SettingsStore"; 
+import SettingsStore from "../../../settings/SettingsStore";
 
 module.exports = React.createClass({
     displayName: 'BaseAvatar',
@@ -183,7 +183,7 @@ module.exports = React.createClass({
         } = this.props;
 
         let imageClasses = 'mx_BaseAvatar_image';
-        if (SettingsStore.isFeatureEnabled("feature_round_avatars")) {
+        if (!SettingsStore.isFeatureEnabled("feature_squircle_avatars")) {
             imageClasses += ' mx_RoundAvatar'
         }
 

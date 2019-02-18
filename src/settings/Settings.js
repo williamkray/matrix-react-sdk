@@ -93,9 +93,15 @@ export const SETTINGS = {
     //     // not use this for new settings.
     //     invertedSettingName: "my-negative-setting",
     // },
-    "feature_round_avatars": {
+    "feature_squircle_avatars": {
         isFeature: true,
-        displayName: _td("Round Avatars"),
+        displayName: _td("Enable Squircle Avatars"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_super_compact": {
+        isFeature: true,
+        displayName: _td("Enable Super Compact Layout"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
