@@ -253,3 +253,16 @@ limitations under the License.
 .mx_RoomHeader_pinsIndicatorUnread {
     background-color: $pinned-unread-color;
 }
+
+.mx_MatrixChat_useSuperCompactLayout {
+
+    .mx_RoomHeader {
+        flex: 0 0 32px;
+    }
+
+    .mx_RoomHeader_wrapper {
+        height: 32px;
+        padding: 0 1px 0 1px;
+    }
+
+}

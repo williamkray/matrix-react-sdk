@@ -274,3 +274,43 @@ limitations under the License.
         height: 50px;
     }
 }
+
+.mx_MatrixChat_useSuperCompactLayout {
+
+    .mx_MessageComposer_input {
+        min-height: 32px;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .mx_MessageComposer_input_markdownIndicator {
+        height: 24px;
+        padding: 1px 1px 4px 0;
+
+    }
+
+    .mx_MessageComposer .mx_MessageComposer_avatar {
+        left: 1px;
+    }
+
+    .mx_MessageComposer_e2eIcon.mx_E2EIcon {
+        left: 28px;
+    }
+
+    .mx_MessageComposer_editor {
+        max-height: 120px;
+        min-height: 19px;
+        margin-top: 7px;
+    }
+
+    .mx_MatrixChat_useCompactLayout {
+        .mx_MessageComposer_input {
+            min-height: 32px;
+        }
+
+        .mx_MessageComposer_noperm_error {
+            height: 32px;
+        }
+    }
+
+}
