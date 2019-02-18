@@ -1544,7 +1544,8 @@
     "If you didn't remove the recovery method, an attacker may be trying to access your account. Change your account password and set a new recovery method immediately in Settings.": "If you didn't remove the recovery method, an attacker may be trying to access your account. Change your account password and set a new recovery method immediately in Settings.",
     "Failed to set direct chat tag": "Failed to set direct chat tag",
     "Failed to remove tag %(tagName)s from room": "Failed to remove tag %(tagName)s from room",
-    "Round Avatars": "Round Avatars",
+    "Enable Squircle Avatars": "Enable Squircle Avatars",
+    "Enable Super Compact Layout": "Enable Super Compact Layout",
     "NSFW Ponymotes": "Enable NSFW Ponymote Suggestions",
     "Disable Ponymotes": "Disable SFW Ponymote Suggestions",
     "Disable Mutant Standard Emotes": "Disable Mutant Standard Emotes",
@@ -1566,5 +1567,5 @@
     "View as Grid": "View as Grid",
     "Allow up to 6 rooms in a community to be shown simultaneously in a grid via the context menu": "Allow up to 6 rooms in a community to be shown simultaneously in a grid via the context menu",
     "No room in this tile yet.": "No room in this tile yet.",
-    "Failed to add tag %(tagName)s to room": "Failed to add tag %(tagName)s to room" 
+    "Failed to add tag %(tagName)s to room": "Failed to add tag %(tagName)s to room"
 }
