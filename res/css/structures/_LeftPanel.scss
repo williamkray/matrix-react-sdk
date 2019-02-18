@@ -141,4 +141,7 @@ limitations under the License.
         min-width: 200px;
     }
 
+    .mx_LeftPanel_container.collapsed {
+        min-width: unset;
+    }
 }

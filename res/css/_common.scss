@@ -428,3 +428,26 @@ textarea {
     opacity: 0;
     cursor: pointer;
 }
+.mx_MatrixChat_useSuperCompactLayout {
+    .gm-scrollbar {
+        border-radius: 3px ! important;
+    }
+    .gm-scrollbar.-vertical {
+        width: 5px;
+        transition: width 120ms ease-out ! important;
+    }
+    .gm-scrollbar.-vertical:hover,
+    .gm-scrollbar.-vertical:active {
+        width: 5px;
+        transition: width 120ms ease-out ! important;
+    }
+    .gm-scrollbar.-horizontal {
+        height: 3px;
+        transition: height 120ms ease-out ! important;
+    }
+    .gm-scrollbar.-horizontal:hover,
+    .gm-scrollbar.-horizontal:active {
+        height: 5px;
+        transition: height 120ms ease-out ! important;
+    }
+}
