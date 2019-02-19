@@ -17,7 +17,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -1169,7 +1169,7 @@ export default class MessageComposerInput extends React.Component {
         if (contentHTML) {
             contentHTML = contentHTML.replace(
                 /<a\s+href="emote:\/\/([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                '<img src="$1" height="32" alt="$2" title="$2" />'
+                '<img src="$1" height="32" alt="$2" title="$2" vertical-align="middle"/>'
             );
         }
 

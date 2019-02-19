@@ -286,7 +286,7 @@ export const sanitizeHtmlParams = {
         font: ['color', 'data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
         span: ['data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
         a: ['href', 'name', 'target', 'rel'], // remote target: custom to matrix
-        img: ['src', 'width', 'height', 'alt', 'title'],
+        img: ['src', 'width', 'height', 'alt', 'title', 'vertical-align', 'style'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
     },
