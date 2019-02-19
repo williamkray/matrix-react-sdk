@@ -300,7 +300,10 @@ limitations under the License.
     .mx_MessageComposer_editor {
         max-height: 120px;
         min-height: 19px;
-        margin-top: 7px;
+    }
+
+    .mx_MessageComposer_wrapper {
+        padding-left: 38px;
     }
 
     .mx_MessageComposer_wrapper.mx_MessageComposer_hasE2EIcon {
