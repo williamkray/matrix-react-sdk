@@ -248,6 +248,7 @@ const transformTags = { // custom to matrix
         const customCSSMapper = {
             'data-mx-color': 'color',
             'data-mx-bg-color': 'background-color',
+            'vertical-align': 'vertical-align',
             // $customAttributeKey: $cssAttributeKey
         };
 
@@ -261,6 +262,9 @@ const transformTags = { // custom to matrix
             ) {
                 style += cssAttributeKey + ":" + customAttributeValue + ";";
                 delete attribs[customAttributeKey];
+            } else if (customAttributeValue &&
+                       customAttributeValue === 'middle') {
+                 style += cssAttributeKey + ":" + customAttributeValue + ";";
             }
         });
 
@@ -286,7 +290,7 @@ export const sanitizeHtmlParams = {
         font: ['color', 'data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
         span: ['data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
         a: ['href', 'name', 'target', 'rel'], // remote target: custom to matrix
-        img: ['src', 'width', 'height', 'alt', 'title', 'vertical-align', 'style'],
+        img: ['src', 'width', 'height', 'alt', 'title', 'vertical-align'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
     },
