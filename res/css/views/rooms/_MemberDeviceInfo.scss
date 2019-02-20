@@ -91,3 +91,16 @@ limitations under the License.
 .mx_MemberDeviceInfo div.mx_MemberDeviceInfo_blacklisted {
     color: $e2e-warning-color;
 }
+
+.mx_MatrixChat_useSuperCompactLayout {
+
+    .mx_MemberDeviceInfo {
+        padding-bottom: 1px;
+    }
+
+    .mx_MemberDeviceInfo_deviceInfo {
+        margin: 0 1px 1px 1px;
+        flex: 1;
+    }
+
+}
