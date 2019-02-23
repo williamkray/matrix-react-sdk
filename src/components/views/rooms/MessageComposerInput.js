@@ -635,7 +635,6 @@ export default class MessageComposerInput extends React.Component {
             }
             const inputState = {
                 marks: editorState.activeMarks,
-                isRichTextEnabled: this.state.isRichTextEnabled,
                 blockType,
             };
             this.props.onInputStateChanged(inputState);
@@ -693,20 +692,22 @@ export default class MessageComposerInput extends React.Component {
     enableRichtext(enabled: boolean) {
         if (enabled === this.state.isRichTextEnabled) return;
 
-        let editorState = null;
-        if (enabled) {
-            editorState = this.mdToRichEditorState(this.state.editorState);
-        } else {
-            editorState = this.richToMdEditorState(this.state.editorState);
-        }
-
         Analytics.setRichtextMode(enabled);
 
         this.setState({
-            editorState: this.createEditorState(enabled, editorState),
+            editorState: this.createEditorState(
+                enabled,
+                this.state.editorState,
+                this.state.isRichTextEnabled,
+            ),
             isRichTextEnabled: enabled,
-        }, ()=>{
+        }, () => {
             this._editor.focus();
+            if (this.props.onInputStateChanged) {
+                this.props.onInputStateChanged({
+                    isRichTextEnabled: enabled,
+                });
+            }
         });
 
         SettingsStore.setValue("MessageComposerInput.isRichTextEnabled", null, SettingLevel.ACCOUNT, enabled);
@@ -1624,7 +1625,7 @@ export default class MessageComposerInput extends React.Component {
                 </div>
                 <div className={className}>
                     <AccessibleButton className={markdownClasses}
-                        onMouseDown={this.onMarkdownToggleClicked}
+                        onClick={this.onMarkdownToggleClicked}
                         title={this.state.isRichTextEnabled ? _t("Markdown is disabled") : _t("Markdown is enabled")}
                     />
                     <Editor ref={this._collectEditor}
