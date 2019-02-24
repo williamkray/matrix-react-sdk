@@ -141,6 +141,12 @@ export default class HelpSettingsTab extends React.Component {
                         <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" target="_blank">
                         CC-BY-SA 4.0</a>. No warranties are given.
                     </li>
+                    <li>
+                        <a href="https://mutant.tech" rel="noopener" target="_blank">
+                        Mutant Standard emotes</a> are licensed under terms of&nbsp;
+                        <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank">
+                        CC-BY-NC-SA 4.0</a>
+                    </li>
                 </ul>
             </div>
         );
