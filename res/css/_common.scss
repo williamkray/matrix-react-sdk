@@ -70,7 +70,7 @@ input[type=search].mx_textinput_icon {
 // FIXME THEME - Tint by CSS rather than referencing a duplicate asset
 input[type=text].mx_textinput_icon.mx_textinput_search,
 input[type=search].mx_textinput_icon.mx_textinput_search {
-    background-image: url('$(res)/img/feather-icons/search-input.svg');
+    background-image: url('$(res)/img/feather-customised/search-input.svg');
 }
 
 // dont search UI as not all browsers support it,
@@ -228,6 +228,17 @@ textarea {
     color: $roomsublist-label-bg-color;
 }
 
+/* Expected z-indexes for dialogs:
+    4000 - Default wrapper index
+    4009 - Static dialog background
+    4010 - Static dialog itself
+    4011 - Standard dialog background
+    4012 - Standard dialog itself
+
+   These are set up such that the static dialog always appears
+   underneath the standard dialogs.
+ */
+
 .mx_Dialog_wrapper {
     position: fixed;
     z-index: 4000;
@@ -249,16 +260,10 @@ textarea {
     box-shadow: none;
 }
 
-/* View Source Dialog overide */
-.mx_Dialog_wrapper.mx_Dialog_viewsource .mx_Dialog {
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
 .mx_Dialog {
     background-color: $primary-bg-color;
     color: $light-fg-color;
-    z-index: 4010;
+    z-index: 4012;
     font-weight: 300;
     font-size: 15px;
     position: relative;
@@ -270,6 +275,10 @@ textarea {
     overflow-y: auto;
 }
 
+.mx_Dialog_staticWrapper .mx_Dialog {
+    z-index: 4010;
+}
+
 .mx_Dialog_background {
     position: fixed;
     top: 0;
@@ -278,6 +287,17 @@ textarea {
     height: 100%;
     background-color: $dialog-backdrop-color;
     opacity: 0.8;
+    z-index: 4011;
+}
+
+.mx_Dialog_background.mx_Dialog_staticBackground {
+    z-index: 4009;
+}
+
+.mx_Dialog_wrapperWithStaticUnder .mx_Dialog_background {
+    // Roughly half of what it would normally be - we don't want to black out
+    // the app, just make it clear that the dialogs are stacked.
+    opacity: 0.4;
 }
 
 .mx_Dialog_lightbox .mx_Dialog_background {
@@ -315,7 +335,7 @@ textarea {
 }
 
 .mx_Dialog_cancelButton {
-    mask: url('$(res)/img/feather-icons/cancel.svg');
+    mask: url('$(res)/img/feather-customised/cancel.svg');
     mask-repeat: no-repeat;
     mask-position: center;
     width: 36px;

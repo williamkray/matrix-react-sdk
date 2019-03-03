@@ -1,7 +1,7 @@
 /*
 Copyright 2017 Travis Ralston
-Copyright 2018 New Vector Ltd
-Copyright 2018 ponies.im
+Copyright 2018, 2019 New Vector Ltd.
+Copyright 2018, 2019 ponies.im
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ export const SETTINGS = {
     },
     "showReadReceipts": {
         supportedLevels: LEVELS_ROOM_SETTINGS,
-        displayName: _td('Show read receipts'),
+        displayName: _td('Show read receipts sent by other users'),
         default: true,
         invertedSettingName: 'hideReadReceipts',
     },
@@ -397,5 +397,10 @@ export const SETTINGS = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td('Show developer tools'),
         default: false,
+    },
+    "RoomList.orderByImportance": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        displayName: _td('Order rooms in the room list by most important first instead of most recent'),
+        default: true,
     },
 };

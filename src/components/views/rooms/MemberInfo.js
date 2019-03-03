@@ -999,14 +999,12 @@ module.exports = withMatrixClient(React.createClass({
 
             roomMemberDetails = <div>
                 <div className="mx_MemberInfo_profileField">
-                    { _t("Level:") } <b>
-                        <PowerSelector controlled={true}
-                            value={parseInt(this.props.member.powerLevel)}
-                            maxValue={this.state.can.modifyLevelMax}
-                            disabled={!this.state.can.modifyLevel}
-                            usersDefault={powerLevelUsersDefault}
-                            onChange={this.onPowerChange} />
-                    </b>
+                    <PowerSelector
+                        value={parseInt(this.props.member.powerLevel)}
+                        maxValue={this.state.can.modifyLevelMax}
+                        disabled={!this.state.can.modifyLevel}
+                        usersDefault={powerLevelUsersDefault}
+                        onChange={this.onPowerChange} />
                 </div>
                 <div className="mx_MemberInfo_profileField">
                     {presenceLabel}

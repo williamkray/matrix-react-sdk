@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019 New Vector Ltd.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-.mx_VoiceSettingsTab .mx_Field select {
+.mx_PowerSelector {
     width: 100%;
-    max-width: 100%;
 }
 
-.mx_VoiceSettingsTab .mx_Field {
-    margin-right: 100px; // align with the rest of the fields
-}
-
-.mx_VoiceSettingsTab_missingMediaPermissions {
-    margin-bottom: 15px;
+.mx_PowerSelector .mx_Field select,
+.mx_PowerSelector .mx_Field input {
+    width: 100%;
+    box-sizing: border-box;
 }

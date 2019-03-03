@@ -103,6 +103,9 @@ export default class Stickerpicker extends React.Component {
     }
 
     componentWillUnmount() {
+        const client = MatrixClientPeg.get();
+        if (client) client.removeListener('accountData', this._updateWidget);
+
         window.removeEventListener('resize', this._onResize);
         if (this.dispatcherRef) {
             dis.unregister(this.dispatcherRef);
@@ -349,7 +352,6 @@ export default class Stickerpicker extends React.Component {
                     key="controls_hide_stickers"
                     className="mx_MessageComposer_button mx_MessageComposer_stickers mx_Stickers_hideStickers"
                     onClick={this._onHideStickersClick}
-                    ref='target'
                     title={_t("Hide Stickers")}
                 >
                 </AccessibleButton>;

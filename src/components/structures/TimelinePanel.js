@@ -935,6 +935,11 @@ var TimelinePanel = React.createClass({
             {windowLimit: this.props.timelineCap});
 
         const onLoaded = () => {
+            // clear the timeline min-height when
+            // (re)loading the timeline
+            if (this.refs.messagePanel) {
+                this.refs.messagePanel.clearTimelineHeight();
+            }
             this._reloadEvents();
 
             // If we switched away from the room while there were pending
@@ -1202,6 +1207,7 @@ var TimelinePanel = React.createClass({
         return (
             <MessagePanel ref="messagePanel"
                           room={this.props.timelineSet.room}
+                          permalinkCreator={this.props.permalinkCreator}
                           hidden={this.props.hidden}
                           backPaginating={this.state.backPaginating}
                           forwardPaginating={forwardPaginating}
