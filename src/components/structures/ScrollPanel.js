@@ -79,26 +79,6 @@ if (DEBUG_SCROLL) {
  * offset as normal.
  */
 
-
-function createTimelineResizeDetector(scrollNode, itemlist, callback) {
-    if (typeof ResizeObserver !== "undefined") {
-        const ro = new ResizeObserver(callback);
-        ro.observe(itemlist);
-        return ro;
-    } else if (typeof IntersectionObserver !== "undefined") {
-        const threshold = [];
-        for (let i = 0; i <= 1000; ++i) {
-            threshold.push(i / 1000);
-        }
-        const io = new IntersectionObserver(
-            callback,
-            {root: scrollNode, threshold},
-        );
-        io.observe(itemlist);
-        return io;
-    }
-}
-
 module.exports = React.createClass({
     displayName: 'ScrollPanel',
 
@@ -181,12 +161,6 @@ module.exports = React.createClass({
 
     componentDidMount: function() {
         this.checkScroll();
-
-        this._timelineSizeObserver = createTimelineResizeDetector(
-            this._getScrollNode(),
-            this.refs.itemlist,
-            () => { this._restoreSavedScrollState(); },
-        );
     },
 
     componentDidUpdate: function() {
@@ -204,10 +178,6 @@ module.exports = React.createClass({
         //
         // (We could use isMounted(), but facebook have deprecated that.)
         this.unmounted = true;
-        if (this._timelineSizeObserver) {
-            this._timelineSizeObserver.disconnect();
-            this._timelineSizeObserver = null;
-        }
     },
 
     onScroll: function(ev) {
@@ -246,8 +216,6 @@ module.exports = React.createClass({
             this._lastSetScroll = undefined;
         }
 
-        this._checkBlockShrinking();
-
         this.props.onScroll(ev);
 
         this.checkFillState();
@@ -264,7 +232,6 @@ module.exports = React.createClass({
     // where it ought to be, and set off pagination requests if necessary.
     checkScroll: function() {
         this._restoreSavedScrollState();
-        this._checkBlockShrinking();
         this.checkFillState();
     },
 
@@ -601,16 +568,17 @@ module.exports = React.createClass({
         }
 
         const scrollNode = this._getScrollNode();
-        const scrollBottom = scrollNode.scrollTop + scrollNode.clientHeight;
-
+        const scrollTop = scrollNode.scrollTop;
+        const viewportBottom = scrollTop + scrollNode.clientHeight;
         const nodeBottom = node.offsetTop + node.clientHeight;
-        const scrollDelta = nodeBottom + pixelOffset - scrollBottom;
+        const intendedViewportBottom = nodeBottom + pixelOffset;
+        const scrollDelta = intendedViewportBottom - viewportBottom;
 
         debuglog("ScrollPanel: scrolling to token '" + scrollToken + "'+" +
                  pixelOffset + " (delta: "+scrollDelta+")");
 
-        if (scrollDelta != 0) {
-            this._setScrollTop(scrollNode.scrollTop + scrollDelta);
+        if (scrollDelta !== 0) {
+            this._setScrollTop(scrollTop + scrollDelta);
         }
     },
 
@@ -622,7 +590,7 @@ module.exports = React.createClass({
         }
 
         const scrollNode = this._getScrollNode();
-        const scrollBottom = scrollNode.scrollTop + scrollNode.clientHeight;
+        const viewportBottom = scrollNode.scrollTop + scrollNode.clientHeight;
 
         const itemlist = this.refs.itemlist;
         const messages = itemlist.children;
@@ -636,7 +604,7 @@ module.exports = React.createClass({
             node = messages[i];
             // break at the first message (coming from the bottom)
             // that has it's offsetTop above the bottom of the viewport.
-            if (node.offsetTop < scrollBottom) {
+            if (node.offsetTop < viewportBottom) {
                 // Use this node as the scrollToken
                 break;
             }
@@ -652,7 +620,7 @@ module.exports = React.createClass({
         this.scrollState = {
             stuckAtBottom: false,
             trackedScrollToken: node.dataset.scrollTokens.split(',')[0],
-            pixelOffset: scrollBottom - nodeBottom,
+            pixelOffset: viewportBottom - nodeBottom,
         };
     },
 
@@ -720,36 +688,14 @@ module.exports = React.createClass({
      * jumping when the typing indicator gets replaced by a smaller message.
      */
     blockShrinking: function() {
-        const messageList = this.refs.itemlist;
-        if (messageList) {
-            const currentHeight = messageList.clientHeight;
-            messageList.style.minHeight = `${currentHeight}px`;
-        }
+        // Disabled for now because of https://github.com/vector-im/riot-web/issues/9205
     },
 
     /**
      * Clear the previously set min height
      */
     clearBlockShrinking: function() {
-        const messageList = this.refs.itemlist;
-        if (messageList) {
-            messageList.style.minHeight = null;
-        }
-    },
-
-    _checkBlockShrinking: function() {
-        const sn = this._getScrollNode();
-        const scrollState = this.scrollState;
-        if (!scrollState.stuckAtBottom) {
-            const spaceBelowViewport = sn.scrollHeight - (sn.scrollTop + sn.clientHeight);
-            // only if we've scrolled up 200px from the bottom
-            // should we clear the min-height used by the typing notifications,
-            // otherwise we might still see it jump as the whitespace disappears
-            // when scrolling up from the bottom
-            if (spaceBelowViewport >= 200) {
-                this.clearBlockShrinking();
-            }
-        }
+        // Disabled for now because of https://github.com/vector-im/riot-web/issues/9205
     },
 
     render: function() {

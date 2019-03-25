@@ -58,7 +58,7 @@ module.exports = React.createClass({
         showUrlPreview: PropTypes.bool,
 
         /* callback for when our widget has loaded */
-        onWidgetLoad: PropTypes.func,
+        onHeightChanged: PropTypes.func,
 
         /* the shape of the tile, used */
         tileShape: PropTypes.string,
@@ -438,7 +438,7 @@ module.exports = React.createClass({
 
         const stripReply = ReplyThread.getParentEventId(mxEvent);
         let body = HtmlUtils.bodyToHtml(content, this.props.highlights, {
-            disableBigEmoji: !SettingsStore.getValue('TextualBody.enableBigEmoji'),
+            disableBigEmoji: content.msgtype === "m.emote" || !SettingsStore.getValue('TextualBody.enableBigEmoji'),
             // Part of Replies fallback support
             stripReplyFallback: stripReply,
         });
@@ -458,7 +458,7 @@ module.exports = React.createClass({
                             link={link}
                             mxEvent={this.props.mxEvent}
                             onCancelClick={this.onCancelClick}
-                            onWidgetLoad={this.props.onWidgetLoad} />;
+                            onHeightChanged={this.props.onHeightChanged} />;
             });
         }
 
