@@ -1,5 +1,5 @@
 /*
-Copyright 2019 New Vector Ltd
+Copyright 2019 Travis Ralston
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-.mx_MainSplit {
-    display: flex;
-    flex-direction: row;
-    min-width: 0;
-}
+.mx_WidgetOpenIDPermissionsDialog .mx_SettingsFlag {
+    .mx_ToggleSwitch {
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
 
-// move hit area 5px to the right so it doesn't overlap with the timeline scrollbar
-.mx_MainSplit > .mx_ResizeHandle.mx_ResizeHandle_horizontal {
-    margin: 0 -10px 0 0;
-    padding: 0 10px 0 0;
+    .mx_SettingsFlag_label {
+        display: inline-block;
+        vertical-align: middle;
+    }
 }
