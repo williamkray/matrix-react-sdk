@@ -19,29 +19,28 @@ limitations under the License.
 // TODO: This component is enormous! There's several things which could stand-alone:
 //  - Search results component
 //  - Drag and drop
-//  - File uploading - uploadFile()
 
-import shouldHideEvent from "../../shouldHideEvent";
+import shouldHideEvent from '../../shouldHideEvent';
 
-const React = require("react");
-const ReactDOM = require("react-dom");
+import React from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import Promise from 'bluebird';
 import filesize from 'filesize';
-const classNames = require("classnames");
+import classNames from 'classnames';
 import { _t } from '../../languageHandler';
-import {RoomPermalinkCreator} from "../../matrix-to";
+import {RoomPermalinkCreator} from '../../matrix-to';
 
-const MatrixClientPeg = require("../../MatrixClientPeg");
-const ContentMessages = require("../../ContentMessages");
-const Modal = require("../../Modal");
-const sdk = require('../../index');
-const CallHandler = require('../../CallHandler');
-const dis = require("../../dispatcher");
-const Tinter = require("../../Tinter");
-const rate_limited_func = require('../../ratelimitedfunc');
-const ObjectUtils = require('../../ObjectUtils');
-const Rooms = require('../../Rooms');
+import MatrixClientPeg from '../../MatrixClientPeg';
+import ContentMessages from '../../ContentMessages';
+import Modal from '../../Modal';
+import sdk from '../../index';
+import CallHandler from '../../CallHandler';
+import dis from '../../dispatcher';
+import Tinter from '../../Tinter';
+import rate_limited_func from '../../ratelimitedfunc';
+import ObjectUtils from '../../ObjectUtils';
+import Rooms from '../../Rooms';
 
 import { KeyCode, isOnlyCtrlOrCmdKeyEvent } from '../../Keyboard';
 
@@ -170,33 +169,11 @@ module.exports = React.createClass({
         MatrixClientPeg.get().on("accountData", this.onAccountData);
         MatrixClientPeg.get().on("crypto.keyBackupStatus", this.onKeyBackupStatus);
         MatrixClientPeg.get().on("deviceVerificationChanged", this.onDeviceVerificationChanged);
-        this._fetchMediaConfig();
         // Start listening for RoomViewStore updates
         this._roomStoreToken = RoomViewStore.addListener(this._onRoomViewStoreUpdate);
         this._onRoomViewStoreUpdate(true);
 
         WidgetEchoStore.on('update', this._onWidgetEchoStoreUpdate);
-    },
-
-    _fetchMediaConfig: function(invalidateCache: boolean = false) {
-        /// NOTE: Using global here so we don't make repeated requests for the
-        /// config every time we swap room.
-        if(global.mediaConfig !== undefined && !invalidateCache) {
-            this.setState({mediaConfig: global.mediaConfig});
-            return;
-        }
-        console.log("[Media Config] Fetching");
-        MatrixClientPeg.get().getMediaConfig().then((config) => {
-            console.log("[Media Config] Fetched config:", config);
-            return config;
-        }).catch(() => {
-            // Media repo can't or won't report limits, so provide an empty object (no limits).
-            console.log("[Media Config] Could not fetch config, so not limiting uploads.");
-            return {};
-        }).then((config) => {
-            global.mediaConfig = config;
-            this.setState({mediaConfig: config});
-        });
     },
 
     _onRoomViewStoreUpdate: function(initial) {
@@ -293,6 +270,28 @@ module.exports = React.createClass({
         // the bare room ID. (We may want to update `state.roomId` after
         // resolving aliases, so we could always trust it.)
         return this.state.room ? this.state.room.roomId : this.state.roomId;
+    },
+
+    _getPermalinkCreatorForRoom: function(room) {
+        if (!this._permalinkCreators) this._permalinkCreators = {};
+        if (this._permalinkCreators[room.roomId]) return this._permalinkCreators[room.roomId];
+
+        this._permalinkCreators[room.roomId] = new RoomPermalinkCreator(room);
+        if (this.state.room && room.roomId === this.state.room.roomId) {
+            // We want to watch for changes in the creator for the primary room in the view, but
+            // don't need to do so for search results.
+            this._permalinkCreators[room.roomId].start();
+        } else {
+            this._permalinkCreators[room.roomId].load();
+        }
+        return this._permalinkCreators[room.roomId];
+    },
+
+    _stopAllPermalinkCreators: function() {
+        if (!this._permalinkCreators) return;
+        for (const roomId of Object.keys(this._permalinkCreators)) {
+            this._permalinkCreators[roomId].stop();
+        }
     },
 
     _onWidgetEchoStoreUpdate: function() {
@@ -459,9 +458,7 @@ module.exports = React.createClass({
         }
 
         // stop tracking room changes to format permalinks
-        if (this.state.permalinkCreator) {
-            this.state.permalinkCreator.stop();
-        }
+        this._stopAllPermalinkCreators();
 
         if (this.refs.roomView) {
             // disconnect the D&D event listeners from the room view. This
@@ -510,7 +507,7 @@ module.exports = React.createClass({
     },
 
     onPageUnload(event) {
-        if (ContentMessages.getCurrentUploads().length > 0) {
+        if (ContentMessages.sharedInstance().getCurrentUploads().length > 0) {
             return event.returnValue =
                 _t("You seem to be uploading files, are you sure you want to quit?");
         } else if (this._getCallForRoom() && this.state.callState !== 'ended') {
@@ -559,16 +556,14 @@ module.exports = React.createClass({
                   payload.data.description || payload.data.name);
               break;
             case 'picture_snapshot':
-                this.uploadFile(payload.file);
+                return ContentMessages.sharedInstance().sendContentListToRoom(
+                    [payload.file], this.state.room.roomId, MatrixClientPeg.get(),
+                );
                 break;
-            case 'upload_failed':
-                // 413: File was too big or upset the server in some way.
-                if (payload.error && payload.error.http_status === 413) {
-                    this._fetchMediaConfig(true);
-                }
             case 'notifier_enabled':
             case 'upload_started':
             case 'upload_finished':
+            case 'upload_canceled':
                 this.forceUpdate();
                 break;
             case 'call_state':
@@ -676,11 +671,6 @@ module.exports = React.createClass({
         this._loadMembersIfJoined(room);
         this._calculateRecommendedVersion(room);
         this._updateE2EStatus(room);
-        if (!this.state.permalinkCreator) {
-            const permalinkCreator = new RoomPermalinkCreator(room);
-            permalinkCreator.start();
-            this.setState({permalinkCreator});
-        }
     },
 
     _calculateRecommendedVersion: async function(room) {
@@ -756,8 +746,19 @@ module.exports = React.createClass({
         if (!MatrixClientPeg.get().isRoomEncrypted(room.roomId)) {
             return;
         }
+        if (!MatrixClientPeg.get().isCryptoEnabled()) {
+            // If crypto is not currently enabled, we aren't tracking devices at all,
+            // so we don't know what the answer is. Let's error on the safe side and show
+            // a warning for this case.
+            this.setState({
+                e2eStatus: "warning",
+            });
+            return;
+        }
         room.hasUnverifiedDevices().then((hasUnverifiedDevices) => {
-            this.setState({e2eStatus: hasUnverifiedDevices ? "warning" : "verified"});
+            this.setState({
+                e2eStatus: hasUnverifiedDevices ? "warning" : "verified",
+            });
         });
     },
 
@@ -1015,9 +1016,11 @@ module.exports = React.createClass({
     onDrop: function(ev) {
         ev.stopPropagation();
         ev.preventDefault();
+        ContentMessages.sharedInstance().sendContentListToRoom(
+            ev.dataTransfer.files, this.state.room.roomId, MatrixClientPeg.get(),
+        );
         this.setState({ draggingFile: false });
-        const files = [...ev.dataTransfer.files];
-        files.forEach(this.uploadFile);
+        dis.dispatch({action: 'focus_composer'});
     },
 
     onDragLeaveOrEnd: function(ev) {
@@ -1026,55 +1029,13 @@ module.exports = React.createClass({
         this.setState({ draggingFile: false });
     },
 
-    isFileUploadAllowed(file) {
-        if (this.state.mediaConfig !== undefined &&
-            this.state.mediaConfig["m.upload.size"] !== undefined &&
-            file.size > this.state.mediaConfig["m.upload.size"]) {
-            return _t("File is too big. Maximum file size is %(fileSize)s", {fileSize: filesize(this.state.mediaConfig["m.upload.size"])});
-        }
-        return true;
-    },
-
-    uploadFile: async function(file) {
-        dis.dispatch({action: 'focus_composer'});
-
-        if (MatrixClientPeg.get().isGuest()) {
-            dis.dispatch({action: 'require_registration'});
-            return;
-        }
-
-        try {
-            await ContentMessages.sendContentToRoom(file, this.state.room.roomId, MatrixClientPeg.get());
-        } catch (error) {
-            if (error.name === "UnknownDeviceError") {
-                // Let the status bar handle this
-                return;
-            }
-            const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
-            console.error("Failed to upload file " + file + " " + error);
-            Modal.createTrackedDialog('Failed to upload file', '', ErrorDialog, {
-                title: _t('Failed to upload file'),
-                description: ((error && error.message)
-                    ? error.message : _t("Server may be unavailable, overloaded, or the file too big")),
-            });
-
-            // bail early to avoid calling the dispatch below
-            return;
-        }
-
-        // Send message_sent callback, for things like _checkIfAlone because after all a file is still a message.
-        dis.dispatch({
-            action: 'message_sent',
-        });
-    },
-
     injectSticker: function(url, info, text) {
         if (MatrixClientPeg.get().isGuest()) {
             dis.dispatch({action: 'require_registration'});
             return;
         }
 
-        ContentMessages.sendStickerContentToRoom(url, this.state.room.roomId, info, text, MatrixClientPeg.get())
+        ContentMessages.sharedInstance().sendStickerContentToRoom(url, this.state.room.roomId, info, text, MatrixClientPeg.get())
             .done(undefined, (error) => {
                 if (error.name === "UnknownDeviceError") {
                     // Let the staus bar handle this
@@ -1223,6 +1184,7 @@ module.exports = React.createClass({
 
             const mxEv = result.context.getEvent();
             const roomId = mxEv.getRoomId();
+            const room = cli.getRoom(roomId);
 
             if (!EventTile.haveTileForEvent(mxEv)) {
                 // XXX: can this ever happen? It will make the result count
@@ -1232,7 +1194,6 @@ module.exports = React.createClass({
 
             if (this.state.searchScope === 'All') {
                 if (roomId != lastRoomId) {
-                    const room = cli.getRoom(roomId);
 
                     // XXX: if we've left the room, we might not know about
                     // it. We should tell the js sdk to go and find out about
@@ -1253,7 +1214,7 @@ module.exports = React.createClass({
                      searchResult={result}
                      searchHighlights={this.state.searchHighlights}
                      resultLink={resultLink}
-                     permalinkCreator={this.state.permalinkCreator}
+                     permalinkCreator={this._getPermalinkCreatorForRoom(room)}
                      onHeightChanged={onHeightChanged} />);
         }
         return ret;
@@ -1666,7 +1627,7 @@ module.exports = React.createClass({
         let statusBar;
         let isStatusAreaExpanded = true;
 
-        if (ContentMessages.getCurrentUploads().length > 0) {
+        if (ContentMessages.sharedInstance().getCurrentUploads().length > 0) {
             const UploadBar = sdk.getComponent('structures.UploadBar');
             statusBar = <UploadBar room={this.state.room} />;
         } else if (!this.state.searchResults) {
@@ -1774,13 +1735,11 @@ module.exports = React.createClass({
             messageComposer =
                 <MessageComposer
                     room={this.state.room}
-                    uploadFile={this.uploadFile}
                     callState={this.state.callState}
                     disabled={this.props.disabled}
                     showApps={this.state.showApps}
-                    uploadAllowed={this.isFileUploadAllowed}
                     e2eStatus={this.state.e2eStatus}
-                    permalinkCreator={this.state.permalinkCreator}
+                    permalinkCreator={this._getPermalinkCreatorForRoom(this.state.room)}
                 />;
         }
 
@@ -1882,7 +1841,7 @@ module.exports = React.createClass({
                 showUrlPreview = {this.state.showUrlPreview}
                 className="mx_RoomView_messagePanel"
                 membersLoaded={this.state.membersLoaded}
-                permalinkCreator={this.state.permalinkCreator}
+                permalinkCreator={this._getPermalinkCreatorForRoom(this.state.room)}
                 resizeNotifier={this.props.resizeNotifier}
             />);
 

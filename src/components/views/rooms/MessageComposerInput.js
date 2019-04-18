@@ -54,6 +54,7 @@ import {Completion} from "../../../autocomplete/Autocompleter";
 import Markdown from '../../../Markdown';
 import ComposerHistoryManager from '../../../ComposerHistoryManager';
 import MessageComposerStore from '../../../stores/MessageComposerStore';
+import ContentMessages from '../../../ContentMessages';
 
 import {MATRIXTO_URL_PATTERN} from '../../../linkify-matrix';
 
@@ -144,8 +145,6 @@ export default class MessageComposerInput extends React.Component {
     static propTypes = {
         // js-sdk Room object
         room: PropTypes.object.isRequired,
-
-        onFilesPasted: PropTypes.func,
 
         onInputStateChanged: PropTypes.func,
     };
@@ -1016,7 +1015,13 @@ export default class MessageComposerInput extends React.Component {
 
         switch (transfer.type) {
             case 'files':
-                return this.props.onFilesPasted(transfer.files);
+                // This actually not so much for 'files' as such (at time of writing
+                // neither chrome nor firefox let you paste a plain file copied
+                // from Finder) but more images copied from a different website
+                // / word processor etc.
+                return ContentMessages.sharedInstance().sendContentListToRoom(
+                    transfer.files, this.props.room.roomId, this.client,
+                );
             case 'html': {
                 if (this.state.isRichTextEnabled) {
                     // FIXME: https://github.com/ianstormtaylor/slate/issues/1497 means
@@ -1043,7 +1048,8 @@ export default class MessageComposerInput extends React.Component {
     };
 
     handleReturn = (ev, change) => {
-        if (ev.shiftKey) {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        if (ev.shiftKey || (isMac && ev.altKey)) {
             return change.insertText('\n');
         }
 
