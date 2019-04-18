@@ -727,17 +727,6 @@
     "block-quote": "block-quote",
     "bulleted-list": "bulleted-list",
     "numbered-list": "numbered-list",
-<<<<<<< HEAD
-    "Attachment": "Attachment",
-    "At this time it is not possible to reply with a file so this will be sent without being a reply.": "At this time it is not possible to reply with a file so this will be sent without being a reply.",
-    "Upload Files": "Upload Files",
-    "Are you sure you want to upload the following files?": "Are you sure you want to upload the following files?",
-    "The following files cannot be uploaded:": "The following files cannot be uploaded:",
-    "Encrypted room": "Encrypted room",
-    "Unencrypted room": "Unencrypted room",
-    "Upload Files": "Upload Files",
-=======
->>>>>>> 9f494fcc58750af8a1cf51529d8c16796432c928
     "Hangup": "Hangup",
     "Voice call": "Voice call",
     "Video call": "Video call",
