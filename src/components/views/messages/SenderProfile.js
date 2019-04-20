@@ -12,10 +12,10 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- 
+
  Additionally, original modifications by ponies.im are licensed under the CSL.
  See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
- These modifications may only be redistributed and used within the terms of 
+ These modifications may only be redistributed and used within the terms of
  the Cooperative Software License as distributed with this project.
  */
 
@@ -31,6 +31,7 @@ import { _t } from '../../../languageHandler';
 import {hashCode} from '../../../utils/FormattingUtils';
 import SettingsStore from "../../../settings/SettingsStore";
 import { discordColorToCssAdjust, getBodyBgColorForTheme } from "../../../utils/poniesUtils";
+import {getUserNameColorClass} from '../../../utils/FormattingUtils';
 
 export default React.createClass({
     displayName: 'SenderProfile',
@@ -104,7 +105,7 @@ export default React.createClass({
     render() {
         const EmojiText = sdk.getComponent('elements.EmojiText');
         const {mxEvent} = this.props;
-        const colorNumber = (hashCode(mxEvent.getSender()) % 8) + 1;
+        const colorClass = getUserNameColorClass(mxEvent.getSender());
         const name = mxEvent.sender ? mxEvent.sender.name : mxEvent.getSender();
         const {msgtype} = mxEvent.getContent();
 
