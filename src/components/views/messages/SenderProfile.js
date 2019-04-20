@@ -142,7 +142,7 @@ export default React.createClass({
 
         // Name + flair
         const nameFlair = <span>
-            <span className={`mx_SenderProfile_name mx_SenderProfile_color${colorNumber}`} style={style}>
+              <span className={`mx_SenderProfile_name ${colorClass}`}>
                 { nameElem }
             </span>
             { flair }
