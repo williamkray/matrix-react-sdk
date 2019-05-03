@@ -32,6 +32,7 @@ the Cooperative Software License as distributed with this project.
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1535053
     // https://bugzilla.mozilla.org/show_bug.cgi?id=255139
     display: inline-block;
+    user-select: none;
 }
 
 .mx_BaseAvatar_initial {
