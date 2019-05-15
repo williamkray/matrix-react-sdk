@@ -23,7 +23,7 @@ limitations under the License.
     line-height: 24px;
     border-radius: 4px;
     background: $message-action-bar-bg-color;
-    top: -13px;
+    top: -18px;
     right: 8px;
     user-select: none;
 
@@ -71,14 +71,4 @@ limitations under the License.
 
 .mx_MessageActionBar_optionsButton::after {
     mask-image: url('$(res)/img/icon_context.svg');
-}
-
-.mx_MessageActionBar_reactionDimension {
-    width: 42px;
-    display: flex;
-    justify-content: space-evenly;
-}
-
-.mx_MessageActionBar_reactionDisabled {
-    opacity: 0.4;
 }
