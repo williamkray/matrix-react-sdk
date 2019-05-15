@@ -148,7 +148,7 @@ const EntityTile = React.createClass({
             }
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto">
+                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>
                         { name }
                     </EmojiText>
                     {presenceLabel}
