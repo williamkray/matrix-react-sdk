@@ -1031,7 +1031,6 @@ module.exports = withMatrixClient(React.createClass({
         }
 
         const GeminiScrollbarWrapper = sdk.getComponent("elements.GeminiScrollbarWrapper");
-        const EmojiText = sdk.getComponent('elements.EmojiText');
 
         let backButton;
         if (this.props.member.roomId) {
@@ -1046,7 +1045,7 @@ module.exports = withMatrixClient(React.createClass({
                     <div className="mx_MemberInfo_name">
                         { backButton }
                         { e2eIconElement }
-                        <EmojiText element="h2">{ memberName }</EmojiText>
+                        <h2>{ memberName }</h2>
                     </div>
                     { avatarElement }
                     <div className="mx_MemberInfo_container">

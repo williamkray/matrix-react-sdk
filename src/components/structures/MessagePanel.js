@@ -24,6 +24,7 @@ import {wantsDateSeparator} from '../../DateUtils';
 import sdk from '../../index';
 
 import MatrixClientPeg from '../../MatrixClientPeg';
+import SettingsStore from '../../settings/SettingsStore';
 
 const CONTINUATION_MAX_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const continuedTypes = ['m.sticker', 'm.room.message'];
@@ -248,6 +249,10 @@ module.exports = React.createClass({
             return false; // ignored = no show (only happens if the ignore happens after an event was received)
         }
 
+        if (SettingsStore.getValue("showHiddenEventsInTimeline")) {
+            return true;
+        }
+
         const EventTile = sdk.getComponent('rooms.EventTile');
         if (!EventTile.haveTileForEvent(mxEv)) {
             return false; // no tile = no show
@@ -453,6 +458,7 @@ module.exports = React.createClass({
         const DateSeparator = sdk.getComponent('messages.DateSeparator');
         const ret = [];
 
+        const isEditing = this.props.editEvent && this.props.editEvent.getId() === mxEv.getId();
         // is this a continuation of the previous message?
         let continuation = false;
 
@@ -521,12 +527,14 @@ module.exports = React.createClass({
                 <EventTile mxEvent={mxEv}
                     continuation={continuation}
                     isRedacted={mxEv.isRedacted()}
+                    replacingEventId={mxEv.replacingEventId()}
+                    isEditing={isEditing}
                     onHeightChanged={this._onHeightChanged}
                     readReceipts={readReceipts}
                     readReceiptMap={this._readReceiptMap}
                     showUrlPreview={this.props.showUrlPreview}
                     checkUnmounting={this._isUnmounting}
-                    eventSendStatus={mxEv.status}
+                    eventSendStatus={mxEv.replacementOrOwnStatus()}
                     tileShape={this.props.tileShape}
                     isTwelveHour={this.props.isTwelveHour}
                     permalinkCreator={this.props.permalinkCreator}
@@ -708,7 +716,7 @@ module.exports = React.createClass({
         );
 
         let whoIsTyping;
-        if (this.props.room) {
+        if (this.props.room && !this.props.tileShape) {
             whoIsTyping = (<WhoIsTypingTile
                 room={this.props.room}
                 onShown={this._onTypingShown}

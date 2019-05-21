@@ -131,7 +131,6 @@ const EntityTile = React.createClass({
             style.color = discordColorToCssAdjust(discordMember.displayColor, getMembersBgColorForTheme());
         }
 
-        const EmojiText = sdk.getComponent('elements.EmojiText');
         if (!this.props.suppressOnHover) {
             const activeAgo = this.props.presenceLastActiveAgo ?
                 (Date.now() - (this.props.presenceLastTs - this.props.presenceLastActiveAgo)) : -1;
@@ -148,24 +147,24 @@ const EntityTile = React.createClass({
             }
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>
+                    <div className="mx_EntityTile_name" dir="auto" style={style}>
                         { name }
-                    </EmojiText>
+                    </div>
                     {presenceLabel}
                 </div>
             );
         } else if (this.props.subtextLabel) {
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>
+                    <div className="mx_EntityTile_name" dir="auto" style={style}>
                         {name}
-                    </EmojiText>
+                    </div>
                     <span className="mx_EntityTile_subtext">{this.props.subtextLabel}</span>
                 </div>
             );
         } else {
             nameEl = (
-                <EmojiText element="div" className="mx_EntityTile_name" dir="auto" style={style}>{ name }</EmojiText>
+                <div className="mx_EntityTile_name" dir="auto" style={style}>{ name }</div>
             );
         }
 
