@@ -1,7 +1,8 @@
 /*
 Copyright 2015, 2016 OpenMarket Ltd
 Copyright 2017 New Vector Ltd
-Copyright 2018 ponies.im
+Copyright 2018, 2019 ponies.im
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -142,7 +143,6 @@ module.exports = React.createClass({
             if (messageWasEdited || stoppedEditing) {
                 this._applyFormatting();
             }
-            this.calculateUrlPreview();
         }
     },
 
@@ -168,7 +168,7 @@ module.exports = React.createClass({
     calculateUrlPreview: function() {
         //console.log("calculateUrlPreview: ShowUrlPreview for %s is %s", this.props.mxEvent.getId(), this.props.showUrlPreview);
 
-        if (this.props.showUrlPreview && !this.state.links.length) {
+        if (this.props.showUrlPreview) {
             let links = this.findLinks(this.refs.content.children);
             if (links.length) {
                 // de-dup the links (but preserve ordering)

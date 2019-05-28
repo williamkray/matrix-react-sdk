@@ -28,10 +28,13 @@ async function isColrFontSupported() {
         return colrFontSupported;
     }
 
+    console.log("Checking for COLR support");
+
     // Firefox has supported COLR fonts since version 26
     // but doesn't support the check below with content blocking enabled.
     if (navigator.userAgent.includes("Firefox")) {
         colrFontSupported = true;
+        console.log("Browser is Firefox - assuming COLR is supported");
         return colrFontSupported;
     }
 
@@ -62,12 +65,15 @@ async function isColrFontSupported() {
         const wait = ms => new Promise((r, j)=>setTimeout(r, ms));
         await wait(500);
 
+        console.log("Drawing canvas to detect COLR support");
         context.drawImage(img, 0, 0);
         colrFontSupported = (context.getImageData(10, 10, 1, 1).data[0] === 200);
+        console.log("Canvas check revealed COLR is supported? " + colrFontSupported);
     } catch (e) {
-        console.error("Couldn't load colr font", e);
+        console.error("Couldn't load COLR font", e);
         colrFontSupported = false;
     }
+
     return colrFontSupported;
 }
 
@@ -77,9 +83,12 @@ export async function fixupColorFonts() {
     }
 
     if (await isColrFontSupported()) {
-        const font = new FontFace("Twemoji",
-            `url('${require("../../res/fonts/Twemoji_Mozilla/TwemojiMozilla-colr.woff2")}')`, {});
-        document.fonts.add(font);
+        const path = `url('${require("../../res/fonts/Twemoji_Mozilla/TwemojiMozilla-colr.woff2")}')`;
+        document.fonts.add(new FontFace("Twemoji", path, {}));
+        // For at least Chrome on Windows 10, we have to explictly add extra
+        // weights for the emoji to appear in bold messages, etc.
+        document.fonts.add(new FontFace("Twemoji", path, { weight: 600 }));
+        document.fonts.add(new FontFace("Twemoji", path, { weight: 700 }));
     }
     // if not supported, the browser will fall back to one of the native fonts specified.
 }

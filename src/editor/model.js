@@ -1,5 +1,6 @@
 /*
 Copyright 2019 New Vector Ltd
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -231,8 +232,9 @@ export default class EditorModel {
                     index += 1;
                     this._insertPart(index, splitPart);
                 }
-            } else {
-                // not-editable, insert str after this part
+            } else if (offset !== 0) {
+                // not-editable part, caret is not at start,
+                // so insert str after this part
                 addLen += part.text.length - offset;
                 index += 1;
             }

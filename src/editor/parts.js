@@ -1,5 +1,6 @@
 /*
 Copyright 2019 New Vector Ltd
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -312,8 +313,16 @@ export class PillCandidatePart extends PlainPart {
         return this._autoCompleteCreator(updateCallback);
     }
 
-    acceptsInsertion(chr) {
-        return true;
+    acceptsInsertion(chr, i) {
+        if ((this.text.length + i) === 0) {
+            return true;
+        } else {
+            return super.acceptsInsertion(chr, i);
+        }
+    }
+
+    merge() {
+        return false;
     }
 
     acceptsRemoval(position, chr) {
