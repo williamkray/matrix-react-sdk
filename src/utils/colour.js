@@ -75,7 +75,7 @@ export function textToHtmlRainbowBar(str) {
             r.toString(16).padStart(2, "0") +
             g.toString(16).padStart(2, "0") +
             b.toString(16).padStart(2, "0") +
-            ' data-mx-bg-color="#'+
+            '" data-mx-bg-color="#'+
             r.toString(16).padStart(2, "0") +
             g.toString(16).padStart(2, "0") +
             b.toString(16).padStart(2, "0") +
