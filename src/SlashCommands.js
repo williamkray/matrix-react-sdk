@@ -31,7 +31,7 @@ import MultiInviter from './utils/MultiInviter';
 import { linkifyAndSanitizeHtml } from './HtmlUtils';
 import QuestionDialog from "./components/views/dialogs/QuestionDialog";
 import WidgetUtils from "./utils/WidgetUtils";
-import {textToHtmlRainbow} from "./utils/colour";
+import {textToHtmlRainbow, textToHtmlRainbowBar} from "./utils/colour";
 import Promise from "bluebird";
 
 class Command {
@@ -773,6 +773,16 @@ export const CommandMap = {
         },
     }),
 
+    rainbowbar: new Command({
+        name: "rainbowbar",
+        description: _td("Sends the given message coloured as a rainbow"),
+        args: '<message>',
+        runFn: function(roomId, args) {
+            if (!args) return reject(this.getUserId());
+            return success(MatrixClientPeg.get().sendHtmlMessage(roomId, args, textToHtmlRainbowBar(args)));
+        },
+    }),
+
     rainbowme: new Command({
         name: "rainbowme",
         description: _td("Sends the given emote coloured as a rainbow"),
@@ -782,6 +792,17 @@ export const CommandMap = {
             return success(MatrixClientPeg.get().sendHtmlEmote(roomId, args, textToHtmlRainbow(args)));
         },
     }),
+
+    rainbowbarme: new Command({
+        name: "rainbowbarme",
+        description: _td("Sends the given emote coloured as a rainbow"),
+        args: '<message>',
+        runFn: function(roomId, args) {
+            if (!args) return reject(this.getUserId());
+            return success(MatrixClientPeg.get().sendHtmlEmote(roomId, args, textToHtmlRainbowBar(args)));
+        },
+    }),
+
 };
 /* eslint-enable babel/no-invalid-this */
 
