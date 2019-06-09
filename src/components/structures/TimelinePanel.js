@@ -207,6 +207,8 @@ const TimelinePanel = React.createClass({
         MatrixClientPeg.get().on("Room.timeline", this.onRoomTimeline);
         MatrixClientPeg.get().on("Room.timelineReset", this.onRoomTimelineReset);
         MatrixClientPeg.get().on("Room.redaction", this.onRoomRedaction);
+        // same event handler as Room.redaction as for both we just do forceUpdate
+        MatrixClientPeg.get().on("Room.redactionCancelled", this.onRoomRedaction);
         MatrixClientPeg.get().on("Room.receipt", this.onRoomReceipt);
         MatrixClientPeg.get().on("Room.localEchoUpdated", this.onLocalEchoUpdated);
         MatrixClientPeg.get().on("Room.accountData", this.onAccountData);
@@ -286,6 +288,7 @@ const TimelinePanel = React.createClass({
             client.removeListener("Room.timeline", this.onRoomTimeline);
             client.removeListener("Room.timelineReset", this.onRoomTimelineReset);
             client.removeListener("Room.redaction", this.onRoomRedaction);
+            client.removeListener("Room.redactionCancelled", this.onRoomRedaction);
             client.removeListener("Room.receipt", this.onRoomReceipt);
             client.removeListener("Room.localEchoUpdated", this.onLocalEchoUpdated);
             client.removeListener("Room.accountData", this.onAccountData);
@@ -613,6 +616,8 @@ const TimelinePanel = React.createClass({
     },
 
     sendReadReceipt: function() {
+        if (SettingsStore.getValue("lowBandwidth")) return;
+
         if (!this.refs.messagePanel) return;
         if (!this.props.manageReadReceipts) return;
         // This happens on user_activity_end which is delayed, and it's
@@ -646,6 +651,7 @@ const TimelinePanel = React.createClass({
 
         const lastReadEventIndex = this._getLastDisplayedEventIndex({
             ignoreOwn: true,
+            allowEventsWithoutTiles: true,
         });
         if (lastReadEventIndex === null) {
             shouldSendRR = false;
@@ -1109,14 +1115,18 @@ const TimelinePanel = React.createClass({
         const ignoreOwn = opts.ignoreOwn || false;
         const ignoreEchoes = opts.ignoreEchoes || false;
         const allowPartial = opts.allowPartial || false;
+        const allowEventsWithoutTiles = opts.allowEventsWithoutTiles || false;
 
         const messagePanel = this.refs.messagePanel;
         if (messagePanel === undefined) return null;
 
+        const EventTile = sdk.getComponent('rooms.EventTile');
+
         const wrapperRect = ReactDOM.findDOMNode(messagePanel).getBoundingClientRect();
         const myUserId = MatrixClientPeg.get().credentials.userId;
 
-        for (let i = this.state.events.length-1; i >= 0; --i) {
+        let lastDisplayedIndex = null;
+        for (let i = this.state.events.length - 1; i >= 0; --i) {
             const ev = this.state.events[i];
 
             if (ignoreOwn && ev.sender && ev.sender.userId == myUserId) {
@@ -1134,10 +1144,34 @@ const TimelinePanel = React.createClass({
             const boundingRect = node.getBoundingClientRect();
             if ((allowPartial && boundingRect.top < wrapperRect.bottom) ||
                 (!allowPartial && boundingRect.bottom < wrapperRect.bottom)) {
-                return i;
+                lastDisplayedIndex = i;
+                break;
             }
         }
-        return null;
+
+        if (lastDisplayedIndex === null) {
+            return null;
+        }
+
+        // If events without tiles are allowed, then we walk forward from the
+        // the last displayed event and advance the index for any events without
+        // tiles that immediately follow it.
+        // XXX: We could track the last event without a tile after the last
+        // displayed event in the loop above so that we only do a single pass
+        // through the loop, which would be more efficient. Using two passes is
+        // easier to reason about, so let's start there and optimise later if
+        // needed.
+        if (allowEventsWithoutTiles) {
+            for (let i = lastDisplayedIndex + 1; i < this.state.events.length; i++) {
+                const ev = this.state.events[i];
+                if (EventTile.haveTileForEvent(ev)) {
+                    break;
+                }
+                lastDisplayedIndex = i;
+            }
+        }
+
+        return lastDisplayedIndex;
     },
 
     /**

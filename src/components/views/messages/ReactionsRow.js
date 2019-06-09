@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
 
 import sdk from '../../../index';
 import { isContentActionable } from '../../../utils/EventUtils';
+import { isSingleEmoji } from '../../../HtmlUtils';
 import MatrixClientPeg from '../../../MatrixClientPeg';
 
 export default class ReactionsRow extends React.PureComponent {
@@ -103,6 +104,9 @@ export default class ReactionsRow extends React.PureComponent {
 
         const ReactionsRowButton = sdk.getComponent('messages.ReactionsRowButton');
         const items = reactions.getSortedAnnotationsByKey().map(([content, events]) => {
+            if (!isSingleEmoji(content)) {
+                return null;
+            }
             const count = events.size;
             if (!count) {
                 return null;
@@ -116,6 +120,7 @@ export default class ReactionsRow extends React.PureComponent {
             return <ReactionsRowButton
                 key={content}
                 content={content}
+                count={count}
                 mxEvent={mxEvent}
                 reactionEvents={events}
                 myReactionEvent={myReactionEvent}

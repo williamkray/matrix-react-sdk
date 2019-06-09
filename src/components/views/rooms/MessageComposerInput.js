@@ -482,6 +482,7 @@ export default class MessageComposerInput extends React.Component {
 
     sendTyping(isTyping) {
         if (!SettingsStore.getValue('sendTypingNotifications')) return;
+        if (SettingsStore.getValue('lowBandwidth')) return;
         MatrixClientPeg.get().sendTyping(
             this.props.room.roomId,
             this.isTyping, TYPING_SERVER_TIMEOUT,
@@ -539,21 +540,24 @@ export default class MessageComposerInput extends React.Component {
                 // The first matched group includes just the matched plaintext emoji
                 const emoticonMatch = REGEX_EMOTICON_WHITESPACE.exec(text.slice(0, currentStartOffset));
                 if (emoticonMatch) {
-                    const data = EMOJIBASE.find(e => e.emoticon === emoticonMatch[1]);
-                    const unicodeEmoji = data ? data.unicode : '';
+                    const query = emoticonMatch[1].toLowerCase().replace("-", "");
+                    const data = EMOJIBASE.find(e => e.emoticon ? e.emoticon.toLowerCase() === query : false);
 
-                    const range = Range.create({
-                        anchor: {
-                            key: editorState.startText.key,
-                            offset: currentStartOffset - emoticonMatch[1].length - 1,
-                        },
-                        focus: {
-                            key: editorState.startText.key,
-                            offset: currentStartOffset - 1,
-                        },
-                    });
-                    change = change.insertTextAtRange(range, unicodeEmoji);
-                    editorState = change.value;
+                    // only perform replacement if we found a match, otherwise we would be not letting user type
+                    if (data) {
+                        const range = Range.create({
+                            anchor: {
+                                key: editorState.startText.key,
+                                offset: currentStartOffset - emoticonMatch[1].length - 1,
+                            },
+                            focus: {
+                                key: editorState.startText.key,
+                                offset: currentStartOffset - 1,
+                            },
+                        });
+                        change = change.insertTextAtRange(range, data.unicode);
+                        editorState = change.value;
+                    }
                 }
             }
         }
@@ -993,6 +997,12 @@ export default class MessageComposerInput extends React.Component {
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         if (ev.shiftKey || (isMac && ev.altKey)) {
             return change.insertText('\n');
+        }
+
+        if (this.autocomplete.hasSelection()) {
+            this.autocomplete.hide();
+            ev.preventDefault();
+            return true;
         }
 
         const editorState = this.state.editorState;
