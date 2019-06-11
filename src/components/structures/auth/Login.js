@@ -26,6 +26,7 @@ import Login from '../../../Login';
 import SdkConfig from '../../../SdkConfig';
 import { messageForResourceLimitError } from '../../../utils/ErrorUtils';
 import AutoDiscoveryUtils, {ValidatedServerConfig} from "../../../utils/AutoDiscoveryUtils";
+import classNames from "classnames";
 
 // For validating phone numbers without country codes
 const PHONE_NUMBER_REGEX = /^[0-9()\-\s]*$/;
@@ -100,6 +101,7 @@ module.exports = React.createClass({
             // that we can render it differently, and override any other error the user may
             // be seeing.
             serverIsAlive: true,
+            serverErrorIsFatal: false,
             serverDeadError: "",
         };
     },
@@ -239,7 +241,7 @@ module.exports = React.createClass({
         const doWellknownLookup = username[0] === "@";
         this.setState({
             username: username,
-            busy: doWellknownLookup, // unset later by the result of onServerConfigChange
+            busy: doWellknownLookup,
             errorText: null,
             canTryLogin: true,
         });
@@ -248,6 +250,16 @@ module.exports = React.createClass({
             try {
                 const result = await AutoDiscoveryUtils.validateServerName(serverName);
                 this.props.onServerConfigChange(result);
+                // We'd like to rely on new props coming in via `onServerConfigChange`
+                // so that we know the servers have definitely updated before clearing
+                // the busy state. In the case of a full MXID that resolves to the same
+                // HS as Riot's default HS though, there may not be any server change.
+                // To avoid this trap, we clear busy here. For cases where the server
+                // actually has changed, `_initLoginLogic` will be called and manages
+                // busy state for its own liveness check.
+                this.setState({
+                    busy: false,
+                });
             } catch (e) {
                 console.error("Problem parsing URL or unhandled error doing .well-known discovery:", e);
 
@@ -349,7 +361,9 @@ module.exports = React.createClass({
                 busy: false,
                 ...AutoDiscoveryUtils.authComponentStateForError(e),
             });
-            return; // Server is dead - do not continue.
+            if (this.state.serverErrorIsFatal) {
+                return; // Server is dead - do not continue.
+            }
         }
 
         loginLogic.getFlows().then((flows) => {
@@ -561,8 +575,13 @@ module.exports = React.createClass({
 
         let serverDeadSection;
         if (!this.state.serverIsAlive) {
+            const classes = classNames({
+                "mx_Login_error": true,
+                "mx_Login_serverError": true,
+                "mx_Login_serverErrorNonFatal": !this.state.serverErrorIsFatal,
+            });
             serverDeadSection = (
-                <div className="mx_Login_error mx_Login_serverError">
+                <div className={classes}>
                     {this.state.serverDeadError}
                 </div>
             );

@@ -27,6 +27,7 @@ import SdkConfig from '../../../SdkConfig';
 import { messageForResourceLimitError } from '../../../utils/ErrorUtils';
 import * as ServerType from '../../views/auth/ServerTypeSelector';
 import AutoDiscoveryUtils, {ValidatedServerConfig} from "../../../utils/AutoDiscoveryUtils";
+import classNames from "classnames";
 
 // Phases
 // Show controls to configure server details
@@ -85,7 +86,12 @@ module.exports = React.createClass({
             // that we can render it differently, and override any other error the user may
             // be seeing.
             serverIsAlive: true,
+            serverErrorIsFatal: false,
             serverDeadError: "",
+
+            // Our matrix client - part of state because we can't render the UI auth
+            // component without it.
+            matrixClient: null,
         };
     },
 
@@ -157,6 +163,9 @@ module.exports = React.createClass({
     _replaceClient: async function(serverConfig) {
         this.setState({
             errorText: null,
+            // busy while we do liveness check (we need to avoid trying to render
+            // the UI auth component while we don't have a matrix client)
+            busy: true,
         });
         if (!serverConfig) serverConfig = this.props.serverConfig;
 
@@ -168,15 +177,23 @@ module.exports = React.createClass({
             );
             this.setState({serverIsAlive: true});
         } catch (e) {
-            this.setState(AutoDiscoveryUtils.authComponentStateForError(e));
-            return; // Server is dead - do not continue.
+            this.setState({
+                busy: false,
+                ...AutoDiscoveryUtils.authComponentStateForError(e, "register"),
+            });
+            if (this.state.serverErrorIsFatal) {
+                return; // Server is dead - do not continue.
+            }
         }
 
         const {hsUrl, isUrl} = serverConfig;
-        this._matrixClient = Matrix.createClient({
-            baseUrl: hsUrl,
-            idBaseUrl: isUrl,
+        this.setState({
+            matrixClient: Matrix.createClient({
+                baseUrl: hsUrl,
+                idBaseUrl: isUrl,
+            }),
         });
+        this.setState({busy: false});
         try {
             await this._makeRegisterRequest({});
             // This should never succeed since we specified an empty
@@ -209,14 +226,14 @@ module.exports = React.createClass({
     },
 
     _requestEmailToken: function(emailAddress, clientSecret, sendAttempt, sessionId) {
-        return this._matrixClient.requestRegisterEmailToken(
+        return this.state.matrixClient.requestRegisterEmailToken(
             emailAddress,
             clientSecret,
             sendAttempt,
             this.props.makeRegistrationUrl({
                 client_secret: clientSecret,
-                hs_url: this._matrixClient.getHomeserverUrl(),
-                is_url: this._matrixClient.getIdentityServerUrl(),
+                hs_url: this.state.matrixClient.getHomeserverUrl(),
+                is_url: this.state.matrixClient.getIdentityServerUrl(),
                 session_id: sessionId,
             }),
         );
@@ -274,8 +291,8 @@ module.exports = React.createClass({
         const cli = await this.props.onLoggedIn({
             userId: response.user_id,
             deviceId: response.device_id,
-            homeserverUrl: this._matrixClient.getHomeserverUrl(),
-            identityServerUrl: this._matrixClient.getIdentityServerUrl(),
+            homeserverUrl: this.state.matrixClient.getHomeserverUrl(),
+            identityServerUrl: this.state.matrixClient.getIdentityServerUrl(),
             accessToken: response.access_token,
         });
 
@@ -344,7 +361,7 @@ module.exports = React.createClass({
             msisdn: true,
         } : {};
 
-        return this._matrixClient.register(
+        return this.state.matrixClient.register(
             this.state.formVals.username,
             this.state.formVals.password,
             undefined, // session id: included in the auth dict already
@@ -429,9 +446,9 @@ module.exports = React.createClass({
         const Spinner = sdk.getComponent('elements.Spinner');
         const RegistrationForm = sdk.getComponent('auth.RegistrationForm');
 
-        if (this.state.doingUIAuth) {
+        if (this.state.matrixClient && this.state.doingUIAuth) {
             return <InteractiveAuth
-                matrixClient={this._matrixClient}
+                matrixClient={this.state.matrixClient}
                 makeRequest={this._makeRegisterRequest}
                 onAuthFinished={this._onUIAuthFinished}
                 inputs={this._getUIAuthInputs()}
@@ -441,6 +458,8 @@ module.exports = React.createClass({
                 emailSid={this.props.idSid}
                 poll={true}
             />;
+        } else if (!this.state.matrixClient && !this.state.busy) {
+            return null;
         } else if (this.state.busy || !this.state.flows) {
             return <div className="mx_AuthBody_spinner">
                 <Spinner />
@@ -467,7 +486,7 @@ module.exports = React.createClass({
                 onEditServerDetailsClick={onEditServerDetailsClick}
                 flows={this.state.flows}
                 serverConfig={this.props.serverConfig}
-                canSubmit={this.state.serverIsAlive}
+                canSubmit={this.state.serverIsAlive && !this.state.serverErrorIsFatal}
             />;
         }
     },
@@ -485,8 +504,13 @@ module.exports = React.createClass({
 
         let serverDeadSection;
         if (!this.state.serverIsAlive) {
+            const classes = classNames({
+                "mx_Login_error": true,
+                "mx_Login_serverError": true,
+                "mx_Login_serverErrorNonFatal": !this.state.serverErrorIsFatal,
+            });
             serverDeadSection = (
-                <div className="mx_Login_error mx_Login_serverError">
+                <div className={classes}>
                     {this.state.serverDeadError}
                 </div>
             );
