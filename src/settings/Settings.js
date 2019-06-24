@@ -129,7 +129,7 @@ export const SETTINGS = {
         isFeature: true,
         displayName: _td("Disable Ponymotes"),
         supportedLevels: LEVELS_FEATURE,
-        default: false,
+        default: true,
     },
     "feature_disable_mutant_standard": {
         isFeature: true,
@@ -147,7 +147,7 @@ export const SETTINGS = {
         isFeature: true,
         displayName: _td("Message Pinning"),
         supportedLevels: LEVELS_FEATURE,
-        default: false,
+        default: true,
     },
     "feature_custom_status": {
         isFeature: true,
@@ -176,13 +176,13 @@ export const SETTINGS = {
         isFeature: true,
         displayName: _td("Edit messages after they have been sent (refresh to apply changes)"),
         supportedLevels: LEVELS_FEATURE,
-        default: false,
+        default: true,
     },
     "feature_reactions": {
         isFeature: true,
         displayName: _td("React to messages with emoji (refresh to apply changes)"),
         supportedLevels: LEVELS_FEATURE,
-        default: false,
+        default: true,
     },
     "MessageComposerInput.suggestEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
