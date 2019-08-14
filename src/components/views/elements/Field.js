@@ -18,7 +18,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import sdk from '../../../index';
-import { throttle } from 'lodash';
+import { debounce } from 'lodash';
 
 // Invoke validation from user input (when typing, etc.) at most once every N ms.
 const VALIDATION_THROTTLE_MS = 200;
@@ -46,6 +46,9 @@ export default class Field extends React.PureComponent {
         // and a `feedback` react component field to provide feedback
         // to the user.
         onValidate: PropTypes.func,
+        // If specified, contents will appear as a tooltip on the element and
+        // validation feedback tooltips will be suppressed.
+        tooltipContent: PropTypes.node,
         // All other props pass through to the <input>.
     };
 
@@ -118,14 +121,23 @@ export default class Field extends React.PureComponent {
         }
     }
 
-    validateOnChange = throttle(() => {
+    /*
+     * This was changed from throttle to debounce: this is more traditional for
+     * form validation since it means that the validation doesn't happen at all
+     * until the user stops typing for a bit (debounce defaults to not running on
+     * the leading edge). If we're doing an HTTP hit on each validation, we have more
+     * incentive to prevent validating input that's very unlikely to be valid.
+     * We may find that we actually want different behaviour for registration
+     * fields, in which case we can add some options to control it.
+     */
+    validateOnChange = debounce(() => {
         this.validate({
             focused: true,
         });
     }, VALIDATION_THROTTLE_MS);
 
     render() {
-        const { element, prefix, onValidate, children, ...inputProps } = this.props;
+        const { element, prefix, onValidate, children, tooltipContent, ...inputProps } = this.props;
 
         const inputElement = element || "input";
 
@@ -156,12 +168,12 @@ export default class Field extends React.PureComponent {
 
         // Handle displaying feedback on validity
         const Tooltip = sdk.getComponent("elements.Tooltip");
-        let tooltip;
-        if (this.state.feedback) {
-            tooltip = <Tooltip
+        let fieldTooltip;
+        if (tooltipContent || this.state.feedback) {
+            fieldTooltip = <Tooltip
                 tooltipClassName="mx_Field_tooltip"
                 visible={this.state.feedbackVisible}
-                label={this.state.feedback}
+                label={tooltipContent || this.state.feedback}
             />;
         }
 
@@ -169,7 +181,7 @@ export default class Field extends React.PureComponent {
             {prefixContainer}
             {fieldInput}
             <label htmlFor={this.props.id}>{this.props.label}</label>
-            {tooltip}
+            {fieldTooltip}
         </div>;
     }
 }

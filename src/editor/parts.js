@@ -69,7 +69,7 @@ class BasePart {
 
     // inserts str at offset if all the characters in str were accepted, otherwise don't do anything
     // return whether the str was accepted or not.
-    insertAll(offset, str) {
+    validateAndInsert(offset, str) {
         for (let i = 0; i < str.length; ++i) {
             const chr = str.charAt(i);
             if (!this.acceptsInsertion(chr)) {
@@ -80,6 +80,16 @@ class BasePart {
         const afterInsert = this._text.substr(offset);
         this._text = beforeInsert + str + afterInsert;
         return true;
+    }
+
+    insert(offset, str) {
+        if (this.canEdit) {
+            const beforeInsert = this._text.substr(0, offset);
+            const afterInsert = this._text.substr(offset);
+            this._text = beforeInsert + str + afterInsert;
+            return true;
+        }
+        return false;
     }
 
     createAutoComplete() {}
@@ -107,7 +117,8 @@ class BasePart {
     }
 }
 
-class PlainPart extends BasePart {
+// exported for unit tests, should otherwise only be used through PartCreator
+export class PlainPart extends BasePart {
     acceptsInsertion(chr) {
         return chr !== "@" && chr !== "#" && chr !== ":" && chr !== "\n";
     }
@@ -314,7 +325,7 @@ class PillCandidatePart extends PlainPart {
     }
 
     createAutoComplete(updateCallback) {
-        return this._autoCompleteCreator(updateCallback);
+        return this._autoCompleteCreator.create(updateCallback);
     }
 
     acceptsInsertion(chr, i) {
@@ -338,18 +349,28 @@ class PillCandidatePart extends PlainPart {
     }
 }
 
-export class PartCreator {
-    constructor(getAutocompleterComponent, updateQuery, room, client) {
-        this._room = room;
-        this._client = client;
-        this._autoCompleteCreator = (updateCallback) => {
+export function autoCompleteCreator(getAutocompleterComponent, updateQuery) {
+    return (partCreator) => {
+        return (updateCallback) => {
             return new AutocompleteWrapperModel(
                 updateCallback,
                 getAutocompleterComponent,
                 updateQuery,
-                this,
+                partCreator,
             );
         };
+    };
+}
+
+export class PartCreator {
+    constructor(room, client, autoCompleteCreator) {
+        this._room = room;
+        this._client = client;
+        this._autoCompleteCreator = {create: autoCompleteCreator && autoCompleteCreator(this)};
+    }
+
+    setAutoCompleteCreator(autoCompleteCreator) {
+        this._autoCompleteCreator.create = autoCompleteCreator(this);
     }
 
     createPartForInput(input) {

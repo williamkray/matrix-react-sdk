@@ -18,9 +18,8 @@ limitations under the License.
 import React from 'react';
 import PropTypes from 'prop-types';
 import sdk from '../../../index';
-import ScalarAuthClient from '../../../ScalarAuthClient';
-import Modal from "../../../Modal";
 import { _t } from '../../../languageHandler';
+import {IntegrationManagers} from "../../../integrations/IntegrationManagers";
 
 export default class ManageIntegsButton extends React.Component {
     constructor(props) {
@@ -30,15 +29,17 @@ export default class ManageIntegsButton extends React.Component {
     onManageIntegrations = (ev) => {
         ev.preventDefault();
 
-        const IntegrationsManager = sdk.getComponent("views.settings.IntegrationsManager");
-        Modal.createDialog(IntegrationsManager, {
-            room: this.props.room,
-        }, "mx_IntegrationsManager");
+        const managers = IntegrationManagers.sharedInstance();
+        if (!managers.hasManager()) {
+            managers.openNoManagerDialog();
+        } else {
+            managers.getPrimaryManager().open(this.props.room);
+        }
     };
 
     render() {
         let integrationsButton = <div />;
-        if (ScalarAuthClient.isPossible()) {
+        if (IntegrationManagers.sharedInstance().hasManager()) {
             const AccessibleButton = sdk.getComponent("elements.AccessibleButton");
             integrationsButton = (
                 <AccessibleButton

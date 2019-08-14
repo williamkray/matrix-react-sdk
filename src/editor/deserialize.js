@@ -17,6 +17,7 @@ limitations under the License.
 
 import { MATRIXTO_URL_PATTERN } from '../linkify-matrix';
 import { walkDOMDepthFirst } from "./dom";
+import { checkBlockNode } from "../HtmlUtils";
 
 const REGEX_MATRIXTO = new RegExp(MATRIXTO_URL_PATTERN);
 
@@ -118,21 +119,6 @@ function checkDecendInto(node) {
     }
 }
 
-function checkBlockNode(node) {
-    switch (node.nodeName) {
-        case "PRE":
-        case "BLOCKQUOTE":
-        case "DIV":
-        case "P":
-        case "UL":
-        case "OL":
-        case "LI":
-            return true;
-        default:
-            return false;
-    }
-}
-
 function checkIgnored(n) {
     if (n.nodeType === Node.TEXT_NODE) {
         // riot adds \n text nodes in a lot of places,
@@ -206,8 +192,11 @@ function parseHtmlMessage(html, partCreator) {
         if (lastNode && lastNode.nodeName === "BLOCKQUOTE") {
             parts.push(partCreator.newline());
         }
-        lastNode = null;
-        return checkDecendInto(n);
+        const decend = checkDecendInto(n);
+        // when not decending (like for PRE), onNodeLeave won't be called to set lastNode
+        // so do that here.
+        lastNode = decend ? null : n;
+        return decend;
     }
 
     function onNodeLeave(n) {

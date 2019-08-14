@@ -42,7 +42,7 @@ export default class UserSettingsDialog extends React.Component {
         tabs.push(new Tab(
             _td("General"),
             "mx_UserSettingsDialog_settingsIcon",
-            <GeneralUserSettingsTab />,
+            <GeneralUserSettingsTab closeSettingsFn={this.props.onFinished} />,
         ));
         tabs.push(new Tab(
             _td("Flair"),

@@ -29,6 +29,7 @@ import { _t } from '../../../languageHandler';
 import WidgetUtils from '../../../utils/WidgetUtils';
 import WidgetEchoStore from "../../../stores/WidgetEchoStore";
 import AccessibleButton from '../elements/AccessibleButton';
+import {IntegrationManagers} from "../../../integrations/IntegrationManagers";
 
 // The maximum number of widgets that can be added in a room
 const MAX_WIDGETS = 2;
@@ -43,10 +44,10 @@ module.exports = React.createClass({
         hide: PropTypes.bool, // If rendered, should apps drawer be visible
     },
 
-    defaultProps: {
+    getDefaultProps: () => ({
         showApps: true,
         hide: false,
-    },
+    }),
 
     getInitialState: function() {
         return {
@@ -127,11 +128,7 @@ module.exports = React.createClass({
     },
 
     _launchManageIntegrations: function() {
-        const IntegrationsManager = sdk.getComponent('views.settings.IntegrationsManager');
-        Modal.createTrackedDialog('Integrations Manager', '', IntegrationsManager, {
-            room: this.props.room,
-            screen: 'add_integ',
-        }, 'mx_IntegrationsManager');
+        IntegrationManagers.sharedInstance().getPrimaryManager().open(this.props.room, 'add_integ');
     },
 
     onClickAddWidget: function(e) {

@@ -18,7 +18,7 @@ import React from 'react';
 import {AutoDiscovery} from "matrix-js-sdk";
 import {_t, _td, newTranslatableError} from "../languageHandler";
 import {makeType} from "./TypeUtils";
-import SdkConfig from "../SdkConfig";
+import SdkConfig from '../SdkConfig';
 
 const LIVELINESS_DISCOVERY_ERRORS = [
     AutoDiscovery.ERROR_INVALID_HOMESERVER,
@@ -31,7 +31,6 @@ export class ValidatedServerConfig {
     hsNameIsDifferent: string;
 
     isUrl: string;
-    identityEnabled: boolean;
 
     isDefault: boolean;
 }
@@ -67,7 +66,7 @@ export default class AutoDiscoveryUtils {
                 {}, {
                     a: (sub) => {
                         return <a
-                            href="https://github.com/vector-im/riot-web#configjson"
+                            href="https://github.com/vector-im/riot-web/blob/master/docs/config.md"
                             target="_blank"
                             rel="noopener"
                         >{sub}</a>;
@@ -135,10 +134,13 @@ export default class AutoDiscoveryUtils {
             "m.homeserver": {
                 base_url: homeserverUrl,
             },
-            "m.identity_server": {
-                base_url: identityUrl,
-            },
         };
+
+        if (identityUrl) {
+            wellknownConfig['m.identity_server'] = {
+                base_url: identityUrl,
+            };
+        }
 
         const result = await AutoDiscovery.fromDiscoveryConfig(wellknownConfig);
 
@@ -181,14 +183,16 @@ export default class AutoDiscoveryUtils {
         const hsResult = discoveryResult['m.homeserver'];
         const isResult = discoveryResult['m.identity_server'];
 
+        const defaultConfig = SdkConfig.get()["validated_server_config"];
+
         // Validate the identity server first because an invalid identity server causes
         // and invalid homeserver, which may not be picked up correctly.
 
-        // Note: In the cases where we rely on this pre-populated "https://vector.im" (namely
+        // Note: In the cases where we rely on the default IS from the config (namely
         // lack of identity server provided by the discovery method), we intentionally do not
-        // validate it. We already know the IS is an IS, and this helps some off-the-grid usage
+        // validate it. This has already been validated and this helps some off-the-grid usage
         // of Riot.
-        let preferredIdentityUrl = "https://vector.im";
+        let preferredIdentityUrl = defaultConfig && defaultConfig['isUrl'];
         if (isResult && isResult.state === AutoDiscovery.SUCCESS) {
             preferredIdentityUrl = isResult["base_url"];
         } else if (isResult && isResult.state !== AutoDiscovery.PROMPT) {
@@ -236,7 +240,6 @@ export default class AutoDiscoveryUtils {
             hsName: preferredHomeserverName,
             hsNameIsDifferent: url.hostname !== preferredHomeserverName,
             isUrl: preferredIdentityUrl,
-            identityEnabled: !SdkConfig.get()['disable_identity_server'],
             isDefault: false,
         });
     }
