@@ -24,6 +24,7 @@ the Cooperative Software License as distributed with this project.
 */
 
 import React from 'react';
+import createReactClass from 'create-react-class';
 import { _t } from '../../../languageHandler';
 import SdkConfig from '../../../SdkConfig';
 import dis from '../../../dispatcher';
@@ -39,7 +40,7 @@ const INITIAL_LOAD_NUM_DISCORD = 20;
 const INITIAL_LOAD_NUM_INVITED = 5;
 const SHOW_MORE_INCREMENT = 100;
 
-module.exports = React.createClass({
+module.exports = createReactClass({
     displayName: 'MemberList',
 
     getInitialState: function() {
@@ -520,7 +521,7 @@ module.exports = React.createClass({
         }
 
         return (
-            <div className="mx_MemberList">
+            <div className="mx_MemberList" role="tabpanel">
                 { inviteButton }
                 <AutoHideScrollbar>
                     <div className="mx_MemberList_wrapper">

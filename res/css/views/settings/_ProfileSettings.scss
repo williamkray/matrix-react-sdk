@@ -26,10 +26,6 @@ limitations under the License.
     height: 4em;
 }
 
-.mx_ProfileSettings_controls .mx_Field {
-    margin-right: 100px;
-}
-
 .mx_ProfileSettings_controls .mx_Field:first-child {
     margin-top: 0;
 }
@@ -47,7 +43,6 @@ limitations under the License.
     height: 88px;
     margin-left: 13px;
     position: relative;
-    cursor: pointer;
 }
 
 .mx_ProfileSettings_avatar > * {
@@ -75,6 +70,7 @@ limitations under the License.
     text-align: center;
     vertical-align: middle;
     font-size: 10px;
+    cursor: pointer;
 }
 
 .mx_ProfileSettings_avatar:hover .mx_ProfileSettings_avatarOverlay:not(.mx_ProfileSettings_avatarOverlay_disabled) {

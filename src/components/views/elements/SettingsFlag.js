@@ -16,11 +16,12 @@ limitations under the License.
 
 import React from "react";
 import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
 import SettingsStore from "../../../settings/SettingsStore";
 import { _t } from '../../../languageHandler';
 import ToggleSwitch from "./ToggleSwitch";
 
-module.exports = React.createClass({
+module.exports = createReactClass({
     displayName: 'SettingsFlag',
     propTypes: {
         name: PropTypes.string.isRequired,
@@ -77,7 +78,7 @@ module.exports = React.createClass({
         return (
             <div className="mx_SettingsFlag">
                 <span className="mx_SettingsFlag_label">{label}</span>
-                <ToggleSwitch checked={value} onChange={this.onChange} disabled={!canChange} />
+                <ToggleSwitch checked={value} onChange={this.onChange} disabled={!canChange} aria-label={label} />
             </div>
         );
     },

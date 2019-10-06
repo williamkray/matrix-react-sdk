@@ -17,6 +17,7 @@ limitations under the License.
 */
 
 import React from 'react';
+import createReactClass from 'create-react-class';
 import classNames from 'classnames';
 import sdk from '../../index';
 import dis from '../../dispatcher';
@@ -34,7 +35,7 @@ import {_t} from "../../languageHandler";
 // turn this on for drop & drag console debugging galore
 const debug = false;
 
-const RoomSubList = React.createClass({
+const RoomSubList = createReactClass({
     displayName: 'RoomSubList',
 
     debug: debug,
@@ -257,7 +258,7 @@ const RoomSubList = React.createClass({
         const tabindex = this.props.isFiltered ? "0" : "-1";
         return (
             <div className="mx_RoomSubList_labelContainer" title={ title } ref="header">
-                <AccessibleButton onClick={ this.onClick } className="mx_RoomSubList_label" tabIndex={tabindex}>
+                <AccessibleButton onClick={this.onClick} className="mx_RoomSubList_label" tabIndex={tabindex} aria-expanded={!isCollapsed}>
                     { chevron }
                     <span>{this.props.label}</span>
                     { incomingCall }
@@ -306,11 +307,11 @@ const RoomSubList = React.createClass({
             });
 
             if (isCollapsed) {
-                return <div ref="subList" className={subListClasses}>
+                return <div ref="subList" className={subListClasses} role="group" aria-label={this.props.label}>
                     {this._getHeaderJsx(isCollapsed)}
                 </div>;
             } else if (this._canUseLazyListRendering()) {
-                return <div ref="subList" className={subListClasses}>
+                return <div ref="subList" className={subListClasses} role="group" aria-label={this.props.label}>
                     {this._getHeaderJsx(isCollapsed)}
                     <IndicatorScrollbar ref="scroller" className="mx_RoomSubList_scroll" onScroll={ this._onScroll }>
                         <LazyRenderList
@@ -324,7 +325,7 @@ const RoomSubList = React.createClass({
             } else {
                 const roomTiles = this.props.list.map(r => this.makeRoomTile(r));
                 const tiles = roomTiles.concat(this.props.extraTiles);
-                return <div ref="subList" className={subListClasses}>
+                return <div ref="subList" className={subListClasses} role="group" aria-label={this.props.label}>
                     {this._getHeaderJsx(isCollapsed)}
                     <IndicatorScrollbar ref="scroller" className="mx_RoomSubList_scroll" onScroll={ this._onScroll }>
                         { tiles }
@@ -339,7 +340,7 @@ const RoomSubList = React.createClass({
             }
 
             return (
-                <div ref="subList" className="mx_RoomSubList">
+                <div ref="subList" className="mx_RoomSubList" role="group" aria-label={this.props.label}>
                     { this._getHeaderJsx(isCollapsed) }
                     { content }
                 </div>

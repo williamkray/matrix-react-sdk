@@ -88,7 +88,9 @@ class ConsoleLogger {
         // run.
         // Example line:
         // 2017-01-18T11:23:53.214Z W Failed to set badge count
-        const line = `${ts} ${level} ${args.join(' ')}\n`;
+        let line = `${ts} ${level} ${args.join(' ')}\n`;
+        // Do some cleanup
+        line = line.replace(/token=[a-zA-Z0-9-]+/gm, 'token=xxxxx');
         // Using + really is the quickest way in JS
         // http://jsperf.com/concat-vs-plus-vs-join
         this.logs += line;
@@ -256,7 +258,7 @@ class IndexedDBLogStore {
             const objectStore = db.transaction("logs", "readonly").objectStore("logs");
 
             return new Promise((resolve, reject) => {
-                const query = objectStore.index("id").openCursor(IDBKeyRange.only(id), 'next');
+                const query = objectStore.index("id").openCursor(IDBKeyRange.only(id), 'prev');
                 let lines = '';
                 query.onerror = (event) => {
                     reject(new Error("Query failed: " + event.target.errorCode));
@@ -267,10 +269,10 @@ class IndexedDBLogStore {
                         resolve(lines);
                         return; // end of results
                     }
-                    lines += cursor.value.lines;
-                    if (lines.length >= MAX_LOG_SIZE) {
+                    if (lines.length + cursor.value.lines.length >= MAX_LOG_SIZE && lines.length > 0) {
                         resolve(lines);
                     } else {
+                        lines = cursor.value.lines + lines;
                         cursor.continue();
                     }
                 };

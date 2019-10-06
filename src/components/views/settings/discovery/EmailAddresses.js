@@ -22,7 +22,6 @@ import { _t } from "../../../../languageHandler";
 import MatrixClientPeg from "../../../../MatrixClientPeg";
 import sdk from '../../../../index';
 import Modal from '../../../../Modal';
-import IdentityAuthClient from '../../../../IdentityAuthClient';
 import AddThreepid from '../../../../AddThreepid';
 
 /*
@@ -59,7 +58,50 @@ export class EmailAddress extends React.Component {
         };
     }
 
+    componentWillReceiveProps(nextProps) {
+        const { bound } = nextProps.email;
+        this.setState({ bound });
+    }
+
     async changeBinding({ bind, label, errorTitle }) {
+        if (!await MatrixClientPeg.get().doesServerSupportSeparateAddAndBind()) {
+            return this.changeBindingTangledAddBind({ bind, label, errorTitle });
+        }
+
+        const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
+        const { medium, address } = this.props.email;
+
+        try {
+            if (bind) {
+                const task = new AddThreepid();
+                this.setState({
+                    verifying: true,
+                    continueDisabled: true,
+                    addTask: task,
+                });
+                await task.bindEmailAddress(address);
+                this.setState({
+                    continueDisabled: false,
+                });
+            } else {
+                await MatrixClientPeg.get().unbindThreePid(medium, address);
+            }
+            this.setState({ bound: bind });
+        } catch (err) {
+            console.error(`Unable to ${label} email address ${address} ${err}`);
+            this.setState({
+                verifying: false,
+                continueDisabled: false,
+                addTask: null,
+            });
+            Modal.createTrackedDialog(`Unable to ${label} email address`, '', ErrorDialog, {
+                title: errorTitle,
+                description: ((err && err.message) ? err.message : _t("Operation failed")),
+            });
+        }
+    }
+
+    async changeBindingTangledAddBind({ bind, label, errorTitle }) {
         const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
         const { medium, address } = this.props.email;
 
@@ -71,14 +113,12 @@ export class EmailAddress extends React.Component {
         });
 
         try {
-            // XXX: Unfortunately, at the moment we can't just bind via the HS
-            // in a single operation, at it will error saying the 3PID is in use
-            // even though it's in use by the current user. For the moment, we
-            // work around this by removing the 3PID from the HS and re-adding
-            // it with IS binding enabled.
-            // See https://github.com/matrix-org/matrix-doc/pull/2140/files#r311462052
             await MatrixClientPeg.get().deleteThreePid(medium, address);
-            await task.addEmailAddress(address, bind);
+            if (bind) {
+                await task.bindEmailAddress(address);
+            } else {
+                await task.addEmailAddress(address);
+            }
             this.setState({
                 continueDisabled: false,
                 bound: bind,
@@ -150,13 +190,13 @@ export class EmailAddress extends React.Component {
         let status;
         if (verifying) {
             status = <span>
-                {_t("Check your inbox, then click Continue")}
+                {_t("Verify the link in your inbox")}
                 <AccessibleButton
                     className="mx_ExistingEmailAddress_confirmBtn"
                     kind="primary_sm"
                     onClick={this.onContinueClick}
                 >
-                    {_t("Continue")}
+                    {_t("Complete")}
                 </AccessibleButton>
             </span>;
         } else if (bound) {
@@ -187,50 +227,14 @@ export class EmailAddress extends React.Component {
 }
 
 export default class EmailAddresses extends React.Component {
-    constructor() {
-        super();
-
-        this.state = {
-            loaded: false,
-            emails: [],
-        };
-    }
-
-    async componentWillMount() {
-        const client = MatrixClientPeg.get();
-        const userId = client.getUserId();
-
-        const { threepids } = await client.getThreePids();
-        const emails = threepids.filter((a) => a.medium === 'email');
-
-        if (emails.length > 0) {
-            // TODO: Handle terms agreement
-            // See https://github.com/vector-im/riot-web/issues/10522
-            const authClient = new IdentityAuthClient();
-            const identityAccessToken = await authClient.getAccessToken();
-
-            // Restructure for lookup query
-            const query = emails.map(({ medium, address }) => [medium, address]);
-            const lookupResults = await client.bulkLookupThreePids(query, identityAccessToken);
-
-            // Record which are already bound
-            for (const [medium, address, mxid] of lookupResults.threepids) {
-                if (medium !== "email" || mxid !== userId) {
-                    continue;
-                }
-                const email = emails.find(e => e.address === address);
-                if (!email) continue;
-                email.bound = true;
-            }
-        }
-
-        this.setState({ emails });
+    static propTypes = {
+        emails: PropTypes.array.isRequired,
     }
 
     render() {
         let content;
-        if (this.state.emails.length > 0) {
-            content = this.state.emails.map((e) => {
+        if (this.props.emails.length > 0) {
+            content = this.props.emails.map((e) => {
                 return <EmailAddress email={e} key={e.address} />;
             });
         } else {

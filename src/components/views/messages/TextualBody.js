@@ -22,27 +22,25 @@ These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
-'use strict';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
 import highlight from 'highlight.js';
 import * as HtmlUtils from '../../../HtmlUtils';
 import {formatDate} from '../../../DateUtils';
 import sdk from '../../../index';
 import Modal from '../../../Modal';
-import SdkConfig from '../../../SdkConfig';
 import dis from '../../../dispatcher';
 import { _t } from '../../../languageHandler';
 import * as ContextualMenu from '../../structures/ContextualMenu';
 import SettingsStore from "../../../settings/SettingsStore";
 import ReplyThread from "../elements/ReplyThread";
-import {host as matrixtoHost} from '../../../matrix-to';
 import {pillifyLinks} from '../../../utils/pillify';
 import {IntegrationManagers} from "../../../integrations/IntegrationManagers";
+import {isPermalinkHost} from "../../../utils/permalinks/Permalinks";
 
-module.exports = React.createClass({
+module.exports = createReactClass({
     displayName: 'TextualBody',
 
     propTypes: {
@@ -256,10 +254,10 @@ module.exports = React.createClass({
             const url = node.getAttribute("href");
             const host = url.match(/^https?:\/\/(.*?)(\/|$)/)[1];
 
-            // never preview matrix.to links (if anything we should give a smart
+            // never preview permalinks (if anything we should give a smart
             // preview of the room/user they point to: nobody needs to be reminded
             // what the matrix.to site looks like).
-            if (host === matrixtoHost) return false;
+            if (isPermalinkHost(host)) return false;
 
             if (node.textContent.toLowerCase().trim().startsWith(host.toLowerCase())) {
                 // it's a "foo.pl" style link

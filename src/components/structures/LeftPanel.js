@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-'use strict';
-
 import React from 'react';
+import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { MatrixClient } from 'matrix-js-sdk';
@@ -30,7 +29,7 @@ import {_t} from "../../languageHandler";
 import Analytics from "../../Analytics";
 
 
-const LeftPanel = React.createClass({
+const LeftPanel = createReactClass({
     displayName: 'LeftPanel',
 
     // NB. If you add props, don't forget to update
@@ -53,8 +52,10 @@ const LeftPanel = React.createClass({
     componentWillMount: function() {
         this.focusedElement = null;
 
-        this._settingWatchRef = SettingsStore.watchSetting(
+        this._breadcrumbsWatcherRef = SettingsStore.watchSetting(
             "breadcrumbs", null, this._onBreadcrumbsChanged);
+        this._tagPanelWatcherRef = SettingsStore.watchSetting(
+            "TagPanel.enableTagPanel", null, () => this.forceUpdate());
 
         const useBreadcrumbs = !!SettingsStore.getValue("breadcrumbs");
         Analytics.setBreadcrumbs(useBreadcrumbs);
@@ -62,7 +63,8 @@ const LeftPanel = React.createClass({
     },
 
     componentWillUnmount: function() {
-        SettingsStore.unwatchSetting(this._settingWatchRef);
+        SettingsStore.unwatchSetting(this._breadcrumbsWatcherRef);
+        SettingsStore.unwatchSetting(this._tagPanelWatcherRef);
     },
 
     shouldComponentUpdate: function(nextProps, nextState) {
@@ -80,6 +82,9 @@ const LeftPanel = React.createClass({
         }
 
         if (this.state.searchFilter !== nextState.searchFilter) {
+            return true;
+        }
+        if (this.state.searchExpanded !== nextState.searchExpanded) {
             return true;
         }
 
@@ -204,10 +209,21 @@ const LeftPanel = React.createClass({
         if (source === "keyboard") {
             dis.dispatch({action: 'focus_composer'});
         }
+        this.setState({searchExpanded: false});
     },
 
     collectRoomList: function(ref) {
         this._roomList = ref;
+    },
+
+    _onSearchFocus: function() {
+        this.setState({searchExpanded: true});
+    },
+
+    _onSearchBlur: function(event) {
+        if (event.target.value.length === 0) {
+            this.setState({searchExpanded: false});
+        }
     },
 
     render: function() {
@@ -218,6 +234,7 @@ const LeftPanel = React.createClass({
         const TopLeftMenuButton = sdk.getComponent('structures.TopLeftMenuButton');
         const SearchBox = sdk.getComponent('structures.SearchBox');
         const CallPreview = sdk.getComponent('voip.CallPreview');
+        const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
 
         const tagPanelEnabled = SettingsStore.getValue("TagPanel.enableTagPanel");
         let tagPanelContainer;
@@ -241,11 +258,23 @@ const LeftPanel = React.createClass({
             },
         );
 
+        let exploreButton;
+        if (!this.props.collapsed) {
+            exploreButton = (
+                <div className={classNames("mx_LeftPanel_explore", {"mx_LeftPanel_explore_hidden": this.state.searchExpanded})}>
+                    <AccessibleButton onClick={() => dis.dispatch({action: 'view_room_directory'})}>{_t("Explore")}</AccessibleButton>
+                </div>
+            );
+        }
+
         const searchBox = (<SearchBox
             enableRoomSearchFocus={true}
-            placeholder={ _t('Filter room names') }
+            blurredPlaceholder={ _t('Filter') }
+            placeholder={ _t('Filter rooms…') }
             onSearch={ this.onSearch }
             onCleared={ this.onSearchCleared }
+            onFocus={this._onSearchFocus}
+            onBlur={this._onSearchBlur}
             collapsed={this.props.collapsed} />);
 
         let breadcrumbs;
@@ -259,7 +288,10 @@ const LeftPanel = React.createClass({
                 <aside className={"mx_LeftPanel dark-panel"} onKeyDown={ this._onKeyDown } onFocus={ this._onFocus } onBlur={ this._onBlur }>
                     <TopLeftMenuButton collapsed={ this.props.collapsed } />
                     { breadcrumbs }
-                    { searchBox }
+                    <div className="mx_LeftPanel_exploreAndFilterRow">
+                        { exploreButton }
+                        { searchBox }
+                    </div>
                     <CallPreview ConferenceHandler={VectorConferenceHandler} />
                     <RoomList
                         ref={this.collectRoomList}

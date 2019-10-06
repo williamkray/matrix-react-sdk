@@ -20,11 +20,10 @@ These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
-'use strict';
-
-const React = require('react');
+import React from 'react';
 import PropTypes from 'prop-types';
-const sdk = require('../../../index');
+import createReactClass from 'create-react-class';
+import sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
 import { _t } from '../../../languageHandler';
 import SettingsStore from "../../../settings/SettingsStore";
@@ -59,7 +58,7 @@ function presenceClassForMember(presenceState, lastActiveAgo, showPresence) {
     }
 }
 
-const EntityTile = React.createClass({
+const EntityTile = createReactClass({
     displayName: 'EntityTile',
 
     propTypes: {

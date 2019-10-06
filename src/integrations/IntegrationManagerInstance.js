@@ -19,17 +19,37 @@ import sdk from "../index";
 import {dialogTermsInteractionCallback, TermsNotSignedError} from "../Terms";
 import type {Room} from "matrix-js-sdk";
 import Modal from '../Modal';
+import url from 'url';
+
+export const KIND_ACCOUNT = "account";
+export const KIND_CONFIG = "config";
+export const KIND_HOMESERVER = "homeserver";
 
 export class IntegrationManagerInstance {
     apiUrl: string;
     uiUrl: string;
+    kind: string;
+    id: string; // only applicable in some cases
 
-    constructor(apiUrl: string, uiUrl: string) {
+    constructor(kind: string, apiUrl: string, uiUrl: string) {
+        this.kind = kind;
         this.apiUrl = apiUrl;
         this.uiUrl = uiUrl;
 
         // Per the spec: UI URL is optional.
         if (!this.uiUrl) this.uiUrl = this.apiUrl;
+    }
+
+    get name(): string {
+        const parsed = url.parse(this.uiUrl);
+        return parsed.host;
+    }
+
+    get trimmedApiUrl(): string {
+        const parsed = url.parse(this.apiUrl);
+        parsed.pathname = '';
+        parsed.path = '';
+        return parsed.format();
     }
 
     getScalarClient(): ScalarAuthClient {

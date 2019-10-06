@@ -17,6 +17,7 @@ limitations under the License.
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from "classnames";
+import {KeyCode} from "../../../Keyboard";
 
 export default class ToggleSwitch extends React.Component {
     static propTypes = {
@@ -44,10 +45,7 @@ export default class ToggleSwitch extends React.Component {
         }
     }
 
-    _onClick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-
+    _toggle = () => {
         if (this.props.disabled) return;
 
         const newState = !this.state.checked;
@@ -57,14 +55,42 @@ export default class ToggleSwitch extends React.Component {
         }
     };
 
+    _onClick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        this._toggle();
+    };
+
+    _onKeyDown = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (e.keyCode === KeyCode.ENTER || e.keyCode === KeyCode.SPACE) {
+            this._toggle();
+        }
+    };
+
     render() {
+        // eslint-disable-next-line no-unused-vars
+        const {checked, disabled, onChange, ...props} = this.props;
+
         const classes = classNames({
             "mx_ToggleSwitch": true,
             "mx_ToggleSwitch_on": this.state.checked,
             "mx_ToggleSwitch_enabled": !this.props.disabled,
         });
         return (
-            <div className={classes} onClick={this._onClick}>
+            <div
+                {...props}
+                className={classes}
+                onClick={this._onClick}
+                onKeyDown={this._onKeyDown}
+                role="checkbox"
+                aria-checked={this.state.checked}
+                aria-disabled={disabled}
+                tabIndex={0}
+            >
                 <div className="mx_ToggleSwitch_ball" />
             </div>
         );

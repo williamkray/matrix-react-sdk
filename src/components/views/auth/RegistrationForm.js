@@ -18,6 +18,7 @@ limitations under the License.
 */
 
 import React from 'react';
+import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import sdk from '../../../index';
 import Email from '../../../email';
@@ -40,7 +41,7 @@ const PASSWORD_MIN_SCORE = 3; // safely unguessable: moderate protection from of
 /**
  * A pure UI component which displays a registration form.
  */
-module.exports = React.createClass({
+module.exports = createReactClass({
     displayName: 'RegistrationForm',
 
     propTypes: {
@@ -55,6 +56,7 @@ module.exports = React.createClass({
         flows: PropTypes.arrayOf(PropTypes.object).isRequired,
         serverConfig: PropTypes.instanceOf(ValidatedServerConfig).isRequired,
         canSubmit: PropTypes.bool,
+        serverRequiresIdServer: PropTypes.bool,
     },
 
     getDefaultProps: function() {
@@ -437,7 +439,17 @@ module.exports = React.createClass({
 
     _showEmail() {
         const haveIs = Boolean(this.props.serverConfig.isUrl);
-        if (!haveIs || !this._authStepIsUsed('m.login.email.identity')) {
+        if ((this.props.serverRequiresIdServer && !haveIs) || !this._authStepIsUsed('m.login.email.identity')) {
+            return false;
+        }
+        return true;
+    },
+
+    _showPhoneNumber() {
+        const threePidLogin = !SdkConfig.get().disable_3pid_login;
+        const haveIs = Boolean(this.props.serverConfig.isUrl);
+        const haveRequiredIs = this.props.serverRequiresIdServer && !haveIs;
+        if (!threePidLogin || haveRequiredIs || !this._authStepIsUsed('m.login.msisdn')) {
             return false;
         }
         return true;
@@ -489,9 +501,7 @@ module.exports = React.createClass({
     },
 
     renderPhoneNumber() {
-        const threePidLogin = !SdkConfig.get().disable_3pid_login;
-        const haveIs = Boolean(this.props.serverConfig.isUrl);
-        if (!threePidLogin || !haveIs || !this._authStepIsUsed('m.login.msisdn')) {
+        if (!this._showPhoneNumber()) {
             return null;
         }
         const CountryDropdown = sdk.getComponent('views.auth.CountryDropdown');
@@ -563,11 +573,24 @@ module.exports = React.createClass({
             <input className="mx_Login_submit" type="submit" value={_t("Register")} disabled={!this.props.canSubmit} />
         );
 
-        const emailHelperText = this._showEmail() ? <div>
-            {_t("Use an email address to recover your account.") + " "}
-            {_t("Other users can invite you to rooms using your contact details.")}
-        </div> : null;
-
+        let emailHelperText = null;
+        if (this._showEmail()) {
+            if (this._showPhoneNumber()) {
+                emailHelperText = <div>
+                    {_t(
+                        "Set an email for account recovery. " +
+                        "Use email or phone to optionally be discoverable by existing contacts.",
+                    )}
+                </div>;
+            } else {
+                emailHelperText = <div>
+                    {_t(
+                        "Set an email for account recovery. " +
+                        "Use email to optionally be discoverable by existing contacts.",
+                    )}
+                </div>;
+            }
+        }
         const haveIs = Boolean(this.props.serverConfig.isUrl);
         const noIsText = haveIs ? null : <div>
             {_t(

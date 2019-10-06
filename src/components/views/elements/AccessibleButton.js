@@ -68,9 +68,8 @@ export default function AccessibleButton(props) {
     delete restProps.inputRef;
 
     restProps.tabIndex = restProps.tabIndex || "0";
-    restProps.role = "button";
-    restProps.className = (restProps.className ? restProps.className + " " : "") +
-                          "mx_AccessibleButton";
+    restProps.role = restProps.role || "button";
+    restProps.className = (restProps.className ? restProps.className + " " : "") + "mx_AccessibleButton";
 
     if (kind) {
         // We apply a hasKind class to maintain backwards compatibility with
@@ -80,6 +79,7 @@ export default function AccessibleButton(props) {
 
     if (disabled) {
         restProps.className += " mx_AccessibleButton_disabled";
+        restProps["aria-disabled"] = true;
     }
 
     return React.createElement(element, restProps, children);

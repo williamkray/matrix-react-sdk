@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Michael Telatynski <7t3chguy@gmail.com>
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,11 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {_td} from "./languageHandler";
+export default class DocumentOffset {
+    constructor(offset, atNodeEnd) {
+        this.offset = offset;
+        this.atNodeEnd = atNodeEnd;
+    }
 
-export const DEFAULT_THEME = "light";
+    asPosition(model) {
+        return model.positionForOffset(this.offset, this.atNodeEnd);
+    }
 
-export const THEMES = {
-    "light": _td("Light theme"),
-    "dark": _td("Dark theme"),
-};
+    add(delta, atNodeEnd = false) {
+        return new DocumentOffset(this.offset + delta, atNodeEnd);
+    }
+}

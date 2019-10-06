@@ -100,11 +100,14 @@ export default class WidgetUtils {
         }
 
         const testUrl = url.parse(testUrlString);
-
         let scalarUrls = SdkConfig.get().integrations_widgets_urls;
         if (!scalarUrls || scalarUrls.length === 0) {
             const defaultManager = IntegrationManagers.sharedInstance().getPrimaryManager();
-            if (defaultManager) scalarUrls = [defaultManager.apiUrl];
+            if (defaultManager) {
+                scalarUrls = [defaultManager.apiUrl];
+            } else {
+                scalarUrls = [];
+            }
         }
 
         for (let i = 0; i < scalarUrls.length; i++) {
@@ -230,7 +233,9 @@ export default class WidgetUtils {
         };
 
         const client = MatrixClientPeg.get();
-        const userWidgets = WidgetUtils.getUserWidgets();
+        // Get the current widgets and clone them before we modify them, otherwise
+        // we'll modify the content of the old event.
+        const userWidgets = JSON.parse(JSON.stringify(WidgetUtils.getUserWidgets()));
 
         // Delete existing widget with ID
         try {
@@ -346,9 +351,33 @@ export default class WidgetUtils {
      */
     static getIntegrationManagerWidgets() {
         const widgets = WidgetUtils.getUserWidgetsArray();
-        // We'll be using im.vector.integration_manager until MSC1957 or similar is accepted.
-        const imTypes = ["m.integration_manager", "im.vector.integration_manager"];
-        return widgets.filter(w => w.content && imTypes.includes(w.content.type));
+        return widgets.filter(w => w.content && w.content.type === "m.integration_manager");
+    }
+
+    static removeIntegrationManagerWidgets() {
+        const client = MatrixClientPeg.get();
+        if (!client) {
+            throw new Error('User not logged in');
+        }
+        const widgets = client.getAccountData('m.widgets');
+        if (!widgets) return;
+        const userWidgets = widgets.getContent() || {};
+        Object.entries(userWidgets).forEach(([key, widget]) => {
+            if (widget.content && widget.content.type === "m.integration_manager") {
+                delete userWidgets[key];
+            }
+        });
+        return client.setAccountData('m.widgets', userWidgets);
+    }
+
+    static addIntegrationManagerWidget(name: string, uiUrl: string, apiUrl: string) {
+        return WidgetUtils.setUserWidget(
+            "integration_manager_" + (new Date().getTime()),
+            "m.integration_manager",
+            uiUrl,
+            "Integration Manager: " + name,
+            {"api_url": apiUrl},
+        );
     }
 
     /**
@@ -360,7 +389,9 @@ export default class WidgetUtils {
         if (!client) {
             throw new Error('User not logged in');
         }
-        const userWidgets = client.getAccountData('m.widgets').getContent() || {};
+        const widgets = client.getAccountData('m.widgets');
+        if (!widgets) return;
+        const userWidgets = widgets.getContent() || {};
         Object.entries(userWidgets).forEach(([key, widget]) => {
             if (widget.content && widget.content.type === 'm.stickerpicker') {
                 delete userWidgets[key];

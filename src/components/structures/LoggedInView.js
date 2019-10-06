@@ -18,10 +18,11 @@ limitations under the License.
 
 import { MatrixClient } from 'matrix-js-sdk';
 import React from 'react';
+import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import { DragDropContext } from 'react-beautiful-dnd';
 
-import { KeyCode, isOnlyCtrlOrCmdKeyEvent } from '../../Keyboard';
+import { Key, isOnlyCtrlOrCmdKeyEvent } from '../../Keyboard';
 import PageTypes from '../../PageTypes';
 import CallMediaHandler from '../../CallMediaHandler';
 import { fixupColorFonts } from '../../utils/FontManager';
@@ -58,7 +59,7 @@ function canElementReceiveInput(el) {
  *
  * Components mounted below us can access the matrix client via the react context.
  */
-const LoggedInView = React.createClass({
+const LoggedInView = createReactClass({
     displayName: 'LoggedInView',
 
     propTypes: {
@@ -350,25 +351,26 @@ const LoggedInView = React.createClass({
 
         let handled = false;
         const ctrlCmdOnly = isOnlyCtrlOrCmdKeyEvent(ev);
-        const hasModifier = ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey;
+        const hasModifier = ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey ||
+            ev.key === "Alt" || ev.key === "Control" || ev.key === "Meta" || ev.key === "Shift";
 
-        switch (ev.keyCode) {
-            case KeyCode.PAGE_UP:
-            case KeyCode.PAGE_DOWN:
+        switch (ev.key) {
+            case Key.PAGE_UP:
+            case Key.PAGE_DOWN:
                 if (!hasModifier) {
                     this._onScrollKeyPressed(ev);
                     handled = true;
                 }
                 break;
 
-            case KeyCode.HOME:
-            case KeyCode.END:
+            case Key.HOME:
+            case Key.END:
                 if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
                     this._onScrollKeyPressed(ev);
                     handled = true;
                 }
                 break;
-            case KeyCode.KEY_K:
+            case Key.K:
                 if (ctrlCmdOnly) {
                     dis.dispatch({
                         action: 'focus_room_filter',
@@ -376,7 +378,9 @@ const LoggedInView = React.createClass({
                     handled = true;
                 }
                 break;
-            case KeyCode.KEY_BACKTICK:
+            case Key.BACKTICK:
+                if (ev.key !== "`") break;
+
                 // Ideally this would be CTRL+P for "Profile", but that's
                 // taken by the print dialog. CTRL+I for "Information"
                 // was previously chosen but conflicted with italics in
@@ -396,7 +400,14 @@ const LoggedInView = React.createClass({
             ev.preventDefault();
         } else if (!hasModifier) {
             const isClickShortcut = ev.target !== document.body &&
-                (ev.key === "Space" || ev.key === "Enter");
+                (ev.key === Key.SPACE || ev.key === Key.ENTER);
+
+            // XXX: Remove after CIDER replaces Slate completely: https://github.com/vector-im/riot-web/issues/11036
+            // If using Slate, consume the Backspace without first focusing as it causes an implosion
+            if (ev.key === Key.BACKSPACE && !SettingsStore.getValue("useCiderComposer")) {
+                ev.stopPropagation();
+                return;
+            }
 
             if (!isClickShortcut && !canElementReceiveInput(ev.target)) {
                 // synchronous dispatch so we focus before key generates input

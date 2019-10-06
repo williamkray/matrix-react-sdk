@@ -19,10 +19,9 @@
  the Cooperative Software License as distributed with this project.
  */
 
-'use strict';
-
 import React from 'react';
 import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
 import {MatrixClient} from 'matrix-js-sdk';
 import Flair from '../elements/Flair.js';
 import FlairStore from '../../../stores/FlairStore';
@@ -32,7 +31,7 @@ import SettingsStore from "../../../settings/SettingsStore";
 import { discordColorToCssAdjust, getBodyBgColorForTheme } from "../../../utils/poniesUtils";
 import {getUserNameColorClass} from '../../../utils/FormattingUtils';
 
-export default React.createClass({
+export default createReactClass({
     displayName: 'SenderProfile',
     propTypes: {
         mxEvent: PropTypes.object.isRequired, // event whose sender we're showing
