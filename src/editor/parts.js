@@ -332,29 +332,35 @@ class EmotePart extends BasePart {
     }
 
     acceptsInsertion(chr, offset, inputType) {
-        return false;
+        return true;
     }
 
     acceptsRemoval(position, chr) {
-        return position !== 0;
+        return true;
     }
 
     toDOMNode() {
-        const container = document.createElement("img");
+        const img = document.createElement("img");
         const url = Avatar.avatarUrlForMxc(this.mxc, 36, 36, "crop");
-        container.src = url;
-        container.width = 36;
-        container.height = 36;
-        container.alt = this.code;
-        return container;
+        img.src = url;
+        img.width = 36;
+        img.height = 36;
+        img.alt = this.code;
+        return img;
+    }
+
+    merge() {
+        return false;
     }
 
     updateDOMNode(node) {
-        // nothing to do
+        const url = Avatar.avatarUrlForMxc(this.mxc, 36, 36, "crop");
+        node.src = url;
+        node.alt = this.code;
     }
 
     canUpdateDOMNode(node) {
-        return false;
+        return node.tagName === "IMG";
     }
 
     get canEdit() {
