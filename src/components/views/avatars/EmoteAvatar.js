@@ -24,10 +24,11 @@ the Cooperative Software License as distributed with this project.
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import createReactClass from 'create-react-class';
 import sdk from '../../../index';
 import MatrixClientPeg from '../../../MatrixClientPeg';
 
-export default React.createClass({
+export default createReactClass({
     displayName: 'EmoteAvatar',
 
     propTypes: {

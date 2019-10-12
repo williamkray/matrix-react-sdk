@@ -1,6 +1,7 @@
 /*
 Copyright 2019 New Vector Ltd
 Copyright 2019 The Matrix.org Foundation C.I.C.
+Copyright 2019 ponies.im
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,6 +14,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
 */
 
 import Markdown from '../Markdown';
@@ -31,6 +37,8 @@ export function mdSerialize(model) {
             case "room-pill":
             case "user-pill":
                 return html + `[${part.text}](${makeGenericPermalink(part.resourceId)})`;
+            case "emote":
+                return html + `![${part.code}](emote:${part.mxc})`;
         }
     }, "");
 }
@@ -39,7 +47,10 @@ export function htmlSerializeIfNeeded(model, {forceHTML = false} = {}) {
     const md = mdSerialize(model);
     const parser = new Markdown(md);
     if (!parser.isPlainText() || forceHTML) {
-        return parser.toHTML();
+        let html = parser.toHTML();
+        // we need to make emotes nicer
+        html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
+        return html;
     }
 }
 
@@ -56,6 +67,8 @@ export function textSerialize(model) {
             case "room-pill":
             case "user-pill":
                 return text + `${part.text}`;
+            case "emote":
+                return text + part.code;
         }
     }, "");
 }

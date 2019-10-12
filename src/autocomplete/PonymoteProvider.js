@@ -31,7 +31,6 @@ import {PillCompletion} from './Components';
 import {getDisplayAliasForRoom} from '../Rooms';
 import sdk from '../index';
 import _sortBy from 'lodash/sortBy';
-import {makeRoomPermalink} from "../matrix-to";
 import SettingsStore from "../settings/SettingsStore"; 
 
 import PonymoteDataClean from '../ponymotes_clean.json';
@@ -157,7 +156,8 @@ export default class PonymoteProvider extends AutocompleteProvider {
                 const completion = ':'+n+':';
                 return {
                     completion: completion,
-                    completionId: completion,
+                    completionId: mxc,
+                    type: 'emote',
                     suffix: ' ',
                     href: 'emote://'+mxc,
                     component: (

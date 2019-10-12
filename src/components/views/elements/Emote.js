@@ -15,12 +15,13 @@ limitations under the License.
 */
 
 import React from 'react';
+import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import MatrixClientPeg from '../../../MatrixClientPeg';
 
 const REGEX_EMOTE = /^emote:\/\/(.*)$/;
 
-const Emote = React.createClass({
+const Emote = createReactClass({
     statics: {
         isEmoteUrl: (url) => {
             return !!REGEX_EMOTE.exec(url);

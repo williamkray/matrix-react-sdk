@@ -107,7 +107,8 @@ export default class EmoteProvider extends AutocompleteProvider {
                     const code = result.code;
                     return {
                         completion: code,
-                        completionId: code,
+                        completionId: mxc,
+                        type: 'emote',
                         suffix: ' ',
                         href: 'emote://'+mxc,
                         component: (
