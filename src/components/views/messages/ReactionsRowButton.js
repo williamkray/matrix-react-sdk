@@ -81,6 +81,22 @@ export default class ReactionsRowButton extends React.PureComponent {
             sdk.getComponent('messages.ReactionsRowButtonTooltip');
         const { content, count, reactionEvents, myReactionEvent } = this.props;
 
+        let contentElem = content;
+        if (content.startsWith("mxc://")) {
+            const size = 18;
+            const url = MatrixClientPeg.get().mxcUrlToHttp(
+                content,
+                size,
+                size,
+                "crop",
+            );
+            contentElem = <img
+                src={url}
+                width={size}
+                height={size}
+            />;
+        }
+
         const classes = classNames({
             mx_ReactionsRowButton: true,
             mx_ReactionsRowButton_selected: !!myReactionEvent,
@@ -102,7 +118,7 @@ export default class ReactionsRowButton extends React.PureComponent {
             onMouseOut={this.onMouseOut}
         >
             <span className="mx_ReactionsRowButton_content">
-                {content}
+                {contentElem}
             </span>
             <span className="mx_ReactionsRowButton_count">
                 {count}
