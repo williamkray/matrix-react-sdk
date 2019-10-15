@@ -124,6 +124,7 @@ export const PasswordAuthEntry = createReactClass({
                 <input type="submit"
                     className="mx_Dialog_primary"
                     disabled={!this.state.password}
+                    value={_t("Continue")}
                 />
             );
         }
@@ -190,14 +191,24 @@ export const RecaptchaAuthEntry = createReactClass({
             return <Loader />;
         }
 
+        let errorText = this.props.errorText;
+
         const CaptchaForm = sdk.getComponent("views.auth.CaptchaForm");
-        const sitePublicKey = this.props.stageParams.public_key;
+        let sitePublicKey;
+        if (!this.props.stageParams || !this.props.stageParams.public_key) {
+            errorText = _t(
+                "Missing captcha public key in homeserver configuration. Please report " +
+                "this to your homeserver administrator.",
+            );
+        } else {
+            sitePublicKey = this.props.stageParams.public_key;
+        }
 
         let errorSection;
-        if (this.props.errorText) {
+        if (errorText) {
             errorSection = (
                 <div className="error" role="alert">
-                    { this.props.errorText }
+                    { errorText }
                 </div>
             );
         }

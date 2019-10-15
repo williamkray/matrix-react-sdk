@@ -1,5 +1,5 @@
 /*
-Copyright 2018 Vector Creations Ltd
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,17 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-.mx_ReplyThread {
-    margin-top: 0;
-}
+import {useState} from 'react';
 
-.mx_ReplyThread_show {
-    cursor: pointer;
-}
-
-blockquote.mx_ReplyThread {
-    margin-left: 0;
-    margin-bottom: 8px;
-    padding-left: 10px;
-    border-left: 4px solid $button-bg-color;
-}
+// Hook to simplify toggling of a boolean state value
+// Returns value, method to toggle boolean value and method to set the boolean value
+export const useStateToggle = (initialValue) => {
+    const [value, setValue] = useState(Boolean(initialValue));
+    const toggleValue = () => {
+        setValue(!value);
+    };
+    return [value, toggleValue, setValue];
+};

@@ -30,6 +30,7 @@ import {MatrixClient} from 'matrix-js-sdk';
 import classNames from 'classnames';
 import {EventStatus} from 'matrix-js-sdk';
 import BasicMessageComposer from "./BasicMessageComposer";
+import {Key} from "../../../Keyboard";
 
 function _isReply(mxEvent) {
     const relatesTo = mxEvent.getContent()["m.relates_to"];
@@ -134,12 +135,12 @@ export default class EditMessageComposer extends React.Component {
         if (event.metaKey || event.altKey || event.shiftKey) {
             return;
         }
-        if (event.key === "Enter") {
+        if (event.key === Key.ENTER) {
             this._sendEdit();
             event.preventDefault();
-        } else if (event.key === "Escape") {
+        } else if (event.key === Key.ESCAPE) {
             this._cancelEdit();
-        } else if (event.key === "ArrowUp") {
+        } else if (event.key === Key.ARROW_UP) {
             if (this._editorRef.isModified() || !this._editorRef.isCaretAtStart()) {
                 return;
             }
@@ -148,7 +149,7 @@ export default class EditMessageComposer extends React.Component {
                 dis.dispatch({action: 'edit_event', event: previousEvent});
                 event.preventDefault();
             }
-        } else if (event.key === "ArrowDown") {
+        } else if (event.key === Key.ARROW_DOWN) {
             if (this._editorRef.isModified() || !this._editorRef.isCaretAtEnd()) {
                 return;
             }
@@ -209,9 +210,18 @@ export default class EditMessageComposer extends React.Component {
     }
 
     componentWillUnmount() {
+        // store caret and serialized parts in the
+        // editorstate so it can be restored when the remote echo event tile gets rendered
+        // in case we're currently editing a pending event
         const sel = document.getSelection();
-        const {caret} = getCaretOffsetAndText(this._editorRef, sel);
+        let caret;
+        if (sel.focusNode) {
+            caret = getCaretOffsetAndText(this._editorRef, sel).caret;
+        }
         const parts = this.model.serializeParts();
+        // if caret is undefined because for some reason there isn't a valid selection,
+        // then when mounting the editor again with the same editor state,
+        // it will set the cursor at the end.
         this.props.editState.setEditorState(caret, parts);
     }
 
@@ -238,7 +248,7 @@ export default class EditMessageComposer extends React.Component {
     _getInitialCaretPosition() {
         const {editState} = this.props;
         let caretPosition;
-        if (editState.hasEditorState()) {
+        if (editState.hasEditorState() && editState.getCaret()) {
             // if restoring state from a previous editor,
             // restore caret position from the state
             const caret = editState.getCaret();

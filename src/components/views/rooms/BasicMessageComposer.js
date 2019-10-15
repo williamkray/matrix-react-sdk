@@ -38,6 +38,7 @@ import EMOJIBASE from 'emojibase-data/en/compact.json';
 import SettingsStore from "../../../settings/SettingsStore";
 import EMOTICON_REGEX from 'emojibase-regex/emoticon';
 import sdk from '../../../index';
+import {Key} from "../../../Keyboard";
 
 const REGEX_EMOTICON_WHITESPACE = new RegExp('(?:^|\\s)(' + EMOTICON_REGEX.source + ')\\s$');
 
@@ -90,6 +91,7 @@ export default class BasicMessageEditor extends React.Component {
         this._modifiedFlag = false;
         this._isIMEComposing = false;
         this._hasTextSelected = false;
+        this._emoticonSettingHandle = null;
     }
 
     _replaceEmoticon = (caretPosition, inputType, diff) => {
@@ -312,19 +314,19 @@ export default class BasicMessageEditor extends React.Component {
         const modKey = IS_MAC ? event.metaKey : event.ctrlKey;
         let handled = false;
         // format bold
-        if (modKey && event.key === "b") {
+        if (modKey && event.key === Key.B) {
             this._onFormatAction("bold");
             handled = true;
         // format italics
-        } else if (modKey && event.key === "i") {
+        } else if (modKey && event.key === Key.I) {
             this._onFormatAction("italics");
             handled = true;
         // format quote
-        } else if (modKey && event.key === ">") {
+        } else if (modKey && event.key === Key.GREATER_THAN) {
             this._onFormatAction("quote");
             handled = true;
         // undo
-        } else if (modKey && event.key === "z") {
+        } else if (modKey && event.key === Key.Z) {
             if (this.historyManager.canUndo()) {
                 const {parts, caret} = this.historyManager.undo(this.props.model);
                 // pass matching inputType so historyManager doesn't push echo
@@ -333,7 +335,7 @@ export default class BasicMessageEditor extends React.Component {
             }
             handled = true;
         // redo
-        } else if (modKey && event.key === "y") {
+        } else if (modKey && event.key === Key.Y) {
             if (this.historyManager.canRedo()) {
                 const {parts, caret} = this.historyManager.redo();
                 // pass matching inputType so historyManager doesn't push echo
@@ -342,7 +344,7 @@ export default class BasicMessageEditor extends React.Component {
             }
             handled = true;
         // insert newline on Shift+Enter
-        } else if (event.key === "Enter" && (event.shiftKey || (IS_MAC && event.altKey))) {
+        } else if (event.key === Key.ENTER && (event.shiftKey || (IS_MAC && event.altKey))) {
             this._insertText("\n");
             handled = true;
         // autocomplete or enter to send below shouldn't have any modifier keys pressed.
@@ -352,25 +354,25 @@ export default class BasicMessageEditor extends React.Component {
             if (model.autoComplete && model.autoComplete.hasCompletions()) {
                 const autoComplete = model.autoComplete;
                 switch (event.key) {
-                    case "ArrowUp":
+                    case Key.ARROW_UP:
                         if (!modifierPressed) {
                             autoComplete.onUpArrow(event);
                             handled = true;
                         }
                         break;
-                    case "ArrowDown":
+                    case Key.ARROW_DOWN:
                         if (!modifierPressed) {
                             autoComplete.onDownArrow(event);
                             handled = true;
                         }
                         break;
-                    case "Tab":
+                    case Key.TAB:
                         if (!metaOrAltPressed) {
                             autoComplete.onTab(event);
                             handled = true;
                         }
                         break;
-                    case "Escape":
+                    case Key.ESCAPE:
                         if (!modifierPressed) {
                             autoComplete.onEscape(event);
                             handled = true;
@@ -379,7 +381,7 @@ export default class BasicMessageEditor extends React.Component {
                     default:
                         return; // don't preventDefault on anything else
                 }
-            } else if (event.key === "Tab") {
+            } else if (event.key === Key.TAB) {
                 this._tabCompleteName();
                 handled = true;
             }
@@ -437,18 +439,25 @@ export default class BasicMessageEditor extends React.Component {
         this.setState({completionIndex});
     }
 
+    _configureEmoticonAutoReplace() {
+        const shouldReplace = SettingsStore.getValue('MessageComposerInput.autoReplaceEmoji');
+        this.props.model.setTransformCallback(shouldReplace ? this._replaceEmoticon : null);
+    }
+
     componentWillUnmount() {
         this._editorRef.removeEventListener("input", this._onInput, true);
         this._editorRef.removeEventListener("compositionstart", this._onCompositionStart, true);
         this._editorRef.removeEventListener("compositionend", this._onCompositionEnd, true);
+        SettingsStore.unwatchSetting(this._emoticonSettingHandle);
     }
 
     componentDidMount() {
         const model = this.props.model;
         model.setUpdateCallback(this._updateEditorState);
-        if (SettingsStore.getValue('MessageComposerInput.autoReplaceEmoji')) {
-            model.setTransformCallback(this._replaceEmoticon);
-        }
+        this._emoticonSettingHandle = SettingsStore.watchSetting('MessageComposerInput.autoReplaceEmoji', null, () => {
+            this._configureEmoticonAutoReplace();
+        });
+        this._configureEmoticonAutoReplace();
         const partCreator = model.partCreator;
         // TODO: does this allow us to get rid of EditorStateTransfer?
         // not really, but we could not serialize the parts, and just change the autoCompleter
@@ -544,7 +553,7 @@ export default class BasicMessageEditor extends React.Component {
             <div
                 className="mx_BasicMessageComposer_input"
                 contentEditable="true"
-                tabIndex="1"
+                tabIndex="0"
                 onBlur={this._onBlur}
                 onFocus={this._onFocus}
                 onPaste={this._onPaste}

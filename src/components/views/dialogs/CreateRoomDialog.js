@@ -22,6 +22,7 @@ import SdkConfig from '../../../SdkConfig';
 import withValidation from '../elements/Validation';
 import { _t } from '../../../languageHandler';
 import MatrixClientPeg from '../../../MatrixClientPeg';
+import {Key} from "../../../Keyboard";
 
 export default createReactClass({
     displayName: 'CreateRoomDialog',
@@ -71,6 +72,14 @@ export default createReactClass({
 
     componentWillUnmount() {
         this._detailsRef.removeEventListener("toggle", this.onDetailsToggled);
+    },
+
+    _onKeyDown: function(event) {
+        if (event.key === Key.ENTER) {
+            this.onOk();
+            event.preventDefault();
+            event.stopPropagation();
+        }
     },
 
     onOk: async function() {
@@ -176,7 +185,7 @@ export default createReactClass({
             <BaseDialog className="mx_CreateRoomDialog" onFinished={this.props.onFinished}
                 title={title}
             >
-                <form onSubmit={this.onOk}>
+                <form onSubmit={this.onOk} onKeyDown={this._onKeyDown}>
                     <div className="mx_Dialog_content">
                         <Field id="name" ref={ref => this._nameFieldRef = ref} label={ _t('Name') } onChange={this.onNameChange} onValidate={this.onNameValidate} value={this.state.name} className="mx_CreateRoomDialog_name" />
                         <Field id="topic" label={ _t('Topic (optional)') } onChange={this.onTopicChange} value={this.state.topic} />
