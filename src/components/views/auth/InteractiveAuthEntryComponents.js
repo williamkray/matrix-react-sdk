@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import React from 'react';
+import React, {createRef} from 'react';
 import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import url from 'url';
@@ -441,7 +441,7 @@ export const MsisdnAuthEntry = createReactClass({
             this.props.fail(e);
         }).finally(() => {
             this.setState({requestingToken: false});
-        }).done();
+        });
     },
 
     /*
@@ -475,22 +475,26 @@ export const MsisdnAuthEntry = createReactClass({
         });
 
         try {
+            const requiresIdServerParam =
+                await this.props.matrixClient.doesServerRequireIdServerParam();
             let result;
             if (this._submitUrl) {
                 result = await this.props.matrixClient.submitMsisdnTokenOtherUrl(
                     this._submitUrl, this._sid, this.props.clientSecret, this.state.token,
                 );
-            } else {
+            } else if (requiresIdServerParam) {
                 result = await this.props.matrixClient.submitMsisdnToken(
                     this._sid, this.props.clientSecret, this.state.token,
                 );
+            } else {
+                throw new Error("The registration with MSISDN flow is misconfigured");
             }
             if (result.success) {
                 const creds = {
                     sid: this._sid,
                     client_secret: this.props.clientSecret,
                 };
-                if (await this.props.matrixClient.doesServerRequireIdServerParam()) {
+                if (requiresIdServerParam) {
                     const idServerParsedUrl = url.parse(
                         this.props.matrixClient.getIdentityServerUrl(),
                     );
@@ -577,6 +581,8 @@ export const FallbackAuthEntry = createReactClass({
         // the popup if we open it immediately.
         this._popupWindow = null;
         window.addEventListener("message", this._onReceiveMessage);
+
+        this._fallbackButton = createRef();
     },
 
     componentWillUnmount: function() {
@@ -587,8 +593,8 @@ export const FallbackAuthEntry = createReactClass({
     },
 
     focus: function() {
-        if (this.refs.fallbackButton) {
-            this.refs.fallbackButton.focus();
+        if (this._fallbackButton.current) {
+            this._fallbackButton.current.focus();
         }
     },
 
@@ -620,7 +626,7 @@ export const FallbackAuthEntry = createReactClass({
         }
         return (
             <div>
-                <a ref="fallbackButton" onClick={this._onShowFallbackClick}>{ _t("Start authentication") }</a>
+                <a ref={this._fallbackButton} onClick={this._onShowFallbackClick}>{ _t("Start authentication") }</a>
                 {errorSection}
             </div>
         );

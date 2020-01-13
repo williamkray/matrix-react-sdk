@@ -25,6 +25,7 @@ import sdk from './';
 import dis from './dispatcher';
 import DMRoomMap from './utils/DMRoomMap';
 import { _t } from './languageHandler';
+import SettingsStore from "./settings/SettingsStore";
 
 /**
  * Invites multiple addresses to a room
@@ -41,6 +42,18 @@ function inviteMultipleToRoom(roomId, addrs) {
 }
 
 export function showStartChatInviteDialog() {
+    if (SettingsStore.isFeatureEnabled("feature_ftue_dms")) {
+        const DMInviteDialog = sdk.getComponent("dialogs.DMInviteDialog");
+        Modal.createTrackedDialog('Start DM', '', DMInviteDialog, {
+            onFinished: (inviteIds) => {
+                // TODO: Replace _onStartDmFinished with less hacks
+                if (inviteIds.length > 0) _onStartDmFinished(true, inviteIds.map(i => ({address: i})));
+                // else ignore and just do nothing
+            },
+        }, /*className=*/null, /*isPriority=*/false, /*isStatic=*/true);
+        return;
+    }
+
     const AddressPickerDialog = sdk.getComponent("dialogs.AddressPickerDialog");
 
     Modal.createTrackedDialog('Start a chat', '', AddressPickerDialog, {
@@ -99,7 +112,7 @@ export function isValid3pidInvite(event) {
     return true;
 }
 
-// TODO: Immutable DMs replaces this
+// TODO: Canonical DMs replaces this
 function _onStartDmFinished(shouldInvite, addrs) {
     if (!shouldInvite) return;
 
@@ -153,13 +166,8 @@ function _onStartDmFinished(shouldInvite, addrs) {
     }
 }
 
-function _onRoomInviteFinished(roomId, shouldInvite, addrs) {
-    if (!shouldInvite) return;
-
-    const addrTexts = addrs.map((addr) => addr.address);
-
-    // Invite new users to a room
-    inviteMultipleToRoom(roomId, addrTexts).then((result) => {
+export function inviteUsersToRoom(roomId, userIds) {
+    return inviteMultipleToRoom(roomId, userIds).then((result) => {
         const room = MatrixClientPeg.get().getRoom(roomId);
         return _showAnyInviteErrors(result.states, room, result.inviter);
     }).catch((err) => {
@@ -170,6 +178,15 @@ function _onRoomInviteFinished(roomId, shouldInvite, addrs) {
             description: ((err && err.message) ? err.message : _t("Operation failed")),
         });
     });
+}
+
+function _onRoomInviteFinished(roomId, shouldInvite, addrs) {
+    if (!shouldInvite) return;
+
+    const addrTexts = addrs.map((addr) => addr.address);
+
+    // Invite new users to a room
+    inviteUsersToRoom(roomId, addrTexts);
 }
 
 // TODO: Immutable DMs replaces this
@@ -203,10 +220,13 @@ function _showAnyInviteErrors(addrs, room, inviter) {
         }
 
         if (errorList.length > 0) {
+            // React 16 doesn't let us use `errorList.join(<br />)` anymore, so this is our solution
+            const description = <div>{errorList.map(e => <div key={e}>{e}</div>)}</div>;
+
             const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
             Modal.createTrackedDialog('Failed to invite the following users to the room', '', ErrorDialog, {
                 title: _t("Failed to invite the following users to the %(roomName)s room:", {roomName: room.name}),
-                description: errorList.join(<br />),
+                description,
             });
         }
     }
@@ -225,4 +245,3 @@ function _getDirectMessageRooms(addr) {
     });
     return rooms;
 }
-

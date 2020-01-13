@@ -26,7 +26,6 @@ import {
     unescapeMessage,
 } from '../../../editor/serialize';
 import {CommandPartCreator} from '../../../editor/parts';
-import {MatrixClient} from 'matrix-js-sdk';
 import BasicMessageComposer from "./BasicMessageComposer";
 import ReplyPreview from "./ReplyPreview";
 import RoomViewStore from '../../../stores/RoomViewStore';
@@ -37,9 +36,10 @@ import SendHistoryManager from "../../../SendHistoryManager";
 import {processCommandInput} from '../../../SlashCommands';
 import sdk from '../../../index';
 import Modal from '../../../Modal';
-import { _t } from '../../../languageHandler';
+import {_t, _td} from '../../../languageHandler';
 import ContentMessages from '../../../ContentMessages';
 import {Key} from "../../../Keyboard";
+import MatrixClientContext from "../../../contexts/MatrixClientContext";
 
 function addReplyToMessageContent(content, repliedToEvent, permalinkCreator) {
     const replyContent = ReplyThread.makeReplyMixIn(repliedToEvent);
@@ -89,12 +89,10 @@ export default class SendMessageComposer extends React.Component {
         permalinkCreator: PropTypes.object.isRequired,
     };
 
-    static contextTypes = {
-        matrixClient: PropTypes.instanceOf(MatrixClient).isRequired,
-    };
+    static contextType = MatrixClientContext;
 
-    constructor(props, context) {
-        super(props, context);
+    constructor(props) {
+        super(props);
         this.model = null;
         this._editorRef = null;
         this.currentlyComposedEditorState = null;
@@ -214,12 +212,20 @@ export default class SendMessageComposer extends React.Component {
                 const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
                 // assume the error is a server error when the command is async
                 const isServerError = !!cmd.promise;
-                const title = isServerError ? "Server error" : "Command error";
+                const title = isServerError ? _td("Server error") : _td("Command error");
+
+                let errText;
+                if (typeof error === 'string') {
+                    errText = error;
+                } else if (error.message) {
+                    errText = error.message;
+                } else {
+                    errText = _t("Server unavailable, overloaded, or something else went wrong.");
+                }
+
                 Modal.createTrackedDialog(title, '', ErrorDialog, {
-                    title: isServerError ? _t("Server error") : _t("Command error"),
-                    description: error.message ? error.message : _t(
-                        "Server unavailable, overloaded, or something else went wrong.",
-                    ),
+                    title: _t(title),
+                    description: errText,
                 });
             } else {
                 console.log("Command success.");
@@ -237,7 +243,7 @@ export default class SendMessageComposer extends React.Component {
             const isReply = !!RoomViewStore.getQuotingEvent();
             const {roomId} = this.props.room;
             const content = createMessageContent(this.model, this.props.permalinkCreator);
-            this.context.matrixClient.sendMessage(roomId, content);
+            this.context.sendMessage(roomId, content);
             if (isReply) {
                 // Clear reply_to_event as we put the message into the queue
                 // if the send fails, retry will handle resending.
@@ -265,7 +271,7 @@ export default class SendMessageComposer extends React.Component {
     }
 
     componentWillMount() {
-        const partCreator = new CommandPartCreator(this.props.room, this.context.matrixClient);
+        const partCreator = new CommandPartCreator(this.props.room, this.context);
         const parts = this._restoreStoredEditorState(partCreator) || [];
         this.model = new EditorModel(parts, partCreator);
         this.dispatcherRef = dis.register(this.onAction);
@@ -353,7 +359,7 @@ export default class SendMessageComposer extends React.Component {
             // from Finder) but more images copied from a different website
             // / word processor etc.
             ContentMessages.sharedInstance().sendContentListToRoom(
-                Array.from(clipboardData.files), this.props.room.roomId, this.context.matrixClient,
+                Array.from(clipboardData.files), this.props.room.roomId, this.context,
             );
         }
     }

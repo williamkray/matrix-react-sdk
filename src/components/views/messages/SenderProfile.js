@@ -22,7 +22,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import createReactClass from 'create-react-class';
-import {MatrixClient} from 'matrix-js-sdk';
 import Flair from '../elements/Flair.js';
 import FlairStore from '../../../stores/FlairStore';
 import { _t } from '../../../languageHandler';
@@ -30,6 +29,7 @@ import {hashCode} from '../../../utils/FormattingUtils';
 import SettingsStore from "../../../settings/SettingsStore";
 import { discordColorToCssAdjust, getBodyBgColorForTheme } from "../../../utils/poniesUtils";
 import {getUserNameColorClass} from '../../../utils/FormattingUtils';
+import MatrixClientContext from "../../../contexts/MatrixClientContext";
 
 export default createReactClass({
     displayName: 'SenderProfile',
@@ -39,8 +39,8 @@ export default createReactClass({
         onClick: PropTypes.func,
     },
 
-    contextTypes: {
-        matrixClient: PropTypes.instanceOf(MatrixClient),
+    statics: {
+        contextType: MatrixClientContext,
     },
 
     getInitialState() {
@@ -55,18 +55,18 @@ export default createReactClass({
         this._updateRelatedGroups();
 
         FlairStore.getPublicisedGroupsCached(
-            this.context.matrixClient, this.props.mxEvent.getSender(),
+            this.context, this.props.mxEvent.getSender(),
         ).then((userGroups) => {
             if (this.unmounted) return;
             this.setState({userGroups});
         });
 
-        this.context.matrixClient.on('RoomState.events', this.onRoomStateEvents);
+        this.context.on('RoomState.events', this.onRoomStateEvents);
     },
 
     componentWillUnmount() {
         this.unmounted = true;
-        this.context.matrixClient.removeListener('RoomState.events', this.onRoomStateEvents);
+        this.context.removeListener('RoomState.events', this.onRoomStateEvents);
     },
 
     onRoomStateEvents(event) {
@@ -79,7 +79,7 @@ export default createReactClass({
 
     _updateRelatedGroups() {
         if (this.unmounted) return;
-        const room = this.context.matrixClient.getRoom(this.props.mxEvent.getRoomId());
+        const room = this.context.getRoom(this.props.mxEvent.getRoomId());
         if (!room) return;
 
         const relatedGroupsEvent = room.currentState.getStateEvents('m.room.related_groups', '');

@@ -27,7 +27,7 @@ import LanguageDropdown from "../../../elements/LanguageDropdown";
 import AccessibleButton from "../../../elements/AccessibleButton";
 import DeactivateAccountDialog from "../../../dialogs/DeactivateAccountDialog";
 import PropTypes from "prop-types";
-import {enumerateThemes} from "../../../../../theme";
+import {enumerateThemes, ThemeWatcher} from "../../../../../theme";
 import PlatformPeg from "../../../../../PlatformPeg";
 import MatrixClientPeg from "../../../../../MatrixClientPeg";
 import sdk from "../../../../..";
@@ -49,7 +49,6 @@ export default class GeneralUserSettingsTab extends React.Component {
 
         this.state = {
             language: languageHandler.getCurrentLanguage(),
-            theme: SettingsStore.getValueAt(SettingLevel.ACCOUNT, "theme"),
             haveIdServer: Boolean(MatrixClientPeg.get().getIdentityServerUrl()),
             serverSupportsSeparateAddAndBind: null,
             idServerHasUnsignedTerms: false,
@@ -61,6 +60,7 @@ export default class GeneralUserSettingsTab extends React.Component {
             },
             emails: [],
             msisdns: [],
+            ...this._calculateThemeState(),
         };
 
         this.dispatcherRef = dis.register(this._onAction);
@@ -79,6 +79,39 @@ export default class GeneralUserSettingsTab extends React.Component {
         dis.unregister(this.dispatcherRef);
     }
 
+    _calculateThemeState() {
+        // We have to mirror the logic from ThemeWatcher.getEffectiveTheme so we
+        // show the right values for things.
+
+        const themeChoice = SettingsStore.getValueAt(SettingLevel.ACCOUNT, "theme");
+        const systemThemeExplicit = SettingsStore.getValueAt(
+            SettingLevel.DEVICE, "use_system_theme", null, false, true);
+        const themeExplicit = SettingsStore.getValueAt(
+            SettingLevel.DEVICE, "theme", null, false, true);
+
+        // If the user has enabled system theme matching, use that.
+        if (systemThemeExplicit) {
+            return {
+                theme: themeChoice,
+                useSystemTheme: true,
+            };
+        }
+
+        // If the user has set a theme explicitly, use that (no system theme matching)
+        if (themeExplicit) {
+            return {
+                theme: themeChoice,
+                useSystemTheme: false,
+            };
+        }
+
+        // Otherwise assume the defaults for the settings
+        return {
+            theme: themeChoice,
+            useSystemTheme: SettingsStore.getValueAt(SettingLevel.DEVICE, "use_system_theme"),
+        };
+    }
+
     _onAction = (payload) => {
         if (payload.action === 'id_server_changed') {
             this.setState({haveIdServer: Boolean(MatrixClientPeg.get().getIdentityServerUrl())});
@@ -88,11 +121,11 @@ export default class GeneralUserSettingsTab extends React.Component {
 
     _onEmailsChange = (emails) => {
         this.setState({ emails });
-    }
+    };
 
     _onMsisdnsChange = (msisdns) => {
         this.setState({ msisdns });
-    }
+    };
 
     async _getThreepidState() {
         const cli = MatrixClientPeg.get();
@@ -102,7 +135,17 @@ export default class GeneralUserSettingsTab extends React.Component {
 
         // Need to get 3PIDs generally for Account section and possibly also for
         // Discovery (assuming we have an IS and terms are agreed).
-        const threepids = await getThreepidsWithBindStatus(cli);
+        let threepids = [];
+        try {
+            threepids = await getThreepidsWithBindStatus(cli);
+        } catch (e) {
+            const idServerUrl = MatrixClientPeg.get().getIdentityServerUrl();
+            console.warn(
+                `Unable to reach identity server at ${idServerUrl} to check ` +
+                `for 3PIDs bindings in Settings`,
+            );
+            console.warn(e);
+        }
         this.setState({ emails: threepids.filter((a) => a.medium === 'email') });
         this.setState({ msisdns: threepids.filter((a) => a.medium === 'msisdn') });
     }
@@ -115,32 +158,40 @@ export default class GeneralUserSettingsTab extends React.Component {
 
         // By starting the terms flow we get the logic for checking which terms the user has signed
         // for free. So we might as well use that for our own purposes.
+        const idServerUrl = MatrixClientPeg.get().getIdentityServerUrl();
         const authClient = new IdentityAuthClient();
         const idAccessToken = await authClient.getAccessToken({ check: false });
-        startTermsFlow([new Service(
-            SERVICE_TYPES.IS,
-            MatrixClientPeg.get().getIdentityServerUrl(),
-            idAccessToken,
-        )], (policiesAndServices, agreedUrls, extraClassNames) => {
-            return new Promise((resolve, reject) => {
-               this.setState({
-                   idServerName: abbreviateUrl(MatrixClientPeg.get().getIdentityServerUrl()),
-                   requiredPolicyInfo: {
-                       hasTerms: true,
-                       policiesAndServices,
-                       agreedUrls,
-                       resolve,
-                   },
-               });
+        try {
+            await startTermsFlow([new Service(
+                SERVICE_TYPES.IS,
+                idServerUrl,
+                idAccessToken,
+            )], (policiesAndServices, agreedUrls, extraClassNames) => {
+                return new Promise((resolve, reject) => {
+                    this.setState({
+                        idServerName: abbreviateUrl(idServerUrl),
+                        requiredPolicyInfo: {
+                            hasTerms: true,
+                            policiesAndServices,
+                            agreedUrls,
+                            resolve,
+                        },
+                    });
+                });
             });
-        }).then(() => {
             // User accepted all terms
             this.setState({
                 requiredPolicyInfo: {
                     hasTerms: false,
                 },
             });
-        });
+        } catch (e) {
+            console.warn(
+                `Unable to reach identity server at ${idServerUrl} to check ` +
+                `for terms in Settings`,
+            );
+            console.warn(e);
+        }
     }
 
     _onLanguageChange = (newLanguage) => {
@@ -155,9 +206,27 @@ export default class GeneralUserSettingsTab extends React.Component {
         const newTheme = e.target.value;
         if (this.state.theme === newTheme) return;
 
-        SettingsStore.setValue("theme", null, SettingLevel.ACCOUNT, newTheme);
+        // doing getValue in the .catch will still return the value we failed to set,
+        // so remember what the value was before we tried to set it so we can revert
+        const oldTheme = SettingsStore.getValue('theme');
+        SettingsStore.setValue("theme", null, SettingLevel.ACCOUNT, newTheme).catch(() => {
+            dis.dispatch({action: 'recheck_theme'});
+            this.setState({theme: oldTheme});
+        });
         this.setState({theme: newTheme});
-        dis.dispatch({action: 'set_theme', value: newTheme});
+        // The settings watcher doesn't fire until the echo comes back from the
+        // server, so to make the theme change immediately we need to manually
+        // do the dispatch now
+        // XXX: The local echoed value appears to be unreliable, in particular
+        // when settings custom themes(!) so adding forceTheme to override
+        // the value from settings.
+        dis.dispatch({action: 'recheck_theme', forceTheme: newTheme});
+    };
+
+    _onUseSystemThemeChanged = (checked) => {
+        this.setState({useSystemTheme: checked});
+        SettingsStore.setValue("use_system_theme", null, SettingLevel.DEVICE, checked);
+        dis.dispatch({action: 'recheck_theme'});
     };
 
     _onPasswordChangeError = (err) => {
@@ -270,11 +339,27 @@ export default class GeneralUserSettingsTab extends React.Component {
 
     _renderThemeSection() {
         const SettingsFlag = sdk.getComponent("views.elements.SettingsFlag");
+        const LabelledToggleSwitch = sdk.getComponent("views.elements.LabelledToggleSwitch");
+
+        const themeWatcher = new ThemeWatcher();
+        let systemThemeSection;
+        if (themeWatcher.isSystemThemeSupported()) {
+            systemThemeSection = <div>
+                <LabelledToggleSwitch
+                    value={this.state.useSystemTheme}
+                    label={SettingsStore.getDisplayName("use_system_theme")}
+                    onChange={this._onUseSystemThemeChanged}
+                />
+            </div>;
+        }
         return (
             <div className="mx_SettingsTab_section mx_GeneralUserSettingsTab_themeSection">
                 <span className="mx_SettingsTab_subheading">{_t("Theme")}</span>
+                {systemThemeSection}
                 <Field id="theme" label={_t("Theme")} element="select"
-                       value={this.state.theme} onChange={this._onThemeChange}>
+                       value={this.state.theme} onChange={this._onThemeChange}
+                       disabled={this.state.useSystemTheme}
+                >
                     {Object.entries(enumerateThemes()).map(([theme, text]) => {
                         return <option key={theme} value={theme}>{text}</option>;
                     })}

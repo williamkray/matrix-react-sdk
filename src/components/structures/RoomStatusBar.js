@@ -25,7 +25,7 @@ import MatrixClientPeg from '../../MatrixClientPeg';
 import Resend from '../../Resend';
 import * as cryptodevices from '../../cryptodevices';
 import dis from '../../dispatcher';
-import { messageForResourceLimitError } from '../../utils/ErrorUtils';
+import {messageForResourceLimitError, messageForSendError} from '../../utils/ErrorUtils';
 
 const STATUS_BAR_HIDDEN = 0;
 const STATUS_BAR_EXPANDED = 1;
@@ -272,7 +272,7 @@ module.exports = createReactClass({
                 unsentMessages[0].error.data &&
                 unsentMessages[0].error.data.error
             ) {
-                title = unsentMessages[0].error.data.error;
+                title = messageForSendError(unsentMessages[0].error.data) || unsentMessages[0].error.data.error;
             } else {
                 title = _t('%(count)s of your messages have not been sent.', { count: unsentMessages.length });
             }
@@ -289,7 +289,7 @@ module.exports = createReactClass({
         }
 
         return <div className="mx_RoomStatusBar_connectionLostBar">
-            <img src={require("../../../res/img/e2e/warning.svg")} width="24" height="24" title={_t("Warning")} alt="" />
+            <img src={require("../../../res/img/feather-customised/warning-triangle.svg")} width="24" height="24" title={_t("Warning")} alt="" />
             <div>
                 <div className="mx_RoomStatusBar_connectionLostBar_title">
                     { title }
@@ -306,7 +306,7 @@ module.exports = createReactClass({
         if (this._shouldShowConnectionError()) {
             return (
                 <div className="mx_RoomStatusBar_connectionLostBar">
-                    <img src={require("../../../res/img/e2e/warning.svg")} width="24" height="24" title="/!\ " alt="/!\ " />
+                    <img src={require("../../../res/img/feather-customised/warning-triangle.svg")} width="24" height="24" title="/!\ " alt="/!\ " />
                     <div>
                         <div className="mx_RoomStatusBar_connectionLostBar_title">
                             { _t('Connectivity to the server has been lost.') }

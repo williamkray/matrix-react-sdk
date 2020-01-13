@@ -91,7 +91,7 @@ describe('MemberEventListSummary', function() {
         testUtils.beforeEach(this);
         sandbox = testUtils.stubClient();
 
-        languageHandler.setLanguage('en').done(done);
+        languageHandler.setLanguage('en').then(done);
         languageHandler.setMissingEntryGenerator(function(key) {
             return key.split('|', 2)[1];
         });
@@ -115,7 +115,8 @@ describe('MemberEventListSummary', function() {
 
         const renderer = new ShallowRenderer();
         renderer.render(<MemberEventListSummary {...props} />);
-        const result = renderer.getRenderOutput();
+        const wrapper = renderer.getRenderOutput(); // matrix cli context wrapper
+        const result = wrapper.props.children;
 
         expect(result.props.children).toEqual([
           <div className="event_tile" key="event0">Expanded membership</div>,
@@ -137,7 +138,8 @@ describe('MemberEventListSummary', function() {
 
         const renderer = new ShallowRenderer();
         renderer.render(<MemberEventListSummary {...props} />);
-        const result = renderer.getRenderOutput();
+        const wrapper = renderer.getRenderOutput(); // matrix cli context wrapper
+        const result = wrapper.props.children;
 
         expect(result.props.children).toEqual([
           <div className="event_tile" key="event0">Expanded membership</div>,

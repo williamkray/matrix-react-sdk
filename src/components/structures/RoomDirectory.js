@@ -27,10 +27,10 @@ const dis = require('../../dispatcher');
 
 import { linkifyAndSanitizeHtml } from '../../HtmlUtils';
 import PropTypes from 'prop-types';
-import Promise from 'bluebird';
 import { _t } from '../../languageHandler';
 import { instanceForInstanceId, protocolNameForInstanceId } from '../../utils/DirectoryUtils';
 import Analytics from '../../Analytics';
+import MatrixClientContext from "../../contexts/MatrixClientContext";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_TOPIC_LENGTH = 160;
@@ -66,16 +66,6 @@ module.exports = createReactClass({
         };
     },
 
-    childContextTypes: {
-        matrixClient: PropTypes.object,
-    },
-
-    getChildContext: function() {
-        return {
-            matrixClient: MatrixClientPeg.get(),
-        };
-    },
-
     componentWillMount: function() {
         this._unmounted = false;
         this.nextBatch = null;
@@ -89,7 +79,7 @@ module.exports = createReactClass({
             this.setState({protocolsLoading: false});
             return;
         }
-        MatrixClientPeg.get().getThirdpartyProtocols().done((response) => {
+        MatrixClientPeg.get().getThirdpartyProtocols().then((response) => {
             this.protocols = response;
             this.setState({protocolsLoading: false});
         }, (err) => {
@@ -109,20 +99,9 @@ module.exports = createReactClass({
                 ),
             });
         });
-
-        // dis.dispatch({
-        //     action: 'panel_disable',
-        //     sideDisabled: true,
-        //     middleDisabled: true,
-        // });
     },
 
     componentWillUnmount: function() {
-        // dis.dispatch({
-        //     action: 'panel_disable',
-        //     sideDisabled: false,
-        //     middleDisabled: false,
-        // });
         if (this.filterTimeout) {
             clearTimeout(this.filterTimeout);
         }
@@ -135,7 +114,7 @@ module.exports = createReactClass({
             publicRooms: [],
             loading: true,
         });
-        this.getMoreRooms().done();
+        this.getMoreRooms();
     },
 
     getMoreRooms: function() {
@@ -246,7 +225,7 @@ module.exports = createReactClass({
                     if (!alias) return;
                     step = _t('delete the alias.');
                     return MatrixClientPeg.get().deleteAlias(alias);
-                }).done(() => {
+                }).then(() => {
                     modal.close();
                     this.refreshRoomList();
                 }, (err) => {
@@ -282,6 +261,7 @@ module.exports = createReactClass({
             roomServer: server,
             instanceId: instanceId,
             includeAll: includeAll,
+            error: null,
         }, this.refreshRoomList);
         // We also refresh the room list each time even though this
         // filtering is client-side. It hopefully won't be client side
@@ -348,7 +328,7 @@ module.exports = createReactClass({
                 });
                 return;
             }
-            MatrixClientPeg.get().getThirdpartyLocation(protocolName, fields).done((resp) => {
+            MatrixClientPeg.get().getThirdpartyLocation(protocolName, fields).then((resp) => {
                 if (resp.length > 0 && resp[0].alias) {
                     this.showRoomAlias(resp[0].alias, true);
                 } else {
@@ -573,7 +553,7 @@ module.exports = createReactClass({
             if (rows.length === 0 && !this.state.loading) {
                 scrollpanel_content = <i>{ _t('No rooms to show') }</i>;
             } else {
-                scrollpanel_content = <table ref="directory_table" className="mx_RoomDirectory_table">
+                scrollpanel_content = <table className="mx_RoomDirectory_table">
                     <tbody>
                         { rows }
                     </tbody>

@@ -20,7 +20,6 @@ import createReactClass from 'create-react-class';
 import MFileBody from './MFileBody';
 import MatrixClientPeg from '../../../MatrixClientPeg';
 import { decryptFile } from '../../../utils/DecryptFile';
-import Promise from 'bluebird';
 import { _t } from '../../../languageHandler';
 import SettingsStore from "../../../settings/SettingsStore";
 
@@ -89,7 +88,7 @@ module.exports = createReactClass({
         const content = this.props.mxEvent.getContent();
         if (content.file !== undefined && this.state.decryptedUrl === null) {
             let thumbnailPromise = Promise.resolve(null);
-            if (content.info.thumbnail_file) {
+            if (content.info && content.info.thumbnail_file) {
                 thumbnailPromise = decryptFile(
                     content.info.thumbnail_file,
                 ).then(function(blob) {
@@ -115,7 +114,7 @@ module.exports = createReactClass({
                 this.setState({
                     error: err,
                 });
-            }).done();
+            });
         }
     },
 
@@ -133,7 +132,7 @@ module.exports = createReactClass({
 
         if (this.state.error !== null) {
             return (
-                <span className="mx_MVideoBody" ref="body">
+                <span className="mx_MVideoBody">
                     <img src={require("../../../../res/img/warning.svg")} width="16" height="16" />
                     { _t("Error decrypting video") }
                 </span>
@@ -145,8 +144,8 @@ module.exports = createReactClass({
             // The attachment is decrypted in componentDidMount.
             // For now add an img tag with a spinner.
             return (
-                <span className="mx_MVideoBody" ref="body">
-                    <div className="mx_MImageBody_thumbnail mx_MImageBody_thumbnail_spinner" ref="image">
+                <span className="mx_MVideoBody">
+                    <div className="mx_MImageBody_thumbnail mx_MImageBody_thumbnail_spinner">
                         <img src={require("../../../../res/img/spinner.gif")} alt={content.body} width="16" height="16" />
                     </div>
                 </span>

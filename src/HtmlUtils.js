@@ -32,9 +32,9 @@ import classNames from 'classnames';
 import MatrixClientPeg from './MatrixClientPeg';
 import url from 'url';
 
-import EMOJIBASE from 'emojibase-data/en/compact.json';
 import EMOJIBASE_REGEX from 'emojibase-regex';
 import {tryTransformPermalinkToLocalHref} from "./utils/permalinks/Permalinks";
+import {SHORTCODE_TO_EMOJI, getEmojiFromUnicode} from "./emoji";
 
 linkifyMatrix(linkify);
 
@@ -53,13 +53,10 @@ const ZWJ_REGEX = new RegExp("\u200D|\u2003", "g");
 const WHITESPACE_REGEX = new RegExp("\\s", "g");
 
 const BIGEMOJI_REGEX = new RegExp(`^(${EMOJIBASE_REGEX.source})+$`, 'i');
-const SINGLE_EMOJI_REGEX = new RegExp(`^(${EMOJIBASE_REGEX.source})$`, 'i');
 
 const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 const PERMITTED_URL_SCHEMES = ['http', 'https', 'ftp', 'mailto', 'magnet'];
-
-const VARIATION_SELECTOR = String.fromCharCode(0xFE0F);
 
 /*
  * Return true if the given string contains emoji
@@ -79,10 +76,7 @@ function mightContainEmoji(str) {
  * @return {String} The shortcode (such as :thumbup:)
  */
 export function unicodeToShortcode(char) {
-    // Check against both the char and the char with an empty variation selector appended because that's how
-    // emoji-base stores its base emojis which have variations. https://github.com/vector-im/riot-web/issues/9785
-    const emptyVariation = char + VARIATION_SELECTOR;
-    const data = EMOJIBASE.find(e => e.unicode === char || e.unicode === emptyVariation);
+    const data = getEmojiFromUnicode(char);
     return (data && data.shortcodes ? `:${data.shortcodes[0]}:` : '');
 }
 
@@ -94,7 +88,7 @@ export function unicodeToShortcode(char) {
  */
 export function shortcodeToUnicode(shortcode) {
     shortcode = shortcode.slice(1, shortcode.length - 1);
-    const data = EMOJIBASE.find(e => e.shortcodes && e.shortcodes.includes(shortcode));
+    const data = SHORTCODE_TO_EMOJI.get(shortcode);
     return data ? data.unicode : null;
 }
 

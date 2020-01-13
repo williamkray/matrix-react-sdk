@@ -1,5 +1,6 @@
 /*
 Copyright 2015, 2016 OpenMarket Ltd
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -143,6 +144,8 @@ limitations under the License.
 
 // toggle menuButton and badge on hover/menu displayed
 .mx_RoomTile_menuDisplayed,
+// or on keyboard focus of room tile
+.mx_RoomTile.focus-visible:focus-within,
 .mx_LeftPanel_container:not(.collapsed) .mx_RoomTile:hover {
     .mx_RoomTile_menuButton {
         display: block;
