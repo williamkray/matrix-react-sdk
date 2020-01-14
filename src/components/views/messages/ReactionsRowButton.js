@@ -94,7 +94,7 @@ export default class ReactionsRowButton extends React.PureComponent {
             const size = 18;
             const url = MatrixClientPeg.get().mxcUrlToHttp(
                 content,
-                undefined,
+                200,
                 size,
                 "crop",
             );
