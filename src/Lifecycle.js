@@ -2,6 +2,7 @@
 Copyright 2015, 2016 OpenMarket Ltd
 Copyright 2017 Vector Creations Ltd
 Copyright 2018 New Vector Ltd
+Copyright 2019, 2020 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@ limitations under the License.
 
 import Matrix from 'matrix-js-sdk';
 
-import MatrixClientPeg from './MatrixClientPeg';
+import {MatrixClientPeg} from './MatrixClientPeg';
 import EventIndexPeg from './indexing/EventIndexPeg';
 import createMatrixClient from './utils/createMatrixClient';
 import Analytics from './Analytics';
@@ -28,15 +29,17 @@ import Presence from './Presence';
 import dis from './dispatcher';
 import DMRoomMap from './utils/DMRoomMap';
 import Modal from './Modal';
-import sdk from './index';
+import * as sdk from './index';
 import ActiveWidgetStore from './stores/ActiveWidgetStore';
 import PlatformPeg from "./PlatformPeg";
 import { sendLoginRequest } from "./Login";
 import * as StorageManager from './utils/StorageManager';
 import SettingsStore from "./settings/SettingsStore";
 import TypingStore from "./stores/TypingStore";
+import ToastStore from "./stores/ToastStore";
 import {IntegrationManagers} from "./integrations/IntegrationManagers";
 import {Mjolnir} from "./mjolnir/Mjolnir";
+import DeviceListener from "./DeviceListener";
 
 /**
  * Called at startup, to attempt to build a logged-in Matrix session. It tries
@@ -375,7 +378,7 @@ export function hydrateSession(credentials) {
 
     const overwrite = credentials.userId !== oldUserId || credentials.deviceId !== oldDeviceId;
     if (overwrite) {
-        console.warn("Clearing all data: Old session belongs to a different user/device");
+        console.warn("Clearing all data: Old session belongs to a different user/session");
     }
 
     return _doSetLoggedIn(credentials, overwrite);
@@ -432,7 +435,7 @@ async function _doSetLoggedIn(credentials, clearStorage) {
         }
     }
 
-    Analytics.setLoggedIn(credentials.guest, credentials.homeserverUrl, credentials.identityServerUrl);
+    Analytics.setLoggedIn(credentials.guest, credentials.homeserverUrl);
 
     if (localStorage) {
         try {
@@ -575,6 +578,7 @@ async function startMatrixClient(startSyncing=true) {
     Notifier.start();
     UserActivity.sharedInstance().start();
     TypingStore.sharedInstance().reset(); // just in case
+    ToastStore.sharedInstance().reset();
     if (!SettingsStore.getValue("lowBandwidth")) {
         Presence.start();
     }
@@ -588,12 +592,18 @@ async function startMatrixClient(startSyncing=true) {
     Mjolnir.sharedInstance().start();
 
     if (startSyncing) {
-        await MatrixClientPeg.start();
+        // The client might want to populate some views with events from the
+        // index (e.g. the FilePanel), therefore initialize the event index
+        // before the client.
         await EventIndexPeg.init();
+        await MatrixClientPeg.start();
     } else {
         console.warn("Caller requested only auxiliary services be started");
         await MatrixClientPeg.assign();
     }
+
+    // This needs to be started after crypto is set up
+    DeviceListener.sharedInstance().start();
 
     // dispatch that we finished starting up to wire up any other bits
     // of the matrix client that cannot be set prior to starting up.
@@ -622,7 +632,7 @@ export async function onLoggedOut() {
  * @returns {Promise} promise which resolves once the stores have been cleared
  */
 async function _clearStorage() {
-    Analytics.logout();
+    Analytics.disable();
 
     if (window.localStorage) {
         window.localStorage.clear();
@@ -651,6 +661,7 @@ export function stopMatrixClient(unsetClient=true) {
     ActiveWidgetStore.stop();
     IntegrationManagers.sharedInstance().stopWatching();
     Mjolnir.sharedInstance().stop();
+    DeviceListener.sharedInstance().stop();
     if (DMRoomMap.shared()) DMRoomMap.shared().stop();
     EventIndexPeg.stop();
     const cli = MatrixClientPeg.get();

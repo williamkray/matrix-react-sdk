@@ -24,7 +24,7 @@ import { throttle } from 'lodash';
 import AccessibleButton from '../../components/views/elements/AccessibleButton';
 import classNames from 'classnames';
 
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'SearchBox',
 
     propTypes: {
@@ -133,9 +133,11 @@ module.exports = createReactClass({
             return null;
         }
         const clearButton = (!this.state.blurred || this.state.searchTerm) ?
-            (<AccessibleButton key="button"
-                    className="mx_SearchBox_closeButton"
-                    onClick={ () => {this._clearSearch("button"); } }>
+            (<AccessibleButton
+                key="button"
+                tabIndex={-1}
+                className="mx_SearchBox_closeButton"
+                onClick={ () => {this._clearSearch("button"); } }>
             </AccessibleButton>) : undefined;
 
         // show a shorter placeholder when blurred, if requested
@@ -158,6 +160,7 @@ module.exports = createReactClass({
                     onKeyDown={ this._onKeyDown }
                     onBlur={this._onBlur}
                     placeholder={ placeholder }
+                    autoComplete="off"
                 />
                 { clearButton }
             </div>

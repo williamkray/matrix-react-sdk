@@ -3,6 +3,7 @@ Copyright 2015, 2016 OpenMarket Ltd
 Copyright 2018 New Vector Ltd
 Copyright 2018, 2019 ponies.im
 Copyright 2019 Michael Telatynski <7t3chguy@gmail.com>
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,12 +26,12 @@ the Cooperative Software License as distributed with this project.
 import React from 'react';
 import PropTypes from 'prop-types';
 import createReactClass from 'create-react-class';
-import AvatarLogic from '../../../Avatar';
+import * as AvatarLogic from '../../../Avatar';
 import SettingsStore from "../../../settings/SettingsStore";
 import AccessibleButton from '../elements/AccessibleButton';
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
 
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'BaseAvatar',
 
     propTypes: {

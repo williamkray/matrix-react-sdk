@@ -17,10 +17,10 @@ limitations under the License.
 
 import React from 'react';
 import Modal from '../../../Modal';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import dis from '../../../dispatcher';
 import { _t } from '../../../languageHandler';
-import MatrixClientPeg from '../../../MatrixClientPeg';
+import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import SettingsStore from "../../../settings/SettingsStore";
 
 export default class LogoutDialog extends React.Component {
@@ -138,7 +138,7 @@ export default class LogoutDialog extends React.Component {
                 const DialogButtons = sdk.getComponent('views.elements.DialogButtons');
                 let setupButtonCaption;
                 if (this.state.backupInfo) {
-                    setupButtonCaption = _t("Connect this device to Key Backup");
+                    setupButtonCaption = _t("Connect this session to Key Backup");
                 } else {
                     // if there's an error fetching the backup info, we'll just assume there's
                     // no backup for the purpose of the button caption

@@ -2,7 +2,7 @@
 Copyright 2017 Travis Ralston
 Copyright 2018, 2019 New Vector Ltd.
 Copyright 2018, 2019 ponies.im
-Copyright 2019 The Matrix.org Foundation C.I.C.
+Copyright 2019, 2020 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -186,12 +186,6 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
-    "feature_ftue_dms": {
-        isFeature: true,
-        displayName: _td("New DM invite dialog (under development)"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
     "feature_presence_in_room_list": {
         isFeature: true,
         displayName: _td("Show a presence dot next to DMs in the room list"),
@@ -208,10 +202,9 @@ export const SETTINGS = {
     },
     "feature_cross_signing": {
         isFeature: true,
-        displayName: _td("Enable cross-signing to verify per-user instead of per-device (in development)"),
+        displayName: _td("Enable cross-signing to verify per-user instead of per-session (in development)"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
-        controller: new ReloadOnChangeController(),
     },
     "feature_event_indexing": {
         isFeature: true,
@@ -224,6 +217,12 @@ export const SETTINGS = {
         supportedLevels: LEVELS_FEATURE,
         displayName: _td("Show info about bridges in room settings"),
         default: false,
+    },
+    "feature_invite_only_padlocks": {
+        isFeature: true,
+        supportedLevels: LEVELS_FEATURE,
+        displayName: _td("Show padlocks on invite only rooms"),
+        default: true,
     },
     "MessageComposerInput.suggestEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
@@ -322,6 +321,11 @@ export const SETTINGS = {
         default: true,
         invertedSettingName: 'dontSendTypingNotifications',
     },
+    "showTypingNotifications": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        displayName: _td("Show typing notifications"),
+        default: true,
+    },
     "MessageComposerInput.autoReplaceEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td('Automatically replace plain text Emoji'),
@@ -413,8 +417,8 @@ export const SETTINGS = {
         supportedLevels: ['room-device', 'device'],
         supportedLevelsAreOrdered: true,
         displayName: {
-            "default": _td('Never send encrypted messages to unverified devices from this device'),
-            "room-device": _td('Never send encrypted messages to unverified devices in this room from this device'),
+            "default": _td('Never send encrypted messages to unverified sessions from this session'),
+            "room-device": _td('Never send encrypted messages to unverified sessions in this room from this session'),
         },
         default: false,
     },
@@ -544,5 +548,20 @@ export const SETTINGS = {
     "lastRightPanelPhaseForGroup": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
         default: RIGHT_PANEL_PHASES.GroupMemberList,
+    },
+    "enableEventIndexing": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        displayName: _td("Enable message search in encrypted rooms"),
+        default: true,
+    },
+    "keepSecretStoragePassphraseForSession": {
+         supportedLevels: ['device', 'config'],
+         displayName: _td("Keep secret storage passphrase in memory for this session"),
+         default: false,
+    },
+    "crawlerSleepTime": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        displayName: _td("How fast should messages be downloaded."),
+        default: 3000,
     },
 };

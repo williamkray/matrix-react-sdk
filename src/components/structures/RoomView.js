@@ -30,15 +30,15 @@ import classNames from 'classnames';
 import { _t } from '../../languageHandler';
 import {RoomPermalinkCreator} from '../../utils/permalinks/Permalinks';
 
-import MatrixClientPeg from '../../MatrixClientPeg';
+import {MatrixClientPeg} from '../../MatrixClientPeg';
 import ContentMessages from '../../ContentMessages';
 import Modal from '../../Modal';
-import sdk from '../../index';
+import * as sdk from '../../index';
 import CallHandler from '../../CallHandler';
 import dis from '../../dispatcher';
 import Tinter from '../../Tinter';
 import rate_limited_func from '../../ratelimitedfunc';
-import ObjectUtils from '../../ObjectUtils';
+import * as ObjectUtils from '../../ObjectUtils';
 import * as Rooms from '../../Rooms';
 import eventSearch from '../../Searching';
 
@@ -53,6 +53,7 @@ import SettingsStore, {SettingLevel} from "../../settings/SettingsStore";
 import WidgetUtils from '../../utils/WidgetUtils';
 import AccessibleButton from "../views/elements/AccessibleButton";
 import RightPanelStore from "../../stores/RightPanelStore";
+import {haveTileForEvent} from "../views/rooms/EventTile";
 import RoomContext from "../../contexts/RoomContext";
 
 const DEBUG = false;
@@ -65,7 +66,7 @@ if (DEBUG) {
     debuglog = console.log.bind(console);
 }
 
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'RoomView',
     propTypes: {
         ConferenceHandler: PropTypes.any,
@@ -172,6 +173,7 @@ module.exports = createReactClass({
         MatrixClientPeg.get().on("accountData", this.onAccountData);
         MatrixClientPeg.get().on("crypto.keyBackupStatus", this.onKeyBackupStatus);
         MatrixClientPeg.get().on("deviceVerificationChanged", this.onDeviceVerificationChanged);
+        MatrixClientPeg.get().on("userTrustStatusChanged", this.onUserVerificationChanged);
         // Start listening for RoomViewStore updates
         this._roomStoreToken = RoomViewStore.addListener(this._onRoomViewStoreUpdate);
         this._onRoomViewStoreUpdate(true);
@@ -340,7 +342,7 @@ module.exports = createReactClass({
                         peekLoading: false,
                     });
                     this._onRoomLoaded(room);
-                }, (err) => {
+                }).catch((err) => {
                     if (this.unmounted) {
                         return;
                     }
@@ -353,7 +355,7 @@ module.exports = createReactClass({
                     // This won't necessarily be a MatrixError, but we duck-type
                     // here and say if it's got an 'errcode' key with the right value,
                     // it means we can't peek.
-                    if (err.errcode == "M_GUEST_ACCESS_FORBIDDEN") {
+                    if (err.errcode === "M_GUEST_ACCESS_FORBIDDEN" || err.errcode === 'M_FORBIDDEN') {
                         // This is fine: the room just isn't peekable (we assume).
                         this.setState({
                             peekLoading: false,
@@ -363,8 +365,6 @@ module.exports = createReactClass({
                     }
                 });
             } else if (room) {
-                //viewing a previously joined room, try to lazy load members
-
                 // Stop peeking because we have joined this room previously
                 MatrixClientPeg.get().stopPeeking();
                 this.setState({isPeeking: false});
@@ -458,8 +458,6 @@ module.exports = createReactClass({
         // (We could use isMounted, but facebook have deprecated that.)
         this.unmounted = true;
 
-        SettingsStore.unwatchSetting(this._ciderWatcherRef);
-
         // update the scroll map before we get unmounted
         if (this.state.roomId) {
             RoomScrollStateStore.setScrollState(this.state.roomId, this._getScrollState());
@@ -485,11 +483,13 @@ module.exports = createReactClass({
             MatrixClientPeg.get().removeListener("Room.timeline", this.onRoomTimeline);
             MatrixClientPeg.get().removeListener("Room.name", this.onRoomName);
             MatrixClientPeg.get().removeListener("Room.accountData", this.onRoomAccountData);
+            MatrixClientPeg.get().removeListener("RoomState.events", this.onRoomStateEvents);
             MatrixClientPeg.get().removeListener("Room.myMembership", this.onMyMembership);
             MatrixClientPeg.get().removeListener("RoomState.members", this.onRoomStateMember);
             MatrixClientPeg.get().removeListener("accountData", this.onAccountData);
             MatrixClientPeg.get().removeListener("crypto.keyBackupStatus", this.onKeyBackupStatus);
             MatrixClientPeg.get().removeListener("deviceVerificationChanged", this.onDeviceVerificationChanged);
+            MatrixClientPeg.get().removeListener("userTrustStatusChanged", this.onUserVerificationChanged);
         }
 
         window.removeEventListener('beforeunload', this.onPageUnload);
@@ -760,6 +760,14 @@ module.exports = createReactClass({
         this._updateE2EStatus(room);
     },
 
+    onUserVerificationChanged: function(userId, _trustStatus) {
+        const room = this.state.room;
+        if (!room || !room.currentState.getMember(userId)) {
+            return;
+        }
+        this._updateE2EStatus(room);
+    },
+
     _updateE2EStatus: async function(room) {
         const cli = MatrixClientPeg.get();
         if (!cli.isRoomEncrypted(room.roomId)) {
@@ -780,32 +788,44 @@ module.exports = createReactClass({
                     e2eStatus: hasUnverifiedDevices ? "warning" : "verified",
                 });
             });
+            debuglog("e2e check is warning/verified only as cross-signing is off");
             return;
         }
+
+        // Duplication between here and _updateE2eStatus in RoomTile
+        /* At this point, the user has encryption on and cross-signing on */
         const e2eMembers = await room.getEncryptionTargetMembers();
-        for (const member of e2eMembers) {
-            const { userId } = member;
-            const userVerified = cli.checkUserTrust(userId).isCrossSigningVerified();
-            if (!userVerified) {
-                this.setState({
-                    e2eStatus: "warning",
-                });
-                return;
-            }
-            const devices = await cli.getStoredDevicesForUser(userId);
-            const allDevicesVerified = devices.every(device => {
-                const { deviceId } = device;
-                return cli.checkDeviceTrust(userId, deviceId).isCrossSigningVerified();
+        const verified = [];
+        const unverified = [];
+        e2eMembers.map(({userId}) => userId)
+            .filter((userId) => userId !== cli.getUserId())
+            .forEach((userId) => {
+                (cli.checkUserTrust(userId).isCrossSigningVerified() ?
+                verified : unverified).push(userId)
             });
-            if (!allDevicesVerified) {
+
+        debuglog("e2e verified", verified, "unverified", unverified);
+
+        /* Check all verified user devices. */
+        /* Don't alarm if no other users are verified  */
+        const targets = (verified.length > 0) ? [...verified, cli.getUserId()] : verified;
+        for (const userId of targets) {
+            const devices = await cli.getStoredDevicesForUser(userId);
+            const anyDeviceNotVerified = devices.some(({deviceId}) => {
+                return !cli.checkDeviceTrust(userId, deviceId).isVerified();
+            });
+            if (anyDeviceNotVerified) {
                 this.setState({
                     e2eStatus: "warning",
                 });
+                debuglog("e2e status set to warning as not all users trust all of their sessions." +
+                         " Aborted on user", userId);
                 return;
             }
         }
+
         this.setState({
-            e2eStatus: "verified",
+            e2eStatus: unverified.length === 0 ? "verified" : "normal",
         });
     },
 
@@ -884,7 +904,7 @@ module.exports = createReactClass({
 
     // rate limited because a power level change will emit an event for every
     // member in the room.
-    _updateRoomMembers: new rate_limited_func(function(dueToMember) {
+    _updateRoomMembers: rate_limited_func(function(dueToMember) {
         // a member state changed in this room
         // refresh the conf call notification state
         this._updateConfCallNotification();
@@ -1242,7 +1262,7 @@ module.exports = createReactClass({
             const roomId = mxEv.getRoomId();
             const room = cli.getRoom(roomId);
 
-            if (!EventTile.haveTileForEvent(mxEv)) {
+            if (!haveTileForEvent(mxEv)) {
                 // XXX: can this ever happen? It will make the result count
                 // not match the displayed count.
                 continue;
@@ -1344,6 +1364,41 @@ module.exports = createReactClass({
                 rejectError: error,
             });
         });
+    },
+
+    onRejectAndIgnoreClick: async function() {
+        this.setState({
+            rejecting: true,
+        });
+
+        const cli = MatrixClientPeg.get();
+        try {
+            const myMember = this.state.room.getMember(cli.getUserId());
+            const inviteEvent = myMember.events.member;
+            const ignoredUsers = MatrixClientPeg.get().getIgnoredUsers();
+            ignoredUsers.push(inviteEvent.getSender()); // de-duped internally in the js-sdk
+            await cli.setIgnoredUsers(ignoredUsers);
+
+            await cli.leave(this.state.roomId);
+            dis.dispatch({ action: 'view_next_room' });
+            this.setState({
+                rejecting: false,
+            });
+        } catch (error) {
+            console.error("Failed to reject invite: %s", error);
+
+            const msg = error.message ? error.message : JSON.stringify(error);
+            const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
+            Modal.createTrackedDialog('Failed to reject invite', '', ErrorDialog, {
+                title: _t("Failed to reject invite"),
+                description: msg,
+            });
+
+            self.setState({
+                rejecting: false,
+                rejectError: error,
+            });
+        }
     },
 
     onRejectThreepidInviteButtonClicked: function(ev) {
@@ -1650,9 +1705,11 @@ module.exports = createReactClass({
                 return (
                     <div className="mx_RoomView">
                         <ErrorBoundary>
-                            <RoomPreviewBar onJoinClick={this.onJoinButtonClicked}
+                            <RoomPreviewBar
+                                onJoinClick={this.onJoinButtonClicked}
                                 onForgetClick={this.onForgetClick}
                                 onRejectClick={this.onRejectButtonClicked}
+                                onRejectAndIgnoreClick={this.onRejectAndIgnoreClick}
                                 inviterName={inviterName}
                                 canPreview={false}
                                 joining={this.state.joining}
@@ -1990,5 +2047,3 @@ module.exports = createReactClass({
         );
     },
 });
-
-module.exports.RoomContext = RoomContext;

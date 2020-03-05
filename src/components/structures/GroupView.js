@@ -19,8 +19,8 @@ limitations under the License.
 import React from 'react';
 import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
-import MatrixClientPeg from '../../MatrixClientPeg';
-import sdk from '../../index';
+import {MatrixClientPeg} from '../../MatrixClientPeg';
+import * as sdk from '../../index';
 import dis from '../../dispatcher';
 import { getHostingLink } from '../../utils/HostingLink';
 import { sanitizedHtmlNode } from '../../HtmlUtils';
@@ -821,10 +821,10 @@ export default createReactClass({
                 {_t(
                     "Want more than a community? <a>Get your own server</a>", {},
                     {
-                        a: sub => <a href={hostingSignupLink} target="_blank" rel="noopener">{sub}</a>,
+                        a: sub => <a href={hostingSignupLink} target="_blank" rel="noreferrer noopener">{sub}</a>,
                     },
                 )}
-                <a href={hostingSignupLink} target="_blank" rel="noopener">
+                <a href={hostingSignupLink} target="_blank" rel="noreferrer noopener">
                     <img src={require("../../../res/img/external-link.svg")} width="11" height="10" alt='' />
                 </a>
             </div>;

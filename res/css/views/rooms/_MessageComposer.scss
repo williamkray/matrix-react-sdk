@@ -76,6 +76,8 @@ limitations under the License.
     left: 60px;
     margin-right: 0; // Counteract the E2EIcon class
     margin-left: 3px; // Counteract the E2EIcon class
+    width: 15px;
+    height: 15px;
 }
 
 .mx_MessageComposer_noperm_error {
@@ -101,7 +103,7 @@ limitations under the License.
     display: flex;
     flex-direction: column;
     min-height: 60px;
-    justify-content: start;
+    justify-content: flex-start;
     align-items: flex-start;
     font-size: 14px;
     margin-right: 6px;

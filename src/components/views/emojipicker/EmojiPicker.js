@@ -17,10 +17,10 @@ limitations under the License.
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import { _t } from '../../../languageHandler';
 
-import * as recent from './recent';
+import * as recent from '../../../emojipicker/recent';
 import {DATA_BY_CATEGORY, getEmojiFromUnicode} from "../../../emoji";
 
 export const CATEGORY_HEADER_HEIGHT = 22;

@@ -38,11 +38,11 @@ import createReactClass from 'create-react-class';
 import classNames from 'classnames';
 import dis from '../../../dispatcher';
 import Modal from '../../../Modal';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import { _t } from '../../../languageHandler';
 import createRoom from '../../../createRoom';
 import DMRoomMap from '../../../utils/DMRoomMap';
-import Unread from '../../../Unread';
+import * as Unread from '../../../Unread';
 import { findReadReceiptFromUserId } from '../../../utils/Receipt';
 import AccessibleButton from '../elements/AccessibleButton';
 import RoomViewStore from '../../../stores/RoomViewStore';
@@ -52,10 +52,10 @@ import SettingsStore from "../../../settings/SettingsStore";
 import { discordColorToCssAdjust, getMembersBgColorForTheme } from "../../../utils/poniesUtils";
 import E2EIcon from "./E2EIcon";
 import AutoHideScrollbar from "../../structures/AutoHideScrollbar";
-import MatrixClientPeg from "../../../MatrixClientPeg";
+import {MatrixClientPeg} from "../../../MatrixClientPeg";
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
 
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'MemberInfo',
 
     propTypes: {
@@ -266,7 +266,7 @@ module.exports = createReactClass({
                 e2eStatus: self._getE2EStatus(devices),
             });
         }, function(err) {
-            console.log("Error downloading devices", err);
+            console.log("Error downloading sessions", err);
             self.setState({devicesLoading: false});
         });
     },
@@ -772,9 +772,9 @@ module.exports = createReactClass({
             // still loading
             devComponents = <Spinner />;
         } else if (devices === null) {
-            devComponents = _t("Unable to load device list");
+            devComponents = _t("Unable to load session list");
         } else if (devices.length === 0) {
-            devComponents = _t("No devices with registered encryption keys");
+            devComponents = _t("No sessions with registered encryption keys");
         } else {
             devComponents = [];
             for (let i = 0; i < devices.length; i++) {
@@ -786,7 +786,7 @@ module.exports = createReactClass({
 
         return (
             <div>
-                <h3>{ _t("Devices") }</h3>
+                <h3>{ _t("Sessions") }</h3>
                 <div className="mx_MemberInfo_devices">
                     { devComponents }
                 </div>
@@ -1166,7 +1166,8 @@ module.exports = createReactClass({
             }
         }
 
-        const avatarUrl = this.props.member.getMxcAvatarUrl();
+        const {member} = this.props;
+        const avatarUrl = member.avatarUrl || (member.getMxcAvatarUrl && member.getMxcAvatarUrl());
         let avatarElement;
         if (avatarUrl) {
             const httpUrl = this.context.mxcUrlToHttp(avatarUrl, 800, 800);

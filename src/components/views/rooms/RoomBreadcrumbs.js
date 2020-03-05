@@ -16,12 +16,12 @@ limitations under the License.
 
 import React, {createRef} from "react";
 import dis from "../../../dispatcher";
-import MatrixClientPeg from "../../../MatrixClientPeg";
+import {MatrixClientPeg} from "../../../MatrixClientPeg";
 import SettingsStore, {SettingLevel} from "../../../settings/SettingsStore";
 import AccessibleButton from '../elements/AccessibleButton';
 import RoomAvatar from '../avatars/RoomAvatar';
 import classNames from 'classnames';
-import sdk from "../../../index";
+import * as sdk from "../../../index";
 import Analytics from "../../../Analytics";
 import * as RoomNotifs from '../../../RoomNotifs';
 import * as FormattingUtils from "../../../utils/FormattingUtils";
@@ -363,7 +363,7 @@ export default class RoomBreadcrumbs extends React.Component {
             }
 
             let dmIndicator;
-            if (this._isDmRoom(r.room)) {
+            if (this._isDmRoom(r.room) && !SettingsStore.isFeatureEnabled("feature_cross_signing")) {
                 dmIndicator = <img
                     src={require("../../../../res/img/icon_person.svg")}
                     className="mx_RoomBreadcrumbs_dmIndicator"

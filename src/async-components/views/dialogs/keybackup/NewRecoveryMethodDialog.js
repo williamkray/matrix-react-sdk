@@ -17,8 +17,8 @@ limitations under the License.
 
 import React from "react";
 import PropTypes from "prop-types";
-import sdk from "../../../../index";
-import MatrixClientPeg from '../../../../MatrixClientPeg';
+import * as sdk from "../../../../index";
+import {MatrixClientPeg} from '../../../../MatrixClientPeg';
 import dis from "../../../../dispatcher";
 import { _t } from "../../../../languageHandler";
 import Modal from "../../../../Modal";
@@ -73,7 +73,7 @@ export default class NewRecoveryMethodDialog extends React.PureComponent {
             content = <div>
                 {newMethodDetected}
                 <p>{_t(
-                    "This device is encrypting history using the new recovery method.",
+                    "This session is encrypting history using the new recovery method.",
                 )}</p>
                 {hackWarning}
                 <DialogButtons

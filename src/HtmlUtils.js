@@ -29,7 +29,7 @@ import linkifyMatrix from './linkify-matrix';
 import _linkifyElement from 'linkifyjs/element';
 import _linkifyString from 'linkifyjs/string';
 import classNames from 'classnames';
-import MatrixClientPeg from './MatrixClientPeg';
+import {MatrixClientPeg} from './MatrixClientPeg';
 import url from 'url';
 
 import EMOJIBASE_REGEX from 'emojibase-regex';
@@ -160,7 +160,7 @@ const transformTags = { // custom to matrix
                 delete attribs.target;
             }
         }
-        attribs.rel = 'noopener'; // https://mathiasbynens.github.io/rel-noopener/
+        attribs.rel = 'noreferrer noopener'; // https://mathiasbynens.github.io/rel-noopener/
         return { tagName, attribs };
     },
     'img': function(tagName, attribs) {
@@ -382,6 +382,7 @@ class TextHighlighter extends BaseHighlighter {
  * opts.stripReplyFallback: optional argument specifying the event is a reply and so fallback needs removing
  * opts.returnString: return an HTML string rather than JSX elements
  * opts.forComposerQuote: optional param to lessen the url rewriting done by sanitization, for quoting into composer
+ * opts.ref: React ref to attach to any React components returned (not compatible with opts.returnString)
  */
 export function bodyToHtml(content, highlights, opts={}) {
     const isHtmlMessage = content.format === "org.matrix.custom.html" && content.formatted_body;
@@ -464,8 +465,8 @@ export function bodyToHtml(content, highlights, opts={}) {
     });
 
     return isDisplayedWithHtml ?
-        <span key="body" className={className} dangerouslySetInnerHTML={{ __html: safeBody }} dir="auto" /> :
-        <span key="body" className={className} dir="auto">{ strippedBody }</span>;
+        <span key="body" ref={opts.ref} className={className} dangerouslySetInnerHTML={{ __html: safeBody }} dir="auto" /> :
+        <span key="body" ref={opts.ref} className={className} dir="auto">{ strippedBody }</span>;
 }
 
 /**

@@ -21,7 +21,7 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import {Key} from "../../Keyboard";
-import sdk from "../../index";
+import * as sdk from "../../index";
 import AccessibleButton from "../views/elements/AccessibleButton";
 
 // Shamelessly ripped off Modal.js.  There's probably a better way
@@ -255,7 +255,7 @@ export class ContextMenu extends React.Component {
 
         if (chevronFace === 'top' || chevronFace === 'bottom') {
             chevronOffset.left = props.chevronOffset;
-        } else {
+        } else if (position.top !== undefined) {
             const target = position.top;
 
             // By default, no adjustment is made

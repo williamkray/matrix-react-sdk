@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {Key} from "../../../Keyboard";
-
-const React = require("react");
+import React from "react";
 import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import { _t } from '../../../languageHandler';
-const sdk = require('../../../index');
-const MatrixClientPeg = require("../../../MatrixClientPeg");
+import {MatrixClientPeg} from "../../../MatrixClientPeg";
+import {Key} from "../../../Keyboard";
+import * as sdk from "../../../index";
 
 // XXX: This component is not cross-signing aware.
 // https://github.com/vector-im/riot-web/issues/11752 tracks either updating this
 // component or taking it out to pasture.
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'EncryptedEventDialog',
 
     propTypes: {
@@ -192,7 +191,7 @@ module.exports = createReactClass({
                     <h4>{ _t('Event information') }</h4>
                     { this._renderEventInfo() }
 
-                    <h4>{ _t('Sender device information') }</h4>
+                    <h4>{ _t('Sender session information') }</h4>
                     { this._renderDeviceInfo() }
                 </div>
                 <div className="mx_Dialog_buttons">

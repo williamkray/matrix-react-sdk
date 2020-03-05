@@ -22,9 +22,9 @@ import PropTypes from 'prop-types';
 import createReactClass from 'create-react-class';
 import classNames from 'classnames';
 import dis from '../../../dispatcher';
-import MatrixClientPeg from '../../../MatrixClientPeg';
+import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import DMRoomMap from '../../../utils/DMRoomMap';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import {ContextMenu, ContextMenuButton, toRightOf} from '../../structures/ContextMenu';
 import * as RoomNotifs from '../../../RoomNotifs';
 import * as FormattingUtils from '../../../utils/FormattingUtils';
@@ -32,8 +32,13 @@ import ActiveRoomObserver from '../../../ActiveRoomObserver';
 import RoomViewStore from '../../../stores/RoomViewStore';
 import SettingsStore from "../../../settings/SettingsStore";
 import {_t} from "../../../languageHandler";
+import {RovingTabIndexWrapper} from "../../../accessibility/RovingTabIndex";
+import E2EIcon from './E2EIcon';
+import InviteOnlyIcon from './InviteOnlyIcon';
+// eslint-disable-next-line camelcase
+import rate_limited_func from '../../../ratelimitedfunc';
 
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'RoomTile',
 
     propTypes: {
@@ -56,7 +61,11 @@ module.exports = createReactClass({
     },
 
     getInitialState: function() {
+        const joinRules = this.props.room.currentState.getStateEvents("m.room.join_rules", "");
+        const joinRule = joinRules && joinRules.getContent().join_rule;
+
         return ({
+            joinRule,
             hover: false,
             badgeHover: false,
             contextMenuPosition: null, // DOM bounding box, null if non-shown
@@ -65,6 +74,7 @@ module.exports = createReactClass({
             notificationCount: this.props.room.getUnreadNotificationCount(),
             selected: this.props.room.roomId === RoomViewStore.getRoomId(),
             statusMessage: this._getStatusMessage(),
+            e2eStatus: null,
         });
     },
 
@@ -97,11 +107,96 @@ module.exports = createReactClass({
         return statusUser._unstable_statusMessage;
     },
 
+    onRoomStateMember: function(ev, state, member) {
+        // we only care about leaving users
+        // because trust state will change if someone joins a megolm session anyway
+        if (member.membership !== "leave") {
+            return;
+        }
+        // ignore members in other rooms
+        if (member.roomId !== this.props.room.roomId) {
+            return;
+        }
+
+        this._updateE2eStatus();
+    },
+
+    onUserVerificationChanged: function(userId, _trustStatus) {
+        if (!this.props.room.getMember(userId)) {
+            // Not in this room
+            return;
+        }
+        this._updateE2eStatus();
+    },
+
+    onRoomTimeline: function(ev, room) {
+        if (!room) return;
+        if (room.roomId != this.props.room.roomId) return;
+        if (ev.getType() !== "m.room.encryption") return;
+        MatrixClientPeg.get().removeListener("Room.timeline", this.onRoomTimeline);
+        this.onFindingRoomToBeEncrypted();
+    },
+
+    onFindingRoomToBeEncrypted: function() {
+        const cli = MatrixClientPeg.get();
+        cli.on("RoomState.members", this.onRoomStateMember);
+        cli.on("userTrustStatusChanged", this.onUserVerificationChanged);
+
+        this._updateE2eStatus();
+    },
+
+    _updateE2eStatus: async function() {
+        const cli = MatrixClientPeg.get();
+        if (!cli.isRoomEncrypted(this.props.room.roomId)) {
+            return;
+        }
+        if (!SettingsStore.isFeatureEnabled("feature_cross_signing")) {
+            return;
+        }
+
+        // Duplication between here and _updateE2eStatus in RoomView
+        const e2eMembers = await this.props.room.getEncryptionTargetMembers();
+        const verified = [];
+        const unverified = [];
+        e2eMembers.map(({userId}) => userId)
+            .filter((userId) => userId !== cli.getUserId())
+            .forEach((userId) => {
+                (cli.checkUserTrust(userId).isCrossSigningVerified() ?
+                verified : unverified).push(userId);
+            });
+
+        /* Check all verified user devices. */
+        /* Don't alarm if no other users are verified  */
+        const targets = (verified.length > 0) ? [...verified, cli.getUserId()] : verified;
+        for (const userId of targets) {
+            const devices = await cli.getStoredDevicesForUser(userId);
+            const allDevicesVerified = devices.every(({deviceId}) => {
+                return cli.checkDeviceTrust(userId, deviceId).isVerified();
+            });
+            if (!allDevicesVerified) {
+                this.setState({
+                    e2eStatus: "warning",
+                });
+                return;
+            }
+        }
+
+        this.setState({
+            e2eStatus: unverified.length === 0 ? "verified" : "normal",
+        });
+    },
+
     onRoomName: function(room) {
         if (room !== this.props.room) return;
         this.setState({
             roomName: this.props.room.name,
         });
+    },
+
+    onJoinRule: function(ev) {
+        if (ev.getType() !== "m.room.join_rules") return;
+        if (ev.getRoomId() !== this.props.room.roomId) return;
+        this.setState({ joinRule: ev.getContent().join_rule });
     },
 
     onAccountData: function(accountDataEvent) {
@@ -140,9 +235,19 @@ module.exports = createReactClass({
     },
 
     componentDidMount: function() {
+        /* We bind here rather than in the definition because otherwise we wind up with the
+           method only being callable once every 500ms across all instances, which would be wrong */
+        this._updateE2eStatus = rate_limited_func(this._updateE2eStatus, 500);
+
         const cli = MatrixClientPeg.get();
         cli.on("accountData", this.onAccountData);
         cli.on("Room.name", this.onRoomName);
+        cli.on("RoomState.events", this.onJoinRule);
+        if (cli.isRoomEncrypted(this.props.room.roomId)) {
+            this.onFindingRoomToBeEncrypted();
+        } else {
+            cli.on("Room.timeline", this.onRoomTimeline);
+        }
         ActiveRoomObserver.addListener(this.props.room.roomId, this._onActiveRoomChange);
         this.dispatcherRef = dis.register(this.onAction);
 
@@ -159,6 +264,10 @@ module.exports = createReactClass({
         if (cli) {
             MatrixClientPeg.get().removeListener("accountData", this.onAccountData);
             MatrixClientPeg.get().removeListener("Room.name", this.onRoomName);
+            cli.removeListener("RoomState.events", this.onJoinRule);
+            cli.removeListener("RoomState.members", this.onRoomStateMember);
+            cli.removeListener("userTrustStatusChanged", this.onUserVerificationChanged);
+            cli.removeListener("Room.timeline", this.onRoomTimeline);
         }
         ActiveRoomObserver.removeListener(this.props.room.roomId, this._onActiveRoomChange);
         dis.unregister(this.dispatcherRef);
@@ -292,6 +401,8 @@ module.exports = createReactClass({
 
         const isMenuDisplayed = Boolean(this.state.contextMenuPosition);
 
+        const dmUserId = DMRoomMap.shared().getUserIdForRoomId(this.props.room.roomId);
+
         const classes = classNames({
             'mx_RoomTile': true,
             'mx_RoomTile_selected': this.state.selected,
@@ -337,7 +448,8 @@ module.exports = createReactClass({
             });
 
             subtextLabel = subtext ? <span className="mx_RoomTile_subtext">{ subtext }</span> : null;
-            label = <div title={name} className={nameClasses} dir="auto">{ name }</div>;
+            // XXX: this is a workaround for Firefox giving this div a tabstop :( [tabIndex]
+            label = <div title={name} className={nameClasses} tabIndex={-1} dir="auto">{ name }</div>;
         } else if (this.state.hover) {
             const Tooltip = sdk.getComponent("elements.Tooltip");
             tooltip = <Tooltip className="mx_RoomTile_tooltip" label={this.props.room.name} dir="auto" />;
@@ -366,11 +478,11 @@ module.exports = createReactClass({
 
         let ariaLabel = name;
 
-        const dmUserId = DMRoomMap.shared().getUserIdForRoomId(this.props.room.roomId);
-
         let dmIndicator;
         let dmOnline;
-        if (dmUserId) {
+        /* Post-cross-signing we don't show DM indicators at all, instead relying on user
+           context to let them know when that is. */
+        if (dmUserId && !SettingsStore.isFeatureEnabled("feature_cross_signing")) {
             dmIndicator = <img
                 src={require("../../../../res/img/icon_person.svg")}
                 className="mx_RoomTile_dm"
@@ -413,36 +525,56 @@ module.exports = createReactClass({
             );
         }
 
+        let privateIcon = null;
+        if (SettingsStore.isFeatureEnabled("feature_cross_signing")) {
+            if (this.state.joinRule == "invite" && !dmUserId) {
+                privateIcon = <InviteOnlyIcon collapsedPanel={this.props.collapsed} />;
+            }
+        }
+
+        let e2eIcon = null;
+        if (this.state.e2eStatus) {
+            e2eIcon = <E2EIcon status={this.state.e2eStatus} className="mx_RoomTile_e2eIcon" />;
+        }
+
         return <React.Fragment>
-            <AccessibleButton
-                tabIndex="0"
-                className={classes}
-                onClick={this.onClick}
-                onMouseEnter={this.onMouseEnter}
-                onMouseLeave={this.onMouseLeave}
-                onContextMenu={this.onContextMenu}
-                aria-label={ariaLabel}
-                aria-selected={this.state.selected}
-                role="treeitem"
-            >
-                <div className={avatarClasses}>
-                    <div className="mx_RoomTile_avatar_container">
-                        <RoomAvatar room={this.props.room} width={24} height={24} />
-                        { dmIndicator }
-                    </div>
-                </div>
-                <div className="mx_RoomTile_nameContainer">
-                    <div className="mx_RoomTile_labelContainer">
-                        { label }
-                        { subtextLabel }
-                    </div>
-                    { dmOnline }
-                    { contextMenuButton }
-                    { badge }
-                </div>
-                { /* { incomingCallBox } */ }
-                { tooltip }
-            </AccessibleButton>
+            <RovingTabIndexWrapper>
+                {({onFocus, isActive, ref}) =>
+                    <AccessibleButton
+                        onFocus={onFocus}
+                        tabIndex={isActive ? 0 : -1}
+                        inputRef={ref}
+                        className={classes}
+                        onClick={this.onClick}
+                        onMouseEnter={this.onMouseEnter}
+                        onMouseLeave={this.onMouseLeave}
+                        onContextMenu={this.onContextMenu}
+                        aria-label={ariaLabel}
+                        aria-selected={this.state.selected}
+                        role="treeitem"
+                    >
+                        <div className={avatarClasses}>
+                            <div className="mx_RoomTile_avatar_container">
+                                <RoomAvatar room={this.props.room} width={24} height={24} />
+                                { dmIndicator }
+                                { e2eIcon }
+                            </div>
+                        </div>
+                        { privateIcon }
+                        <div className="mx_RoomTile_nameContainer">
+                            <div className="mx_RoomTile_labelContainer">
+                                { label }
+                                { subtextLabel }
+                            </div>
+                            { dmOnline }
+                            { contextMenuButton }
+                            { badge }
+                        </div>
+                        { /* { incomingCallBox } */ }
+                        { tooltip }
+                    </AccessibleButton>
+                }
+            </RovingTabIndexWrapper>
 
             { contextMenu }
         </React.Fragment>;

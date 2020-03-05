@@ -17,15 +17,15 @@ limitations under the License.
 */
 
 import url from 'url';
-import qs from 'querystring';
+import qs from 'qs';
 import React, {createRef} from 'react';
 import PropTypes from 'prop-types';
-import MatrixClientPeg from '../../../MatrixClientPeg';
+import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import WidgetMessaging from '../../../WidgetMessaging';
 import AccessibleButton from './AccessibleButton';
 import Modal from '../../../Modal';
 import { _t } from '../../../languageHandler';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import AppPermission from './AppPermission';
 import AppWarning from './AppWarning';
 import MessageSpinner from './MessageSpinner';
@@ -552,7 +552,7 @@ export default class AppTile extends React.Component {
         // Using Object.assign workaround as the following opens in a new window instead of a new tab.
         // window.open(this._getSafeUrl(), '_blank', 'noopener=yes');
         Object.assign(document.createElement('a'),
-            { target: '_blank', href: this._getSafeUrl(), rel: 'noopener'}).click();
+            { target: '_blank', href: this._getSafeUrl(), rel: 'noreferrer noopener'}).click();
     }
 
     _onReloadWidgetClick() {

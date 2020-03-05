@@ -36,7 +36,7 @@ import {Room} from 'matrix-js-sdk';
 import TypingStore from "../../../stores/TypingStore";
 import SettingsStore from "../../../settings/SettingsStore";
 import EMOTICON_REGEX from 'emojibase-regex/emoticon';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import {Key} from "../../../Keyboard";
 import {EMOTICON_TO_EMOJI} from "../../../emoji";
 
@@ -94,6 +94,17 @@ export default class BasicMessageEditor extends React.Component {
         this._emoticonSettingHandle = null;
     }
 
+    componentDidUpdate(prevProps) {
+        if (this.props.placeholder !== prevProps.placeholder && this.props.placeholder) {
+            const {isEmpty} = this.props.model;
+            if (isEmpty) {
+                this._showPlaceholder();
+            } else {
+                this._hidePlaceholder();
+            }
+        }
+    }
+
     _replaceEmoticon = (caretPosition, inputType, diff) => {
         const {model} = this.props;
         const range = model.startRange(caretPosition);
@@ -107,8 +118,9 @@ export default class BasicMessageEditor extends React.Component {
         });
         const emoticonMatch = REGEX_EMOTICON_WHITESPACE.exec(range.text);
         if (emoticonMatch) {
-            const query = emoticonMatch[1].toLowerCase().replace("-", "");
-            const data = EMOTICON_TO_EMOJI.get(query);
+            const query = emoticonMatch[1].replace("-", "");
+            // try both exact match and lower-case, this means that xd won't match xD but :P will match :p
+            const data = EMOTICON_TO_EMOJI.get(query) || EMOTICON_TO_EMOJI.get(query.toLowerCase());
 
             if (data) {
                 const {partCreator} = model;
@@ -200,17 +212,49 @@ export default class BasicMessageEditor extends React.Component {
         return !!(this._isIMEComposing || (event.nativeEvent && event.nativeEvent.isComposing));
     }
 
+    _onCutCopy = (event, type) => {
+        const selection = document.getSelection();
+        const text = selection.toString();
+        if (text) {
+            const {model} = this.props;
+            const range = getRangeForSelection(this._editorRef, model, selection);
+            const selectedParts = range.parts.map(p => p.serialize());
+            event.clipboardData.setData("application/x-riot-composer", JSON.stringify(selectedParts));
+            event.clipboardData.setData("text/plain", text); // so plain copy/paste works
+            if (type === "cut") {
+                // Remove the text, updating the model as appropriate
+                this._modifiedFlag = true;
+                replaceRangeAndMoveCaret(range, []);
+            }
+            event.preventDefault();
+        }
+    }
+
+    _onCopy = (event) => {
+        this._onCutCopy(event, "copy");
+    }
+
+    _onCut = (event) => {
+        this._onCutCopy(event, "cut");
+    }
+
     _onPaste = (event) => {
         const {model} = this.props;
         const {partCreator} = model;
-        const text = event.clipboardData.getData("text/plain");
-        if (text) {
-            this._modifiedFlag = true;
-            const range = getRangeForSelection(this._editorRef, model, document.getSelection());
-            const parts = parsePlainTextMessage(text, partCreator);
-            replaceRangeAndMoveCaret(range, parts);
-            event.preventDefault();
+        const partsText = event.clipboardData.getData("application/x-riot-composer");
+        let parts;
+        if (partsText) {
+            const serializedTextParts = JSON.parse(partsText);
+            const deserializedParts = serializedTextParts.map(p => partCreator.deserializePart(p));
+            parts = deserializedParts;
+        } else {
+            const text = event.clipboardData.getData("text/plain");
+            parts = parsePlainTextMessage(text, partCreator);
         }
+        this._modifiedFlag = true;
+        const range = getRangeForSelection(this._editorRef, model, document.getSelection());
+        replaceRangeAndMoveCaret(range, parts);
+        event.preventDefault();
     }
 
     _onInput = (event) => {
@@ -229,8 +273,8 @@ export default class BasicMessageEditor extends React.Component {
         const {caret, text} = getCaretOffsetAndText(this._editorRef, sel);
         const newText = text.substr(0, caret.offset) + textToInsert + text.substr(caret.offset);
         caret.offset += textToInsert.length;
-        this.props.model.update(newText, inputType, caret);
         this._modifiedFlag = true;
+        this.props.model.update(newText, inputType, caret);
     }
 
     // this is used later to see if we need to recalculate the caret
@@ -348,6 +392,20 @@ export default class BasicMessageEditor extends React.Component {
         } else if (event.key === Key.ENTER && (event.shiftKey || (IS_MAC && event.altKey))) {
             this._insertText("\n");
             handled = true;
+        // move selection to start of composer
+        } else if (modKey && event.key === Key.HOME && !event.shiftKey) {
+            setSelection(this._editorRef, model, {
+                index: 0,
+                offset: 0,
+            });
+            handled = true;
+        // move selection to end of composer
+        } else if (modKey && event.key === Key.END && !event.shiftKey) {
+            setSelection(this._editorRef, model, {
+                index: model.parts.length - 1,
+                offset: model.parts[model.parts.length - 1].text.length,
+            });
+            handled = true;
         // autocomplete or enter to send below shouldn't have any modifier keys pressed.
         } else {
             const metaOrAltPressed = event.metaKey || event.altKey;
@@ -413,10 +471,14 @@ export default class BasicMessageEditor extends React.Component {
                 const addedLen = range.replace([partCreator.pillCandidate(range.text)]);
                 return model.positionForOffset(caret.offset + addedLen, true);
             });
-            await model.autoComplete.onTab();
-            if (!model.autoComplete.hasSelection()) {
-                this.setState({showVisualBell: true});
-                model.autoComplete.close();
+
+            // Don't try to do things with the autocomplete if there is none shown
+            if (model.autoComplete) {
+                await model.autoComplete.onTab();
+                if (!model.autoComplete.hasSelection()) {
+                    this.setState({showVisualBell: true});
+                    model.autoComplete.close();
+                }
             }
         } catch (err) {
             console.error(err);
@@ -446,6 +508,7 @@ export default class BasicMessageEditor extends React.Component {
     }
 
     componentWillUnmount() {
+        document.removeEventListener("selectionchange", this._onSelectionChange);
         this._editorRef.removeEventListener("input", this._onInput, true);
         this._editorRef.removeEventListener("compositionstart", this._onCompositionStart, true);
         this._editorRef.removeEventListener("compositionend", this._onCompositionEnd, true);
@@ -557,6 +620,8 @@ export default class BasicMessageEditor extends React.Component {
                 tabIndex="0"
                 onBlur={this._onBlur}
                 onFocus={this._onFocus}
+                onCopy={this._onCopy}
+                onCut={this._onCut}
                 onPaste={this._onPaste}
                 onKeyDown={this._onKeyDown}
                 ref={ref => this._editorRef = ref}

@@ -20,12 +20,13 @@ import React from 'react';
 import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import {_t, _td} from '../../../languageHandler';
-import sdk from '../../../index';
+import * as sdk from '../../../index';
 import Login from '../../../Login';
 import SdkConfig from '../../../SdkConfig';
 import { messageForResourceLimitError } from '../../../utils/ErrorUtils';
 import AutoDiscoveryUtils, {ValidatedServerConfig} from "../../../utils/AutoDiscoveryUtils";
 import classNames from "classnames";
+import AuthPage from "../../views/auth/AuthPage";
 
 // For validating phone numbers without country codes
 const PHONE_NUMBER_REGEX = /^[0-9()\-\s]*$/;
@@ -53,10 +54,15 @@ _td("General failure");
 /**
  * A wire component which glues together login UI components and Login logic
  */
-module.exports = createReactClass({
+export default createReactClass({
     displayName: 'Login',
 
     propTypes: {
+        // Called when the user has logged in. Params:
+        // - The object returned by the login API
+        // - The user's password, if applicable, (may be cached in memory for a
+        //   short time so the user is not required to re-enter their password
+        //   for operations like uploading cross-signing keys).
         onLoggedIn: PropTypes.func.isRequired,
 
         // If true, the component will consider itself busy.
@@ -114,8 +120,8 @@ module.exports = createReactClass({
             'm.login.password': this._renderPasswordStep,
 
             // CAS and SSO are the same thing, modulo the url we link to
-            'm.login.cas': () => this._renderSsoStep(this._loginLogic.getSsoLoginUrl("cas")),
-            'm.login.sso': () => this._renderSsoStep(this._loginLogic.getSsoLoginUrl("sso")),
+            'm.login.cas': () => this._renderSsoStep(this._getSsoUrl('m.login.cas')),
+            'm.login.sso': () => this._renderSsoStep(this._getSsoUrl('m.login.sso')),
         };
 
         this._initLoginLogic();
@@ -142,6 +148,18 @@ module.exports = createReactClass({
 
     isBusy: function() {
         return this.state.busy || this.props.busy;
+    },
+
+    _isSsoStep: function() {
+        return this._getCurrentFlowStep() === 'm.login.sso' || this._getCurrentFlowStep() === 'm.login.cas';
+    },
+
+    _getSsoUrl: function(kind) {
+        if (kind === 'm.login.cas') {
+            return this._loginLogic.getSsoLoginUrl("cas");
+        } else {
+            return this._loginLogic.getSsoLoginUrl("sso");
+        }
     },
 
     onPasswordLogin: async function(username, phoneCountry, phoneNumber, password) {
@@ -180,7 +198,7 @@ module.exports = createReactClass({
             username, phoneCountry, phoneNumber, password,
         ).then((data) => {
             this.setState({serverIsAlive: true}); // it must be, we logged in.
-            this.props.onLoggedIn(data);
+            this.props.onLoggedIn(data, password);
         }, (error) => {
             if (this._unmounted) {
                 return;
@@ -338,6 +356,19 @@ module.exports = createReactClass({
         this.props.onRegisterClick();
     },
 
+    onTryRegisterClick: function(ev) {
+        if (this._isSsoStep()) {
+            // If we're showing SSO it means that registration is also probably disabled,
+            // so intercept the click and instead pretend the user clicked 'Sign in with SSO'.
+            ev.preventDefault();
+            ev.stopPropagation();
+            window.location = this._getSsoUrl(this._getCurrentFlowStep());
+        } else {
+            // Don't intercept - just go through to the register page
+            this.onRegisterClick(ev);
+        }
+    },
+
     async onServerDetailsNextPhaseClick() {
         this.setState({
             phase: PHASE_LOGIN,
@@ -475,7 +506,7 @@ module.exports = createReactClass({
                         "Either use HTTPS or <a>enable unsafe scripts</a>.", {},
                         {
                             'a': (sub) => {
-                                return <a target="_blank" rel="noopener"
+                                return <a target="_blank" rel="noreferrer noopener"
                                     href="https://www.google.com/search?&q=enable%20unsafe%20scripts"
                                 >
                                     { sub }
@@ -490,11 +521,10 @@ module.exports = createReactClass({
                         "<a>homeserver's SSL certificate</a> is trusted, and that a browser extension " +
                         "is not blocking requests.", {},
                         {
-                            'a': (sub) => {
-                                return <a target="_blank" rel="noopener" href={this.props.serverConfig.hsUrl}>
+                            'a': (sub) =>
+                                <a target="_blank" rel="noreferrer noopener" href={this.props.serverConfig.hsUrl}>
                                     { sub }
-                                </a>;
-                            },
+                                </a>,
                         },
                     ) }
                 </span>;
@@ -608,7 +638,6 @@ module.exports = createReactClass({
 
     render: function() {
         const Loader = sdk.getComponent("elements.Spinner");
-        const AuthPage = sdk.getComponent("auth.AuthPage");
         const AuthHeader = sdk.getComponent("auth.AuthHeader");
         const AuthBody = sdk.getComponent("auth.AuthBody");
         const loader = this.isBusy() ? <div className="mx_Login_loader"><Loader /></div> : null;
@@ -650,7 +679,7 @@ module.exports = createReactClass({
                     { serverDeadSection }
                     { this.renderServerComponent() }
                     { this.renderLoginComponentForStep() }
-                    <a className="mx_AuthBody_changeFlow" onClick={this.onRegisterClick} href="#">
+                    <a className="mx_AuthBody_changeFlow" onClick={this.onTryRegisterClick} href="#">
                         { _t('Create account') }
                     </a>
                 </AuthBody>
