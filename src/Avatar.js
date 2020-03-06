@@ -69,8 +69,11 @@ export function defaultAvatarUrlForString(s) {
 }
 
 export function avatarUrlForMxc(mxc, width, height, resizeMethod) {
-    const url = ContentRepo.getHttpUriForMxc(
-        MatrixClientPeg.get().getHomeserverUrl(), mxc, width, height, resizeMethod,
+    const url = getHttpUriForMxc(
+        MatrixClientPeg.get().getHomeserverUrl(), mxc,
+        Math.floor(width * window.devicePixelRatio),
+        Math.floor(height * window.devicePixelRatio),
+        resizeMethod,
     );
     return url;
 }
