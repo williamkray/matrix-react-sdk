@@ -15,11 +15,12 @@ limitations under the License.
 */
 
 import React from 'react';
+import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 const classNames = require("classnames");
 import { _t, _td } from '../../../languageHandler';
 
-const sdk = require('../../../index');
+import * as sdk from '../../../index';
 
 import dis from '../../../dispatcher';
 import SettingsStore from "../../../settings/SettingsStore";
@@ -62,50 +63,46 @@ function getHandlerTile(ev) {
     return ev.isState() ? stateEventTileTypes[type] : eventTileTypes[type];
 }
 
-class ReplyTile extends React.Component {
-    static contextTypes = {
-        matrixClient: PropTypes.instanceOf(MatrixClient).isRequired,
-    }
+export default createReactClass({
+    displayName: 'ReplyTile',
 
-    static propTypes = {
+    contextTypes: {
+        matrixClient: PropTypes.instanceOf(MatrixClient).isRequired,
+    },
+
+    propTypes: {
         mxEvent: PropTypes.object.isRequired,
         isRedacted: PropTypes.bool,
         permalinkCreator: PropTypes.object,
         onHeightChanged: PropTypes.func,
-    }
+    },
 
-    static defaultProps = {
+    defaultProps: {
         onHeightChanged: function() {},
-    }
+    },
 
-    constructor(props, context) {
-        super(props, context);
-        this.state = {};
-        this.onClick = this.onClick.bind(this);
-    }
-
-    componentDidMount() {
+    componentDidMount: function() {
         this.props.mxEvent.on("Event.decrypted", this._onDecrypted);
-    }
+    },
 
-    shouldComponentUpdate(nextProps, nextState) {
+    shouldComponentUpdate: function(nextProps, nextState) {
         if (!ObjectUtils.shallowEqual(this.state, nextState)) {
             return true;
         }
 
         return !this._propsEqual(this.props, nextProps);
-    }
+    },
 
-    componentWillUnmount() {
+    componentWillUnmount: function() {
         const client = this.context.matrixClient;
         this.props.mxEvent.removeListener("Event.decrypted", this._onDecrypted);
-    }
+    },
 
-    _onDecrypted() {
+    _onDecrypted: function() {
         this.forceUpdate();
-    }
+    },
 
-    _propsEqual(objA, objB) {
+    _propsEqual: function(objA, objB) {
         const keysA = Object.keys(objA);
         const keysB = Object.keys(objB);
 
@@ -125,9 +122,9 @@ class ReplyTile extends React.Component {
             }
         }
         return true;
-    }
+    },
 
-    onClick(e) {
+    onClick: function(e) {
         // This allows the permalink to be opened in a new tab/window or copied as
         // matrix.to, but also for it to enable routing within Riot when clicked.
         e.preventDefault();
@@ -137,9 +134,9 @@ class ReplyTile extends React.Component {
             highlighted: true,
             room_id: this.props.mxEvent.getRoomId(),
         });
-    }
+    },
 
-    render() {
+    render: function() {
         const SenderProfile = sdk.getComponent('messages.SenderProfile');
 
         const content = this.props.mxEvent.getContent();
@@ -229,6 +226,4 @@ class ReplyTile extends React.Component {
             </div>
         )
     }
-}
-
-module.exports = ReplyTile;
+});

@@ -17,9 +17,9 @@ limitations under the License.
 import React from 'react';
 import { _t } from '../languageHandler';
 import AutocompleteProvider from './AutocompleteProvider';
-import MatrixClientPeg from '../MatrixClientPeg';
+import {MatrixClientPeg} from '../MatrixClientPeg';
 import {PillCompletion} from './Components';
-import sdk from '../index';
+import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
 
 const EMOTE_REGEX = /(\S+)/g;

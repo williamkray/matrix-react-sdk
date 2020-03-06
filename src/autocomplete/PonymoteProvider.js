@@ -25,11 +25,11 @@ the Cooperative Software License as distributed with this project.
 import React from 'react';
 import { _t } from '../languageHandler';
 import AutocompleteProvider from './AutocompleteProvider';
-import MatrixClientPeg from '../MatrixClientPeg';
+import {MatrixClientPeg} from '../MatrixClientPeg';
 import QueryMatcher from './QueryMatcher';
 import {PillCompletion} from './Components';
 import {getDisplayAliasForRoom} from '../Rooms';
-import sdk from '../index';
+import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
 import SettingsStore from "../settings/SettingsStore"; 
 
