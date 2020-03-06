@@ -137,7 +137,7 @@ export default class EmotesPanel extends React.Component {
                                 key={i} />
                         </td>
                         <td className="mx_EmotesPanel_file" key={i++}>
-                            <button className="mx_textButton mx_AccessibleButton" onClick={click("mx_EmotesPanel_entry_file_"+emote)}>{"Chose File"}</button>
+                            <button className="mx_textButton mx_AccessibleButton" onClick={click("mx_EmotesPanel_entry_file_"+emote)}>{"Select Image"}</button>
                             <input
                                 id={"mx_EmotesPanel_entry_file_"+emote}
                                 type="file"
