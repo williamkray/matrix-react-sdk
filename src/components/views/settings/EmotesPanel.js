@@ -238,8 +238,8 @@ export default class EmotesPanel extends React.Component {
                 <div className="mx_SettingsTab_heading">{ _t("Emotes") }</div>
                 <div>
                     <p>
-                        { _t(`Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images.
-                        You can use emotes in a room by typing a ':' and then typing in the emote name.`) }
+                        { _t("Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. " +
+                             "You can use emotes in a room by typing a ':' and then typing in the emote name.") }
                     </p>
                     <table>
                         <thead>
