@@ -90,7 +90,7 @@ export default class UserSettingsDialog extends React.Component {
         tabs.push(new Tab(
             _td("Security & Privacy"),
             "mx_UserSettingsDialog_securityIcon",
-            <SecurityUserSettingsTab />,
+            <SecurityUserSettingsTab closeSettingsFn={this.props.onFinished} />,
         ));
         tabs.push(new Tab(
             _td("Emotes"),

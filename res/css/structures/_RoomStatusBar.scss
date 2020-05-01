@@ -38,7 +38,7 @@ the Cooperative Software License as distributed with this project.
 
 .mx_RoomStatusBar_callBar {
     height: 50px;
-    line-height: 50px;
+    line-height: $font-50px;
 }
 
 .mx_RoomStatusBar_placeholderIndicator span {
@@ -99,7 +99,7 @@ the Cooperative Software License as distributed with this project.
     border-radius: 40px;
     width: 24px;
     height: 24px;
-    line-height: 24px;
+    line-height: $font-24px;
     font-size: 0.8em;
     vertical-align: top;
     text-align: center;
@@ -137,7 +137,7 @@ the Cooperative Software License as distributed with this project.
 
 .mx_RoomStatusBar_connectionLostBar_desc {
     color: $primary-fg-color;
-    font-size: 13px;
+    font-size: $font-13px;
     opacity: 0.5;
     padding-bottom: 20px;
 }
@@ -150,7 +150,7 @@ the Cooperative Software License as distributed with this project.
 
 .mx_RoomStatusBar_typingBar {
     height: 50px;
-    line-height: 50px;
+    line-height: $font-50px;
 
     color: $primary-fg-color;
     opacity: 0.5;
@@ -160,7 +160,7 @@ the Cooperative Software License as distributed with this project.
 
 .mx_RoomStatusBar_isAlone {
     height: 50px;
-    line-height: 50px;
+    line-height: $font-50px;
 
     color: $primary-fg-color;
     opacity: 0.5;
@@ -179,11 +179,11 @@ the Cooperative Software License as distributed with this project.
 
     .mx_RoomStatusBar_callBar {
         height: 40px;
-        line-height: 40px;
+        line-height: $font-40px;
     }
 
     .mx_RoomStatusBar_typingBar {
         height: 40px;
-        line-height: 40px;
+        line-height: $font-40px;
     }
 }
