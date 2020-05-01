@@ -96,6 +96,7 @@ interface IState {
     };
     syncErrorData: any;
     useCompactLayout: boolean;
+    useSuperCompactLayout: boolean;
     serverNoticeEvents: MatrixEvent[];
     userHasGeneratedPassword: boolean;
 }
