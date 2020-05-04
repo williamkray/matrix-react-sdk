@@ -1,5 +1,5 @@
 /*
-Copyright 2018 ponies.im
+Copyright 2020 ponies.im
 
 Licensed under the Cooperative Software License (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import {MatrixClientPeg} from '../MatrixClientPeg';
 import {PillCompletion} from './Components';
 import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
+import RoomViewStore from "../stores/RoomViewStore";
 
 const EMOTE_REGEX = /(\S+)/g;
 const LIMIT = 20;
@@ -34,13 +35,31 @@ function score(query, space) {
     }
 }
 
-export default class EmoteProvider extends AutocompleteProvider {
+export default class RoomEmoteProvider extends AutocompleteProvider {
     constructor() {
         super(EMOTE_REGEX);
         this.client = MatrixClientPeg.get();
         this.emoteData = [];
-        this.loadEmotes(this.client.getAccountData('im.ponies.user_emotes'));
+        this.roomId = RoomViewStore.getRoomId();
+        this.loadEmotesRoom();
         this.listenChanges();
+    }
+
+    listenChanges() {
+        this.fn = (event, room) => {
+            if (room && room.roomId == this.roomId) {
+                this.loadEmotes(event);
+            }
+        };
+        this.client.on("Room.timeline", this.fn);
+    }
+
+    loadEmotesRoom() {
+        const room = this.client.getRoom(this.roomId);
+        if (room) {
+            const event = room.currentState.getStateEvents('im.ponies.room_emotes', '');
+            this.loadEmotes(event);
+        }
     }
 
     loadEmotes(event) {
@@ -48,8 +67,8 @@ export default class EmoteProvider extends AutocompleteProvider {
             return;
         }
 
-        const emote_data_event = event.event;
-        if (emote_data_event.type !== 'im.ponies.user_emotes') {
+        const emote_data_event = event.event || event;
+        if (emote_data_event.type !== 'im.ponies.room_emotes' || typeof emote_data_event.state_key !== 'string') {
             return;
         }
 
@@ -65,13 +84,6 @@ export default class EmoteProvider extends AutocompleteProvider {
                 mxc: emote_data_content.short[emote],
             });
         }
-    }
-
-    listenChanges() {
-        this.fn = (event) => {
-            this.loadEmotes(event);
-        };
-        this.client.on("accountData", this.fn);
     }
 
     match(s) {
@@ -127,7 +139,7 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     getName() {
-        return _t('Emotes');
+        return _t('Room Emotes');
     }
 
     renderCompletions(completions: [React.Component]): ?React.Component {
@@ -137,6 +149,6 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     destroy() {
-        this.client.off("accountData", this.fn);
+        this.client.off("Room.timeline", this.fn);
     }
 }
