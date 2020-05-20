@@ -21,6 +21,7 @@ import {MatrixClientPeg} from '../MatrixClientPeg';
 import {PillCompletion} from './Components';
 import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
+import RoomViewStore from "../stores/RoomViewStore";
 
 const EMOTE_REGEX = /(\S+)/g;
 const LIMIT = 20;
@@ -39,51 +40,99 @@ export default class EmoteProvider extends AutocompleteProvider {
         super(EMOTE_REGEX);
         this.client = MatrixClientPeg.get();
         this.emoteData = [];
-        this.loadEmotes(this.client.getAccountData('im.ponies.user_emotes'));
+        this.loadEmotes();
         this.listenChanges();
     }
 
-    loadEmotes(event) {
-        if (!event || event.error) {
-            return;
-        }
-
-        const emote_data_event = event.event;
-        if (emote_data_event.type !== 'im.ponies.user_emotes') {
-            return;
-        }
-
-        const emote_data_content = emote_data_event.content;
-        if (!emote_data_content.short) {
-            return;
-        }
-
+    loadEmotes() {
         this.emoteData = [];
-        for (const emote of Object.keys(emote_data_content.short)) {
-            this.emoteData.push({
-                code: emote,
-                mxc: emote_data_content.short[emote],
-            });
+        const normalizeEmotePackName = (name) => {
+          name = name.replace(/ /g, '-');
+          name = name.replace(/[^\w-]/g, '');
+          return name.toLowerCase();
+        };
+        const addEmotePack = (packName, content, packNameOverride) => {
+            if (!content.short) {
+                return;
+            }
+            if (content.pack && content.pack.name) {
+                packName = content.pack.name;
+            }
+            if (packNameOverride) {
+                packName = packNameOverride;
+            }
+            packName = normalizeEmotePackName(packName);
+            for (const key of Object.keys(content.short)) {
+                if (content.short[key].startsWith('mxc://')) {
+                    this.emoteData.push({
+                        code: key,
+                        mxc: content.short[key],
+                        packName: packName,
+                    });
+                }
+            }
+        };
+
+        // first add all the room emotes
+        const thisRoomId = RoomViewStore.getRoomId();
+        const thisRoom = this.client.getRoom(thisRoomId);
+        if (thisRoom) {
+            const events = thisRoom.currentState.getStateEvents('im.ponies.room_emotes');
+            for (let event of events) {
+                event = event.event || event;
+                addEmotePack(event.state_key || 'room', event.content);
+            }
+        }
+        // now add the user emotes
+        const userEmotes = this.client.getAccountData('im.ponies.user_emotes');
+        if (userEmotes && !userEmotes.error && userEmotes.event.content) {
+            addEmotePack('user', userEmotes.event.content);
+        }
+        // finally add the external room emotes
+        const emoteRooms = this.client.getAccountData('im.ponies.emote_rooms');
+        if (emoteRooms && !emoteRooms.error && emoteRooms.event.content && emoteRooms.event.content.rooms) {
+            for (const roomId of Object.keys(emoteRooms.event.content.rooms)) {
+                if (roomId == thisRoomId) {
+                    continue;
+                }
+                const room = this.client.getRoom(roomId);
+                if (!room) {
+                    continue;
+                }
+                for (const stateKey of Object.keys(emoteRooms.event.content.rooms[roomId])) {
+                    let event = room.currentState.getStateEvents('im.ponies.room_emotes', stateKey);
+                    if (event) {
+                        event = event.event || event;
+                        addEmotePack(roomId, event.content, emoteRooms.event.content.rooms[roomId][stateKey]['name']);
+                    }
+                }
+            }
         }
     }
 
     listenChanges() {
         this.fn = (event) => {
-            this.loadEmotes(event);
+            this.loadEmotes();
         };
         this.client.on("accountData", this.fn);
+        this.roomFn = (event, room) => {
+            if ((event.event || event).type === 'im.ponies.room_emotes') {
+                this.loadEmotes();
+            }
+        };
+        this.client.on("Room.timeline", this.roomFn);
     }
 
     match(s) {
         if (s.length == 0) {
             return [];
         }
-        s = s.toLowerCase();
+        const firstChar = s[0];
+        s = s.toLowerCase().substring(1);
 
         const results = [];
         this.emoteData.forEach((e) => {
-            const index = e.code.toLowerCase().indexOf(s);
-            if (index === 0) {
+            if (e.code[0] == firstChar && e.code.toLowerCase().includes(s)) {
                 results.push(e);
             }
         });
@@ -113,7 +162,7 @@ export default class EmoteProvider extends AutocompleteProvider {
                         suffix: ' ',
                         href: 'emote://'+mxc,
                         component: (
-                            <PillCompletion initialComponent={<EmoteAvatar width={24} height={24} mxcUrl={mxc} name={code} />} title={code} />
+                            <PillCompletion initialComponent={<EmoteAvatar width={24} height={24} mxcUrl={mxc} name={code} />} title={`${code} (${result.packName})`} />
                         ),
                         range,
                     };
@@ -138,5 +187,6 @@ export default class EmoteProvider extends AutocompleteProvider {
 
     destroy() {
         this.client.off("accountData", this.fn);
+        this.client.off("Room.timeline", this.roomFn);
     }
 }

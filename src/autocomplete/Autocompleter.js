@@ -34,7 +34,6 @@ import EmojiProvider from './EmojiProvider';
 import NotifProvider from './NotifProvider';
 import PonymoteProvider from './PonymoteProvider';
 import EmoteProvider from './EmoteProvider';
-import RoomEmoteProvider from './RoomEmoteProvider';
 import {timeout} from "../utils/promise";
 
 export type SelectionRange = {
@@ -62,7 +61,6 @@ const PROVIDERS = [
     CommunityProvider,
     DuckDuckGoProvider,
     EmoteProvider,
-    RoomEmoteProvider,
     PonymoteProvider,
 ];
 
