@@ -34,6 +34,7 @@ import {ALL_RULE_TYPES} from "../../../mjolnir/BanList";
 import * as ObjectUtils from "../../../ObjectUtils";
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
 import {E2E_STATE} from "./E2EIcon";
+import toRem from "../../../utils/rem";
 
 const eventTileTypes = {
     'm.room.message': 'messages.MessageEvent',
@@ -473,7 +474,7 @@ export default createReactClass({
             if (remainder > 0) {
                 remText = <span className="mx_EventTile_readAvatarRemainder"
                     onClick={this.toggleAllReadAvatars}
-                    style={{ right: -(left - receiptOffset) }}>{ remainder }+
+                    style={{ right: "calc(" + toRem(-left) + " + " + receiptOffset + "px)" }}>{ remainder }+
                 </span>;
             }
         }
@@ -669,7 +670,6 @@ export default createReactClass({
             mx_EventTile_unknown: !isBubbleMessage && this.state.verified === E2E_STATE.UNKNOWN,
             mx_EventTile_bad: isEncryptionFailure,
             mx_EventTile_emote: msgtype === 'm.emote',
-            mx_EventTile_redacted: isRedacted,
         });
 
         let permalink = "#";

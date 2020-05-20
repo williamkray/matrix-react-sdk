@@ -35,6 +35,12 @@ import { abbreviateUrl } from './utils/UrlUtils';
 import { getDefaultIdentityServerUrl, useDefaultIdentityServer } from './utils/IdentityServerUtils';
 import {isPermalinkHost, parsePermalink} from "./utils/permalinks/Permalinks";
 import {inviteUsersToRoom} from "./RoomInvite";
+import { WidgetType } from "./widgets/WidgetType";
+import { Jitsi } from "./widgets/Jitsi";
+import { parseFragment as parseHtml } from "parse5";
+import sendBugReport from "./rageshake/submit-rageshake";
+import SdkConfig from "./SdkConfig";
+import { ensureDMExists } from "./createRoom";
 
 // XXX: workaround for https://github.com/microsoft/TypeScript/issues/31816
 interface HTMLInputEvent extends Event {
@@ -81,7 +87,7 @@ interface ICommandOpts {
     hideCompletionAfterSpace?: boolean;
 }
 
-class Command {
+export class Command {
     command: string;
     aliases: string[];
     args: undefined | string;
@@ -360,6 +366,7 @@ export const Commands = [
             Modal.createTrackedDialog('Slash Commands', 'Topic', InfoDialog, {
                 title: room.name,
                 description: <div dangerouslySetInnerHTML={{ __html: topicHtml }} />,
+                hasCloseButton: true,
             });
             return success();
         },
@@ -766,18 +773,50 @@ export const Commands = [
     }),
     new Command({
         command: 'addwidget',
-        args: '<url>',
+        args: '<url | embed code | Jitsi url>',
         description: _td('Adds a custom widget by URL to the room'),
-        runFn: function(roomId, args) {
-            if (!args || (!args.startsWith("https://") && !args.startsWith("http://"))) {
+        runFn: function(roomId, widgetUrl) {
+            if (!widgetUrl) {
+                return reject(_t("Please supply a widget URL or embed code"));
+            }
+
+            // Try and parse out a widget URL from iframes
+            if (widgetUrl.toLowerCase().startsWith("<iframe ")) {
+                // We use parse5, which doesn't render/create a DOM node. It instead runs
+                // some superfast regex over the text so we don't have to.
+                const embed = parseHtml(widgetUrl);
+                if (embed && embed.childNodes && embed.childNodes.length === 1) {
+                    const iframe = embed.childNodes[0];
+                    if (iframe.tagName.toLowerCase() === 'iframe' && iframe.attrs) {
+                        const srcAttr = iframe.attrs.find(a => a.name === 'src');
+                        console.log("Pulling URL out of iframe (embed code)");
+                        widgetUrl = srcAttr.value;
+                    }
+                }
+            }
+
+            if (!widgetUrl.startsWith("https://") && !widgetUrl.startsWith("http://")) {
                 return reject(_t("Please supply a https:// or http:// widget URL"));
             }
             if (WidgetUtils.canUserModifyWidgets(roomId)) {
                 const userId = MatrixClientPeg.get().getUserId();
                 const nowMs = (new Date()).getTime();
                 const widgetId = encodeURIComponent(`${roomId}_${userId}_${nowMs}`);
-                return success(WidgetUtils.setRoomWidget(
-                    roomId, widgetId, "m.custom", args, "Custom Widget", {}));
+                let type = WidgetType.CUSTOM;
+                let name = "Custom Widget";
+                let data = {};
+
+                // Make the widget a Jitsi widget if it looks like a Jitsi widget
+                const jitsiData = Jitsi.getInstance().parsePreferredConferenceUrl(widgetUrl);
+                if (jitsiData) {
+                    console.log("Making /addwidget widget a Jitsi conference");
+                    type = WidgetType.JITSI;
+                    name = "Jitsi Conference";
+                    data = jitsiData;
+                    widgetUrl = WidgetUtils.getLocalJitsiWrapperUrl();
+                }
+
+                return success(WidgetUtils.setRoomWidget(roomId, widgetId, type, widgetUrl, name, data));
             } else {
                 return reject(_t("You cannot modify widgets in this room."));
             }
@@ -931,6 +970,73 @@ export const Commands = [
             return success();
         },
         category: CommandCategories.advanced,
+    }),
+    new Command({
+        command: "rageshake",
+        aliases: ["bugreport"],
+        description: _td("Send a bug report with logs"),
+        args: "<description>",
+        runFn: function(roomId, args) {
+            return success(
+                sendBugReport(SdkConfig.get().bug_report_endpoint_url, {
+                    userText: args,
+                    sendLogs: true,
+                }).then(() => {
+                    const InfoDialog = sdk.getComponent('dialogs.InfoDialog');
+                    Modal.createTrackedDialog('Slash Commands', 'Rageshake sent', InfoDialog, {
+                        title: _t('Logs sent'),
+                        description: _t('Thank you!'),
+                    });
+                }),
+            );
+        },
+        category: CommandCategories.advanced,
+    }),
+    new Command({
+        command: "query",
+        description: _td("Opens chat with the given user"),
+        args: "<user-id>",
+        runFn: function(roomId, userId) {
+            if (!userId || !userId.startsWith("@") || !userId.includes(":")) {
+                return reject(this.getUsage());
+            }
+
+            return success((async () => {
+                dis.dispatch({
+                    action: 'view_room',
+                    room_id: await ensureDMExists(MatrixClientPeg.get(), userId),
+                });
+            })());
+        },
+        category: CommandCategories.actions,
+    }),
+    new Command({
+        command: "msg",
+        description: _td("Sends a message to the given user"),
+        args: "<user-id> <message>",
+        runFn: function(_, args) {
+            if (args) {
+                // matches the first whitespace delimited group and then the rest of the string
+                const matches = args.match(/^(\S+?)(?: +(.*))?$/s);
+                if (matches) {
+                    const [userId, msg] = matches.slice(1);
+                    if (msg && userId && userId.startsWith("@") && userId.includes(":")) {
+                        return success((async () => {
+                            const cli = MatrixClientPeg.get();
+                            const roomId = await ensureDMExists(cli, userId);
+                            dis.dispatch({
+                                action: 'view_room',
+                                room_id: roomId,
+                            });
+                            cli.sendTextMessage(roomId, msg);
+                        })());
+                    }
+                }
+            }
+
+            return reject(this.getUsage());
+        },
+        category: CommandCategories.actions,
     }),
 
     // Command definitions for autocompletion ONLY:

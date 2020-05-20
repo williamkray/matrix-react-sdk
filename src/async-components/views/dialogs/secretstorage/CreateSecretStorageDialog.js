@@ -24,6 +24,8 @@ import FileSaver from 'file-saver';
 import { _t } from '../../../../languageHandler';
 import Modal from '../../../../Modal';
 import { promptForBackupPassphrase } from '../../../../CrossSigningManager';
+import {copyNode} from "../../../../utils/strings";
+import {SSOAuthEntry} from "../../../../components/views/auth/InteractiveAuthEntryComponents";
 
 const PHASE_LOADING = 0;
 const PHASE_LOADERROR = 1;
@@ -38,16 +40,6 @@ const PHASE_CONFIRM_SKIP = 9;
 
 const PASSWORD_MIN_SCORE = 4; // So secure, many characters, much complex, wow, etc, etc.
 const PASSPHRASE_FEEDBACK_DELAY = 500; // How long after keystroke to offer passphrase feedback, ms.
-
-// XXX: copied from ShareDialog: factor out into utils
-function selectText(target) {
-    const range = document.createRange();
-    range.selectNodeContents(target);
-
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-}
 
 /*
  * Walks the user through the process of creating a passphrase to guard Secure
@@ -183,8 +175,7 @@ export default class CreateSecretStorageDialog extends React.PureComponent {
     }
 
     _onCopyClick = () => {
-        selectText(this._recoveryKeyNode);
-        const successful = document.execCommand('copy');
+        const successful = copyNode(this._recoveryKeyNode);
         if (successful) {
             this.setState({
                 copied: true,
@@ -219,12 +210,32 @@ export default class CreateSecretStorageDialog extends React.PureComponent {
             });
         } else {
             const InteractiveAuthDialog = sdk.getComponent("dialogs.InteractiveAuthDialog");
+
+            const dialogAesthetics = {
+                [SSOAuthEntry.PHASE_PREAUTH]: {
+                    title: _t("Use Single Sign On to continue"),
+                    body: _t("To continue, use Single Sign On to prove your identity."),
+                    continueText: _t("Single Sign On"),
+                    continueKind: "primary",
+                },
+                [SSOAuthEntry.PHASE_POSTAUTH]: {
+                    title: _t("Confirm encryption setup"),
+                    body: _t("Click the button below to confirm setting up encryption."),
+                    continueText: _t("Confirm"),
+                    continueKind: "primary",
+                },
+            };
+
             const { finished } = Modal.createTrackedDialog(
                 'Cross-signing keys dialog', '', InteractiveAuthDialog,
                 {
                     title: _t("Setting up keys"),
                     matrixClient: MatrixClientPeg.get(),
                     makeRequest,
+                    aestheticsForStagePhases: {
+                        [SSOAuthEntry.LOGIN_TYPE]: dialogAesthetics,
+                        [SSOAuthEntry.UNSTABLE_LOGIN_TYPE]: dialogAesthetics,
+                    },
                 },
             );
             const [confirmed] = await finished;
@@ -246,12 +257,20 @@ export default class CreateSecretStorageDialog extends React.PureComponent {
 
         try {
             if (force) {
+                console.log("Forcing secret storage reset"); // log something so we can debug this later
                 await cli.bootstrapSecretStorage({
                     authUploadDeviceSigningKeys: this._doBootstrapUIAuth,
                     createSecretStorageKey: async () => this._recoveryKey,
-                    setupNewKeyBackup: true,
+                    setupNewKeyBackup: this.state.useKeyBackup,
                     setupNewSecretStorage: true,
                 });
+                if (!this.state.useKeyBackup && this.state.backupInfo) {
+                    // If the user is resetting their cross-signing keys and doesn't want
+                    // key backup (but had it enabled before), delete the key backup as it's
+                    // no longer valid.
+                    console.log("Deleting invalid key backup (secrets have been reset; key backup not requested)");
+                    await cli.deleteKeyBackupVersion(this.state.backupInfo.version);
+                }
             } else {
                 await cli.bootstrapSecretStorage({
                     authUploadDeviceSigningKeys: this._doBootstrapUIAuth,

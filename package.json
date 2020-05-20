@@ -1,6 +1,6 @@
 {
   "name": "matrix-react-sdk",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "SDK for matrix.org using React",
   "author": "matrix.org",
   "repository": {
@@ -51,8 +51,7 @@
     "lint:types": "tsc --noEmit --jsx react",
     "lint:style": "stylelint 'res/css/**/*.scss'",
     "test": "jest",
-    "test:e2e": "echo 'The tests are broken with cross-signing. Fix them: https://github.com/vector-im/riot-web/issues/13226'",
-    "test:e2e_real": "./test/end-to-end-tests/run.sh --riot-url http://localhost:8080"
+    "test:e2e": "./test/end-to-end-tests/run.sh --riot-url http://localhost:8080"
   },
   "dependencies": {
     "@babel/runtime": "^7.8.3",
@@ -80,9 +79,10 @@
     "is-ip": "^2.0.0",
     "linkifyjs": "^2.1.6",
     "lodash": "^4.17.14",
-    "matrix-js-sdk": "6.0.0",
+    "matrix-js-sdk": "6.1.0",
     "minimist": "^1.2.0",
     "pako": "^1.0.5",
+    "parse5": "^5.1.1",
     "png-chunks-extract": "^1.0.0",
     "project-name-generator": "^2.1.7",
     "prop-types": "^15.5.8",
@@ -118,6 +118,7 @@
     "@babel/register": "^7.7.4",
     "@peculiar/webcrypto": "^1.0.22",
     "@types/classnames": "^2.2.10",
+    "@types/modernizr": "^3.5.3",
     "@types/react": "16.9",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^24.9.0",
