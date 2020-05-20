@@ -19,6 +19,7 @@ import { _t } from '../languageHandler';
 import AutocompleteProvider from './AutocompleteProvider';
 import {MatrixClientPeg} from '../MatrixClientPeg';
 import {PillCompletion} from './Components';
+import {ICompletion, ISelectionRange} from './Autocompleter';
 import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
 import RoomViewStore from "../stores/RoomViewStore";
@@ -36,6 +37,11 @@ function score(query, space) {
 }
 
 export default class EmoteProvider extends AutocompleteProvider {
+    client: any;
+    emoteData: any[];
+    fn: any;
+    roomFn: any;
+
     constructor() {
         super(EMOTE_REGEX);
         this.client = MatrixClientPeg.get();
@@ -51,7 +57,7 @@ export default class EmoteProvider extends AutocompleteProvider {
           name = name.replace(/[^\w-]/g, '');
           return name.toLowerCase();
         };
-        const addEmotePack = (packName, content, packNameOverride) => {
+        const addEmotePack = (packName, content, packNameOverride?) => {
             if (!content.short) {
                 return;
             }
@@ -139,10 +145,10 @@ export default class EmoteProvider extends AutocompleteProvider {
         return results;
     }
 
-    async getCompletions(query: string, selection: {start: number, end: number}, force = false) {
+    async getCompletions(query: string, selection: ISelectionRange, force?: boolean): Promise<ICompletion[]> {
         
         let completions = [];
-        const {command, range} = this.getCurrentCommand(query, selection, force);
+        const {command, range} = this.getCurrentCommand(query, selection);
         if (command) {
             const EmoteAvatar = sdk.getComponent('views.avatars.EmoteAvatar');
 
@@ -179,7 +185,7 @@ export default class EmoteProvider extends AutocompleteProvider {
         return _t('Emotes');
     }
 
-    renderCompletions(completions: [React.Component]): ?React.Component {
+    renderCompletions(completions: React.Component[]): React.ReactNode {
         return <div className="mx_Autocomplete_Completion_container_pill">
             { completions }
         </div>;

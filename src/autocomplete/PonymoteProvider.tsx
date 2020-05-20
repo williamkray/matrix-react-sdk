@@ -28,6 +28,7 @@ import AutocompleteProvider from './AutocompleteProvider';
 import {MatrixClientPeg} from '../MatrixClientPeg';
 import QueryMatcher from './QueryMatcher';
 import {PillCompletion} from './Components';
+import {ICompletion, ISelectionRange} from './Autocompleter';
 import {getDisplayAliasForRoom} from '../Rooms';
 import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
@@ -129,6 +130,8 @@ function matchPonymotes(s) {
 }
 
 export default class PonymoteProvider extends AutocompleteProvider {
+    matcher: QueryMatcher<any>;
+
     constructor() {
         super(PONYMOTE_REGEX);
         this.matcher = new QueryMatcher(PONYMOTE_SHORTNAMES, {
@@ -138,10 +141,9 @@ export default class PonymoteProvider extends AutocompleteProvider {
         });
     }
 
-    async getCompletions(query: string, selection: {start: number, end: number}, force = false) {
-        
+    async getCompletions(query: string, selection: ISelectionRange, force?: boolean): Promise<ICompletion[]> {
         let completions = [];
-        const {command, range} = this.getCurrentCommand(query, selection, force);
+        const {command, range} = this.getCurrentCommand(query, selection);
         if (command) {
             const EmoteAvatar = sdk.getComponent('views.avatars.EmoteAvatar');
             
@@ -174,7 +176,7 @@ export default class PonymoteProvider extends AutocompleteProvider {
         return _t('Additional Emotes');
     }
 
-    renderCompletions(completions: [React.Component]): ?React.Component {
+    renderCompletions(completions: React.Component[]): React.ReactNode {
         return <div className="mx_Autocomplete_Completion_container_pill">
             { completions }
         </div>;
