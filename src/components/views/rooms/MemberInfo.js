@@ -1062,7 +1062,7 @@ export default createReactClass({
             presenceCurrentlyActive = this.props.member.user.currentlyActive;
 
             if (SettingsStore.isFeatureEnabled("feature_custom_status")) {
-                statusMessage = this.props.member.user._unstable_statusMessage;
+                statusMessage = this.props.member.user.presenceStatusMsg;
             }
         }
 

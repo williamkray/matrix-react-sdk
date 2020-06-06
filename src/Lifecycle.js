@@ -605,6 +605,7 @@ async function startMatrixClient(startSyncing=true) {
     // the client
     if (!SettingsStore.getValue("lowBandwidth")) {
         Presence.start();
+        Presence.setStatusMessage(SettingsStore.getValue("statusMessage"));
     }
 
     // Now that we have a MatrixClientPeg, update the Jitsi info

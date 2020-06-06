@@ -577,4 +577,8 @@ export const SETTINGS = {
             MatrixClient.prototype.setCryptoTrustCrossSignedDevices, true,
         ),
     },
+    "statusMessage": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        default: "",
+    },
 };

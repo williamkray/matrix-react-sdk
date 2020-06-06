@@ -52,7 +52,7 @@ export default createReactClass({
         if (SettingsStore.isFeatureEnabled("feature_custom_status")) {
             const { user } = this.props.member;
             if (user) {
-                user.on("User._unstable_statusMessage", this._onStatusMessageCommitted);
+                user.on("User.presenceStatusMsg", this._onStatusMessageCommitted);
             }
         }
 
@@ -81,7 +81,7 @@ export default createReactClass({
         const { user } = this.props.member;
         if (user) {
             user.removeListener(
-                "User._unstable_statusMessage",
+                "User.presenceStatusMsg",
                 this._onStatusMessageCommitted,
             );
         }
@@ -150,7 +150,7 @@ export default createReactClass({
         if (!user) {
             return "";
         }
-        return user._unstable_statusMessage;
+        return user.presenceStatusMsg;
     },
 
     _onStatusMessageCommitted() {
