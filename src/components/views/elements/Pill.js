@@ -24,7 +24,7 @@ the Cooperative Software License as distributed with this project.
 import React from 'react';
 import createReactClass from 'create-react-class';
 import * as sdk from '../../../index';
-import dis from '../../../dispatcher';
+import dis from '../../../dispatcher/dispatcher';
 import classNames from 'classnames';
 import { Room, RoomMember } from 'matrix-js-sdk';
 import PropTypes from 'prop-types';
@@ -32,6 +32,7 @@ import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import FlairStore from "../../../stores/FlairStore";
 import {getPrimaryPermalinkEntity} from "../../../utils/permalinks/Permalinks";
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
+import {Action} from "../../../dispatcher/actions";
 
 // For URLs of matrix.to links in the timeline which have been reformatted by
 // HttpUtils transformTags to relative links. This excludes event URLs (with `[^\/]*`)
@@ -199,7 +200,7 @@ const Pill = createReactClass({
 
     onUserPillClicked: function() {
         dis.dispatch({
-            action: 'view_user',
+            action: Action.ViewUser,
             member: this.state.member,
         });
     },
