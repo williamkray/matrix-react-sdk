@@ -151,10 +151,11 @@ const BaseAvatar = (props) => {
         }
     }
 
+    imageClasses += " mx_BaseAvatar";
     if (onClick != null) {
         return (
             <AccessibleButton
-                className="mx_BaseAvatar mx_BaseAvatar_image"
+                className={imageClasses}
                 element='img'
                 src={imageUrl}
                 onClick={onClick}
@@ -170,7 +171,7 @@ const BaseAvatar = (props) => {
     } else {
         return (
             <img
-                className="mx_BaseAvatar mx_BaseAvatar_image"
+                className={imageClasses}
                 src={imageUrl}
                 onError={onError}
                 style={{

@@ -109,9 +109,6 @@ class Presence {
      * @param {string} statusMsg the status message to set
      */
     async setStatusMessage(newStatusMsg) {
-        if (newStatusMsg === this.statusMsg) {
-            return;
-        }
         const oldStatusMsg = this.statusMsg;
         this.statusMsg = newStatusMsg;
 
