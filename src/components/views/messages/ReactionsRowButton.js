@@ -98,7 +98,7 @@ export default class ReactionsRowButton extends React.PureComponent {
                 content,
                 200,
                 size,
-                "crop",
+                "scale",
             );
             contentElem = <img
                 src={url}
