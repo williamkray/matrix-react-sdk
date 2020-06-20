@@ -248,7 +248,7 @@ export default class EmotesPanel extends React.Component {
                 <td className="mx_EmotesPanel_mxc" key={i++}>
                     <Field value={emote.url}
                         key={i}
-                        onChange={this._onTextChange.bind(this, "mxc", emoteIndex)}
+                        onChange={this._onTextChange.bind(this, "url", emoteIndex)}
                     />
                 </td>
             );
