@@ -29,7 +29,7 @@ import PreferencesUserSettingsTab from "../settings/tabs/user/PreferencesUserSet
 import VoiceUserSettingsTab from "../settings/tabs/user/VoiceUserSettingsTab";
 import HelpUserSettingsTab from "../settings/tabs/user/HelpUserSettingsTab";
 import FlairUserSettingsTab from "../settings/tabs/user/FlairUserSettingsTab";
-import EmotesPanel from "../settings/EmotesPanel";
+import EmotesUserSettingsTab from "../settings/tabs/user/EmotesUserSettingsTab";
 import * as sdk from "../../../index";
 import SdkConfig from "../../../SdkConfig";
 import MjolnirUserSettingsTab from "../settings/tabs/user/MjolnirUserSettingsTab";
@@ -101,7 +101,7 @@ export default class UserSettingsDialog extends React.Component {
         tabs.push(new Tab(
             _td("Emotes"),
             "mx_MessageComposer_emoji",
-            <EmotesPanel />,
+            <EmotesUserSettingsTab />,
         ));
         if (SdkConfig.get()['showLabsSettings'] || SettingsStore.getLabsFeatures().length > 0) {
             tabs.push(new Tab(

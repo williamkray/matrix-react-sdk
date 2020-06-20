@@ -1,5 +1,5 @@
 /*
-Copyright 2018 ponies.im
+Copyright 2018, 2020 ponies.im
 
 Licensed under the Cooperative Software License (the "License");
 you may not use this file except in compliance with the License.
@@ -49,13 +49,32 @@ export default class EmotesPanel extends React.Component {
         this._loadEmotes();
     }
 
+    _getEventContent() {
+        if (this.props.roomId) {
+            const thisRoom = MatrixClientPeg.get().getRoom(this.props.roomId);
+            if (thisRoom) {
+                const event = thisRoom.currentState.getStateEvents('im.ponies.room_emotes', this.props.stateKey || "");
+                if (event && !event.error && event.event.content) {
+                    return event.event.content;
+                }
+            }
+        } else {
+            const event = MatrixClientPeg.get().getAccountData('im.ponies.user_emotes');
+            if (event && !event.error && event.event.type == 'im.ponies.user_emotes' && event.event.content) {
+                return event.event.content;
+            }
+        }
+    }
+
     _saveEmotes() {
+        if (this.props.readonly) {
+            return;
+        }
         this.setState({"saving": true});
 
         // Extract emotes from state
-        let emotes = {
-            short: {}
-        };
+        let emotes = this._getEventContent() || {};
+        emotes.short = {};
 
         for (const emoteIndex in Object.keys(this.state.emotes)) {
             const emote = this.state.emotes[emoteIndex];
@@ -72,7 +91,13 @@ export default class EmotesPanel extends React.Component {
 
         console.log("Saving emotes:", emotes);
 
-        MatrixClientPeg.get().setAccountData('im.ponies.user_emotes', emotes).catch((e) => {
+        let promise;
+        if (this.props.roomId) {
+            promise = MatrixClientPeg.get().sendStateEvent(this.props.roomId, 'im.ponies.room_emotes', emotes, this.props.stateKey || '');
+        } else {
+            promise = MatrixClientPeg.get().setAccountData('im.ponies.user_emotes', emotes);
+        }
+        promise.catch((e) => {
             console.error("Failed setting emotes:", e);
             this.setState({"saving": false});
             throw e;
@@ -88,44 +113,39 @@ export default class EmotesPanel extends React.Component {
 
     _loadEmotes() {
         // Load user's emotes from their server account data
-        const event = MatrixClientPeg.get().getAccountData('im.ponies.user_emotes');
-        if (event && !event.error && event.event.type == 'im.ponies.user_emotes' && event.event.content) {
-            const emotes = event.event.content;
+        const emotes = this._getEventContent();
 
-            console.log("Got emotes from account data:", emotes)
-
-            // Check if there are any existing emotes
-            if (!emotes || !emotes.short) {
-                return;
-            }
-
-            // Build a new map of emotes to put in state
-            //
-            // We can't use the emote shortcode as a key as it can change,
-            // instead we assign boring old increasing ints
-            //
-            // Example resulting form of `this.state.emotes`:
-            // {
-            //  0: {"short": "foo", "url": "mxc://a/b"},
-            //  1: {"short": "bar", "url": "mxc://a/c"},
-            //  ...
-            // }
-            let cleanEmotes = {};
-            Object.keys(emotes.short).forEach((emoteShortcode) => {
-                // Remove the : from each emote name
-                // We don't want users to have to type `:` before and after
-                // their shortcuts when setting them
-                const cleanShortcode = this._removeColonsFromEmoteName(emoteShortcode)
-
-                cleanEmotes[this.emoteIndex++] = {
-                    "short": cleanShortcode,
-                    "url": emotes.short[emoteShortcode],
-                };
-            });
-
-            this.setState({"emotes": cleanEmotes})
-            console.log("this.state.emotes set up as:", this.state.emotes)
+        // Check if there are any existing emotes
+        if (!emotes || !emotes.short) {
+            return;
         }
+
+        // Build a new map of emotes to put in state
+        //
+        // We can't use the emote shortcode as a key as it can change,
+        // instead we assign boring old increasing ints
+        //
+        // Example resulting form of `this.state.emotes`:
+        // {
+        //  0: {"short": "foo", "url": "mxc://a/b"},
+        //  1: {"short": "bar", "url": "mxc://a/c"},
+        //  ...
+        // }
+        let cleanEmotes = {};
+        Object.keys(emotes.short).forEach((emoteShortcode) => {
+            // Remove the : from each emote name
+            // We don't want users to have to type `:` before and after
+            // their shortcuts when setting them
+            const cleanShortcode = this._removeColonsFromEmoteName(emoteShortcode)
+
+            cleanEmotes[this.emoteIndex++] = {
+                "short": cleanShortcode,
+                "url": emotes.short[emoteShortcode],
+            };
+        });
+
+        this.setState({"emotes": cleanEmotes})
+        console.log("this.state.emotes set up as:", this.state.emotes)
     }
 
     _removeColonsFromEmoteName(emoteName) {
@@ -137,6 +157,9 @@ export default class EmotesPanel extends React.Component {
     }
 
     _addEmote() {
+        if (this.props.readonly) {
+            return;
+        }
         // Check whether there's already an available empty emote
         for (const emote in Object.values(this.state.emotes)) {
             if (emote.short == "" && emote.url == "") {
@@ -155,6 +178,9 @@ export default class EmotesPanel extends React.Component {
     }
 
     _removeEmote(emoteIndex) {
+        if (this.props.readonly) {
+            return;
+        }
         // Delete an emote
         let emotes = this.state.emotes;
         delete emotes[emoteIndex];
@@ -163,6 +189,9 @@ export default class EmotesPanel extends React.Component {
     }
 
     _onTextChange(type, emoteIndex, ev) {
+        if (this.props.readonly) {
+            return;
+        }
         let emotes = this.state.emotes;
         emotes[emoteIndex][type] = ev.target.value;
 
@@ -170,6 +199,9 @@ export default class EmotesPanel extends React.Component {
     }
 
     _onFileSelected(emoteIndex) {
+        if (this.props.readonly) {
+            return;
+        }
         // Upload a selected file and set the returned URL as
         // an MXC URL
         return (ev) => {
@@ -195,23 +227,38 @@ export default class EmotesPanel extends React.Component {
         for (const emoteIndex of Object.keys(this.state.emotes)) {
             let emote = this.state.emotes[emoteIndex];
             let i = 0;
-            emoteRows.push(
-                <tr className="mx_EmotesPanel_entry" key={emoteIndex}>
+            const row = [];
+            if (this.props.readonly) {
+                row.push(
+                    <td className="mx_EmotesPanel_name" key={i++}>
+                        {":" + emote.short + ":"}
+                    </td>
+                );
+            } else {
+                row.push(
                     <td className="mx_EmotesPanel_name" key={i++}>
                         <Field value={emote.short}
-                            key={i}
-                            onChange={this._onTextChange.bind(this, "short", emoteIndex)}
+                        key={i}
+                        onChange={this._onTextChange.bind(this, "short", emoteIndex)}
                         />
                     </td>
-                    <td className="mx_EmotesPanel_mxc" key={i++}>
-                        <Field value={emote.url}
-                            key={i}
-                            onChange={this._onTextChange.bind(this, "mxc", emoteIndex)}
-                        />
-                    </td>
-                    <td key={i++}>
-                        <Emote url={emote.url} alt={emote.short} key={i} />
-                    </td>
+                );
+            }
+            row.push(
+                <td className="mx_EmotesPanel_mxc" key={i++}>
+                    <Field value={emote.url}
+                        key={i}
+                        onChange={this._onTextChange.bind(this, "mxc", emoteIndex)}
+                    />
+                </td>
+            );
+            row.push(
+                <td key={i++}>
+                    <Emote url={emote.url} alt={emote.short} key={i} />
+                </td>
+            );
+            if (!this.props.readonly) {
+                row.push(
                     <td className="mx_EmotesPanel_file" key={i++}>
                         <button className="mx_textButton mx_AccessibleButton"
                             onClick={click("mx_EmotesPanel_entry_file_"+emote.short)}>
@@ -223,46 +270,57 @@ export default class EmotesPanel extends React.Component {
                             accept="image/*"
                             onChange={this._onFileSelected(emoteIndex)} />
                     </td>
+                );
+                row.push(
                     <td key={i++}>
                         <div onClick={this._removeEmote.bind(this, emoteIndex)}
                             className="mx_EditableItem_delete"
                             title={ _t("Remove") }
                             role="button" />
                     </td>
+                );
+            }
+            emoteRows.push(
+                <tr className="mx_EmotesPanel_entry" key={emoteIndex}>
+                    {row}
                 </tr>
             );
         }
 
+        const actions = [];
+        if (!this.props.readonly) {
+            actions.push(
+                <AccessibleButton onClick={this._saveEmotes} kind="primary"
+                                  disabled={this.state.saving}>
+                    { this.state.saving ? _t("Saving") : _t("Save") }
+                </AccessibleButton>
+            );
+            actions.push(
+                <AccessibleButton onClick={this._addEmote} kind="primary">
+                    { _t("New Emote") }
+                </AccessibleButton>
+            );
+        }
+
         return (
-            <div className="mx_SettingsTab mx_EmotesUserSettingsTab">
-                <div className="mx_SettingsTab_heading">{ _t("Emotes") }</div>
-                <div>
-                    <p>
-                        { _t("Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. " +
-                             "You can use emotes in a room by typing a ':' and then typing in the emote name.") }
-                    </p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>{ _t('Name') }</th>
-                                <th>{ _t('Image URL') }</th>
-                                <th>{ _t('Preview') }</th>
-                                <th></th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            { emoteRows }
-                        </tbody>
-                    </table>
-                    <AccessibleButton onClick={this._saveEmotes} kind="primary"
-                                      disabled={this.state.saving}>
-                        { this.state.saving ? _t("Saving") : _t("Save") }
-                    </AccessibleButton>
-                    <AccessibleButton onClick={this._addEmote} kind="primary">
-                        { _t("New Emote") }
-                    </AccessibleButton>
-                </div>
+            <div>
+                <p>
+                    { _t("Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. " +
+                         "You can use emotes in a room by typing a ':' and then typing in the emote name.") }
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{ _t('Name') }</th>
+                            <th>{ _t('Image URL') }</th>
+                            <th>{ _t('Preview') }</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { emoteRows }
+                    </tbody>
+                </table>
+                { actions }
             </div>
         );
     }

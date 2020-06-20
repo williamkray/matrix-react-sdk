@@ -50,7 +50,7 @@ export function htmlSerializeIfNeeded(model: EditorModel, {forceHTML = false} = 
     if (!parser.isPlainText() || forceHTML) {
         let html = parser.toHTML();
         // we need to make emotes nicer
-        html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
+        html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img data-mx-emote src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
         return html;
     }
 }
