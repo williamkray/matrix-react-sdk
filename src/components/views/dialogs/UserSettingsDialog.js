@@ -100,7 +100,7 @@ export default class UserSettingsDialog extends React.Component {
         ));
         tabs.push(new Tab(
             _td("Emotes"),
-            "mx_MessageComposer_stickers",
+            "mx_MessageComposer_emoji",
             <EmotesPanel />,
         ));
         if (SdkConfig.get()['showLabsSettings'] || SettingsStore.getLabsFeatures().length > 0) {
