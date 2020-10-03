@@ -33,7 +33,7 @@ export default class MessageTimestamp extends React.Component {
     };
 
     render() {
-        if (SettingsStore.isFeatureEnabled("feature_interplanetary_time")) {
+        if (SettingsStore.getValue("feature_interplanetary_time")) {
             const ipt=((244058700000+((this.props.ts+27000)/864))).toFixed(3).match(/(.*)(.)(.)(.)(.)(.{2})(.{2})(.{4})/);
             return (
                 <span

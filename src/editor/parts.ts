@@ -43,7 +43,14 @@ interface ISerializedPillPart {
     resourceId: string;
 }
 
-export type SerializedPart = ISerializedPart | ISerializedPillPart;
+interface ISerializedEmotePart {
+    type: Type.Emote;
+    code: string;
+    mxc: string;
+    text: string;
+}
+
+export type SerializedPart = ISerializedPart | ISerializedPillPart | ISerializedEmotePart;
 
 enum Type {
     Plain = "plain",
@@ -53,6 +60,7 @@ enum Type {
     RoomPill = "room-pill",
     AtRoomPill = "at-room-pill",
     PillCandidate = "pill-candidate",
+    Emote = "emote",
 }
 
 interface IBasePart {
@@ -82,7 +90,13 @@ interface IPillPart extends Omit<IBasePart, "type" | "resourceId"> {
     resourceId: string;
 }
 
-export type Part = IBasePart | IPillCandidatePart | IPillPart;
+interface IEmotePart extends Omit<IBasePart, "type" | "resourceId"> {
+    type: Type.Emote;
+    mxc: string;
+    code: string;
+}
+
+export type Part = IBasePart | IPillCandidatePart | IPillPart | IEmotePart;
 
 abstract class BasePart {
     protected _text: string;
@@ -406,7 +420,10 @@ class UserPillPart extends PillPart {
     }
 }
 
-class EmotePart extends BasePart {
+class EmotePart extends BasePart implements IEmotePart {
+    public mxc: string;
+    public code: string;
+
     constructor(mxc, code) {
         super(code);
         this.mxc = mxc;
@@ -449,15 +466,17 @@ class EmotePart extends BasePart {
         return false;
     }
 
-    get type() {
-        return "emote";
+    get type(): IEmotePart["type"] {
+        return Type.Emote;
     }
 
-    serialize() {
-        const obj = super.serialize();
-        obj.code = this.code;
-        obj.mxc = this.mxc;
-        return obj;
+    serialize(): ISerializedEmotePart {
+        return {
+            type: this.type,
+            code: this.code,
+            mxc: this.mxc,
+            text: "",
+        };
     }
 }
 

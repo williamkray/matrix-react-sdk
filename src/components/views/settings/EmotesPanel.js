@@ -74,8 +74,12 @@ export default class EmotesPanel extends React.Component {
 
         // Extract emotes from state
         let emotes = this._getEventContent() || {};
-        emotes.short = {};
+        delete emotes.short;
+        if (!emotes.emoticons) {
+            emotes.emoticons = {};
+        }
 
+        const allEmoteShortcodes = new Set();
         for (const emoteIndex in Object.keys(this.state.emotes)) {
             const emote = this.state.emotes[emoteIndex];
 
@@ -86,7 +90,17 @@ export default class EmotesPanel extends React.Component {
 
             // Re-add the colons to the shortcode
             let fullShortCode = this._addColonsToEmoteName(emote.short);
-            emotes.short[fullShortCode] = emote.url;
+            if (!emotes.emoticons[fullShortCode]) {
+                emotes.emoticons[fullShortCode] = {};
+            }
+            allEmoteShortcodes.add(fullShortCode);
+            emotes.emoticons[fullShortCode].url = emote.url;
+        }
+
+        for (const key of Object.keys(emotes.emoticons)) {
+            if (!allEmoteShortcodes.has(key)) {
+                delete emotes.emoticons[key];
+            }
         }
 
         console.log("Saving emotes:", emotes);
@@ -116,7 +130,7 @@ export default class EmotesPanel extends React.Component {
         const emotes = this._getEventContent();
 
         // Check if there are any existing emotes
-        if (!emotes || !emotes.short) {
+        if (!emotes || (!emotes.emoticons && !emotes.short)) {
             return;
         }
 
@@ -132,17 +146,31 @@ export default class EmotesPanel extends React.Component {
         //  ...
         // }
         let cleanEmotes = {};
-        Object.keys(emotes.short).forEach((emoteShortcode) => {
-            // Remove the : from each emote name
-            // We don't want users to have to type `:` before and after
-            // their shortcuts when setting them
-            const cleanShortcode = this._removeColonsFromEmoteName(emoteShortcode)
+        if (emotes.emoticons) {
+            Object.keys(emotes.emoticons).forEach((emoteShortcode) => {
+                // Remove the : from each emote name
+                // We don't want users to have to type `:` before and after
+                // their shortcuts when setting them
+                const cleanShortcode = this._removeColonsFromEmoteName(emoteShortcode);
 
-            cleanEmotes[this.emoteIndex++] = {
-                "short": cleanShortcode,
-                "url": emotes.short[emoteShortcode],
-            };
-        });
+                cleanEmotes[this.emoteIndex++] = {
+                    "short": cleanShortcode,
+                    "url": emotes.emoticons[emoteShortcode].url,
+                };
+            });
+        } else {
+            Object.keys(emotes.short).forEach((emoteShortcode) => {
+                // Remove the : from each emote name
+                // We don't want users to have to type `:` before and after
+                // their shortcuts when setting them
+                const cleanShortcode = this._removeColonsFromEmoteName(emoteShortcode);
+
+                cleanEmotes[this.emoteIndex++] = {
+                    "short": cleanShortcode,
+                    "url": emotes.short[emoteShortcode],
+                };
+            });
+        }
 
         this.setState({"emotes": cleanEmotes})
         console.log("this.state.emotes set up as:", this.state.emotes)
@@ -206,7 +234,7 @@ export default class EmotesPanel extends React.Component {
         // an MXC URL
         return (ev) => {
             const file = ev.target.files[0];
-            
+
             return MatrixClientPeg.get().uploadContent(file).then((url) => {
                 let emotes = this.state.emotes;
                 emotes[emoteIndex].url = url;

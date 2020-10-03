@@ -164,7 +164,7 @@ class LoggedInView extends React.Component<IProps, IState> {
             syncErrorData: undefined,
             // use compact timeline view
             useCompactLayout: SettingsStore.getValue('useCompactLayout'),
-            useSuperCompactLayout: SettingsStore.isFeatureEnabled("feature_super_compact"),
+            useSuperCompactLayout: SettingsStore.getValue("feature_super_compact"),
         };
 
         // stash the MatrixClient in case we log out before we are unmounted

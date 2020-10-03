@@ -112,8 +112,8 @@ const BaseAvatar = (props: IProps) => {
 
     const [imageUrl, onError] = useImageUrl({url, urls});
 
-    let imageClasses = 'mx_BaseAvatar_image';
-    if (!SettingsStore.isFeatureEnabled("feature_squircle_avatars")) {
+    let imageClasses = 'mx_BaseAvatar mx_BaseAvatar_image';
+    if (!SettingsStore.getValue("feature_squircle_avatars")) {
         imageClasses += ' mx_RoundAvatar';
     }
 

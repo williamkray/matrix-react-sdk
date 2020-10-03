@@ -18,7 +18,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -32,7 +32,7 @@ import {ICompletion, ISelectionRange} from './Autocompleter';
 import {getDisplayAliasForRoom} from '../Rooms';
 import * as sdk from '../index';
 import _sortBy from 'lodash/sortBy';
-import SettingsStore from "../settings/SettingsStore"; 
+import SettingsStore from "../settings/SettingsStore";
 
 import PonymoteDataClean from '../ponymotes_clean.json';
 import PonymoteDataNSFW from '../ponymotes_nsfw.json';
@@ -91,7 +91,7 @@ function matchPonymotes(s) {
     s = s.toLowerCase();
     const results = [];
 
-    if (!SettingsStore.isFeatureEnabled("feature_disable_ponymotes")) {
+    if (!SettingsStore.getValue("feature_disable_ponymotes")) {
         PonymoteDataClean.forEach((key) => {
             const index = key.toLowerCase().indexOf(s);
             if (index !== -1) {
@@ -103,7 +103,7 @@ function matchPonymotes(s) {
         });
     }
 
-    if (SettingsStore.isFeatureEnabled("feature_nsfw_ponymotes")) {
+    if (SettingsStore.getValue("feature_nsfw_ponymotes")) {
         PonymoteDataNSFW.forEach((key) => {
             const index = key.toLowerCase().indexOf(s);
             if (index !== -1) {
@@ -115,7 +115,7 @@ function matchPonymotes(s) {
         });
     }
 
-    if (!SettingsStore.isFeatureEnabled("feature_disable_mutant_standard")) {
+    if (!SettingsStore.getValue("feature_disable_mutant_standard")) {
         MutantStandardData.forEach((key) => {
             const index = key.toLowerCase().indexOf(s);
             if (index !== -1) {
@@ -146,7 +146,7 @@ export default class PonymoteProvider extends AutocompleteProvider {
         const {command, range} = this.getCurrentCommand(query, selection);
         if (command) {
             const EmoteAvatar = sdk.getComponent('views.avatars.EmoteAvatar');
-            
+
             const matchedString = command[1];
             completions = this.matcher.match(matchedString);
             completions = completions.concat(matchPonymotes(matchedString));
@@ -163,7 +163,9 @@ export default class PonymoteProvider extends AutocompleteProvider {
                     suffix: ' ',
                     href: 'emote://'+mxc,
                     component: (
-                        <PillCompletion initialComponent={<EmoteAvatar width={24} height={24} mxcUrl={mxc} name={n} />} title={n} />
+                        <PillCompletion title={n}>
+                            <EmoteAvatar width={24} height={24} mxcUrl={mxc} name={n} />
+                        </PillCompletion>
                     ),
                     range,
                 };

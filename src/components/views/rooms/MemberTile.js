@@ -147,7 +147,7 @@ export default class MemberTile extends React.Component {
             return "";
         }
         return user.presenceStatusMsg;
-    },
+    };
 
     _onStatusMessageCommitted = () => {
         // The `User` object has observed a status message change.

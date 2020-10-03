@@ -15,29 +15,26 @@ limitations under the License.
 */
 
 import React from 'react';
-import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
 import {MatrixClientPeg} from '../../../MatrixClientPeg';
 
 const REGEX_EMOTE = /^emote:\/\/(.*)$/;
 
-const Emote = createReactClass({
-    statics: {
-        isEmoteUrl: (url) => {
-            return !!REGEX_EMOTE.exec(url);
-        },
-    },
-
-    props: {
+export default class Emote extends React.Component {
+    static propTypes = {
         url: PropTypes.string,
         alt: PropTypes.string,
-    },
+    };
 
-    render: function() {
+    static defaultProps = {};
+
+    static isEmoteUrl(url) {
+        return !!REGEX_EMOTE.exec(url);
+    }
+
+    render() {
         const cli = MatrixClientPeg.get();
         const url = cli.mxcUrlToHttp(this.props.url.replace('emote://', ''), 800, 32);
         return <img src={url} height={32} alt={this.props.alt} title={this.props.alt} />;
     }
-});
-
-export default Emote;
+}

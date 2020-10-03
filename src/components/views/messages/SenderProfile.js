@@ -127,7 +127,7 @@ export default class SenderProfile extends React.Component {
         } catch (e) {
             discordMember = undefined;
         }
-        if (!SettingsStore.isFeatureEnabled("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
+        if (!SettingsStore.getValue("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
             style.color = discordColorToCssAdjust(discordMember.displayColor, getBodyBgColorForTheme());
         }
 

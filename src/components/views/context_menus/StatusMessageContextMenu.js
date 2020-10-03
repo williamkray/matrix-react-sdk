@@ -21,7 +21,8 @@ import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import * as sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
 import Presence from '../../../Presence';
-import SettingsStore, {SettingLevel} from "../../../settings/SettingsStore";
+import SettingsStore from "../../../settings/SettingsStore";
+import {SettingLevel} from "../../../settings/SettingLevel";
 
 export default class StatusMessageContextMenu extends React.Component {
     static propTypes = {

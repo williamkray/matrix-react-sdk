@@ -57,8 +57,9 @@ export default class EmoteProvider extends AutocompleteProvider {
           name = name.replace(/[^\w-]/g, '');
           return name.toLowerCase();
         };
+        const allMxcs = new Set();
         const addEmotePack = (packName, content, packNameOverride?) => {
-            if (!content.short) {
+            if (!content.emoticons && !content.short) {
                 return;
             }
             if (content.pack && content.pack.name) {
@@ -68,39 +69,41 @@ export default class EmoteProvider extends AutocompleteProvider {
                 packName = packNameOverride;
             }
             packName = normalizeEmotePackName(packName);
-            for (const key of Object.keys(content.short)) {
-                if (content.short[key].startsWith('mxc://')) {
-                    this.emoteData.push({
-                        code: key,
-                        mxc: content.short[key],
-                        packName: packName,
-                    });
+            if (content.emoticons) {
+                for (const key of Object.keys(content.emoticons)) {
+                    if (content.emoticons[key].url.startsWith('mxc://') && !allMxcs.has(content.emoticons[key].url)) {
+                        allMxcs.add(content.emoticons[key].url);
+                        this.emoteData.push({
+                            code: key,
+                            mxc: content.emoticons[key].url,
+                            packName: packName,
+                        });
+                    }
+                }
+            } else {
+                for (const key of Object.keys(content.short)) {
+                    if (content.short[key].startsWith('mxc://') && !allMxcs.has(content.short[key])) {
+                        allMxcs.add(content.short[key]);
+                        this.emoteData.push({
+                            code: key,
+                            mxc: content.short[key],
+                            packName: packName,
+                        });
+                    }
                 }
             }
         };
 
-        // first add all the room emotes
-        const thisRoomId = RoomViewStore.getRoomId();
-        const thisRoom = this.client.getRoom(thisRoomId);
-        if (thisRoom) {
-            const events = thisRoom.currentState.getStateEvents('im.ponies.room_emotes');
-            for (let event of events) {
-                event = event.event || event;
-                addEmotePack(event.state_key || 'room', event.content);
-            }
-        }
-        // now add the user emotes
+        // first add the user emotes
         const userEmotes = this.client.getAccountData('im.ponies.user_emotes');
         if (userEmotes && !userEmotes.error && userEmotes.event.content) {
             addEmotePack('user', userEmotes.event.content);
         }
-        // finally add the external room emotes
+
+        // next add the external room emotes
         const emoteRooms = this.client.getAccountData('im.ponies.emote_rooms');
         if (emoteRooms && !emoteRooms.error && emoteRooms.event.content && emoteRooms.event.content.rooms) {
             for (const roomId of Object.keys(emoteRooms.event.content.rooms)) {
-                if (roomId == thisRoomId) {
-                    continue;
-                }
                 const room = this.client.getRoom(roomId);
                 if (!room) {
                     continue;
@@ -112,6 +115,17 @@ export default class EmoteProvider extends AutocompleteProvider {
                         addEmotePack(roomId, event.content, emoteRooms.event.content.rooms[roomId][stateKey]['name']);
                     }
                 }
+            }
+        }
+
+        // finally add all the room emotes
+        const thisRoomId = RoomViewStore.getRoomId();
+        const thisRoom = this.client.getRoom(thisRoomId);
+        if (thisRoom) {
+            const events = thisRoom.currentState.getStateEvents('im.ponies.room_emotes');
+            for (let event of events) {
+                event = event.event || event;
+                addEmotePack(event.state_key || 'room', event.content);
             }
         }
     }
@@ -146,7 +160,7 @@ export default class EmoteProvider extends AutocompleteProvider {
     }
 
     async getCompletions(query: string, selection: ISelectionRange, force?: boolean): Promise<ICompletion[]> {
-        
+
         let completions = [];
         const {command, range} = this.getCurrentCommand(query, selection);
         if (command) {
@@ -168,7 +182,9 @@ export default class EmoteProvider extends AutocompleteProvider {
                         suffix: ' ',
                         href: 'emote://'+mxc,
                         component: (
-                            <PillCompletion initialComponent={<EmoteAvatar width={24} height={24} mxcUrl={mxc} name={code} />} title={`${code} (${result.packName})`} />
+                            <PillCompletion title={`${code} (${result.packName})`}>
+                                <EmoteAvatar width={24} height={24} mxcUrl={mxc} name={code} />
+                            </PillCompletion>
                         ),
                         range,
                     };

@@ -62,19 +62,23 @@ export default class EmotesRoomSettingsTab extends React.Component {
         if (thisRoom) {
             let emotePacks = [];
             const events = thisRoom.currentState.getStateEvents('im.ponies.room_emotes');
+            let haveDefault = false;
             for (let event of events) {
                 event = event.event || event;
                 if (!event.content.pack) {
                     event.content.pack = {};
                 }
+                if (event.state_key === "") {
+                    haveDefault = true;
+                }
                 emotePacks.push({
                     stateKey: event.state_key,
                     name: event.content.pack.displayname || event.content.pack.name || event.state_key || "Default",
                     activated: Boolean(emoteRoomsThis[event.state_key]),
-                    numEmotes: Object.keys(event.content.short).length,
+                    numEmotes: Object.keys(event.content.short || event.content.emoticons || {}).length,
                 });
             }
-            if (emotePacks.length === 0) {
+            if (!haveDefault) {
                 // add the default one
                 emotePacks.push({
                     stateKey: event.state_key,

@@ -18,45 +18,40 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import * as sdk from '../../../index';
 import {MatrixClientPeg} from '../../../MatrixClientPeg';
 
-export default createReactClass({
-    displayName: 'EmoteAvatar',
-
-    propTypes: {
+export default class EmoteAvatar extends React.Component {
+    static propTypes = {
         name: PropTypes.string,
         mxcUrl: PropTypes.string,
         width: PropTypes.number,
         height: PropTypes.number,
         resizeMethod: PropTypes.string,
-    },
+    };
 
-    getDefaultProps: function() {
-        return {
-            width: 36,
-            height: 36,
-            resizeMethod: 'crop',
-        };
-    },
+    static defaultProps = {
+        width: 36,
+        height: 36,
+        resizeMethod: 'crop',
+    };
 
-    getPonymoteAvatarUrl: function() {
+    getPonymoteAvatarUrl() {
         return MatrixClientPeg.get().mxcUrlToHttp(
             this.props.mxcUrl,
             this.props.width,
             this.props.height,
             this.props.resizeMethod,
         );
-    },
+    }
 
-    render: function() {
+    render() {
         const BaseAvatar = sdk.getComponent("avatars.BaseAvatar");
         // extract the props we use from props so we can pass any others through
         // should consider adding this as a global rule in js-sdk?
@@ -70,5 +65,5 @@ export default createReactClass({
                 {...otherProps}
             />
         );
-    },
-});
+    }
+}

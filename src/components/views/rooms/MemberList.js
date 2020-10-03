@@ -451,11 +451,11 @@ export default class MemberList extends React.Component {
 
     _getChildrenDiscord = (start, end) => {
         return this._makeMemberTiles(this.state.filteredDiscordMembers.slice(start, end));
-    },
+    };
 
     _getChildCountDiscord = () => {
         return this.state.filteredDiscordMembers.length;
-    },
+    };
 
     _getChildrenInvited = (start, end) => {
         let targets = this.state.filteredInvitedMembers;
@@ -468,7 +468,7 @@ export default class MemberList extends React.Component {
 
     _getChildCountInvited = () => {
         return this.state.filteredInvitedMembers.length + (this._getPending3PidInvites() || []).length;
-    }
+    };
 
     render() {
         if (this.state.loading) {
@@ -526,7 +526,6 @@ export default class MemberList extends React.Component {
                 />;
         }
 
-<<<<<<< HEAD
         let discordHeader;
         let discordSection;
         if (this._getChildCountDiscord() > 0) {

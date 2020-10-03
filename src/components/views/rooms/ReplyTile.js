@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Tulir Asokan <tulir@maunium.net>
+Copyright 2020 Tulir Asokan <tulir@maunium.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@ limitations under the License.
 */
 
 import React from 'react';
-import createReactClass from 'create-react-class';
 import PropTypes from 'prop-types';
-const classNames = require("classnames");
+import classNames from 'classnames';
 import { _t, _td } from '../../../languageHandler';
 
 import * as sdk from '../../../index';
 
-import dis from "../../../dispatcher/dispatcher";
+import dis from '../../../dispatcher/dispatcher';
 import SettingsStore from "../../../settings/SettingsStore";
 import {MatrixClient} from 'matrix-js-sdk';
 
-const ObjectUtils = require('../../../ObjectUtils');
+import * as ObjectUtils from '../../../ObjectUtils';
 
 const eventTileTypes = {
     'm.room.message': 'messages.MessageEvent',
@@ -63,46 +62,53 @@ function getHandlerTile(ev) {
     return ev.isState() ? stateEventTileTypes[type] : eventTileTypes[type];
 }
 
-export default createReactClass({
-    displayName: 'ReplyTile',
-
-    contextTypes: {
+class ReplyTile extends React.Component {
+    static contextTypes = {
         matrixClient: PropTypes.instanceOf(MatrixClient).isRequired,
-    },
+    }
 
-    propTypes: {
+    static propTypes = {
         mxEvent: PropTypes.object.isRequired,
         isRedacted: PropTypes.bool,
         permalinkCreator: PropTypes.object,
         onHeightChanged: PropTypes.func,
-    },
+    }
 
-    defaultProps: {
+    static defaultProps = {
         onHeightChanged: function() {},
-    },
+    }
 
-    componentDidMount: function() {
+    constructor(props, context) {
+        super(props, context);
+        this.state = {};
+        this.onClick = this.onClick.bind(this);
+        this._onDecrypted = this._onDecrypted.bind(this);
+    }
+
+    componentDidMount() {
         this.props.mxEvent.on("Event.decrypted", this._onDecrypted);
-    },
+    }
 
-    shouldComponentUpdate: function(nextProps, nextState) {
+    shouldComponentUpdate(nextProps, nextState) {
         if (!ObjectUtils.shallowEqual(this.state, nextState)) {
             return true;
         }
 
         return !this._propsEqual(this.props, nextProps);
-    },
+    }
 
-    componentWillUnmount: function() {
-        const client = this.context.matrixClient;
+    componentWillUnmount() {
         this.props.mxEvent.removeListener("Event.decrypted", this._onDecrypted);
-    },
+    }
 
-    _onDecrypted: function() {
+    _onDecrypted() {
         this.forceUpdate();
-    },
+        if (this.props.onHeightChanged) {
+            this.props.onHeightChanged();
+        }
+    }
 
-    _propsEqual: function(objA, objB) {
+    _propsEqual(objA, objB) {
         const keysA = Object.keys(objA);
         const keysB = Object.keys(objB);
 
@@ -122,9 +128,9 @@ export default createReactClass({
             }
         }
         return true;
-    },
+    }
 
-    onClick: function(e) {
+    onClick(e) {
         // This allows the permalink to be opened in a new tab/window or copied as
         // matrix.to, but also for it to enable routing within Riot when clicked.
         e.preventDefault();
@@ -134,9 +140,9 @@ export default createReactClass({
             highlighted: true,
             room_id: this.props.mxEvent.getRoomId(),
         });
-    },
+    }
 
-    render: function() {
+    render() {
         const SenderProfile = sdk.getComponent('messages.SenderProfile');
 
         const content = this.props.mxEvent.getContent();
@@ -182,7 +188,7 @@ export default createReactClass({
         }
 
         let sender;
-        let needsSenderProfile = tileHandler !== 'messages.RoomCreate' && !isInfoMessage;
+        const needsSenderProfile = msgtype !== 'm.image' && tileHandler !== 'messages.RoomCreate' && !isInfoMessage;
 
         if (needsSenderProfile) {
             let text = null;
@@ -221,9 +227,11 @@ export default createReactClass({
                         showUrlPreview={false}
                         overrideBodyTypes={msgtypeOverrides}
                         overrideEventTypes={evOverrides}
-                        maxImageHeight={96}/>
+                        maxImageHeight={96} />
                 </a>
             </div>
-        )
+        );
     }
-});
+}
+
+export default ReplyTile;
