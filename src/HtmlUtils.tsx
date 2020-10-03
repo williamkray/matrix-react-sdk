@@ -43,6 +43,10 @@ const SURROGATE_PAIR_PATTERN = /([\ud800-\udbff])([\udc00-\udfff])/;
 // (with plenty of false positives, but that's OK)
 const SYMBOL_PATTERN = /([\u2100-\u2bff])/;
 
+const EMOTE_PATTERN = /<img[^>]+data-mx-(?:emote|emoticon)(?==|>|\s)[^>]*>/;
+
+const ONLY_EMOTES_EMOJI_REGEX = /^((?:\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])[\ufe00-\ufe0f]?|<img[^>]+data-mx-(?:emote|emoticon)(?==|>|\s)[^>]*>|\s)*$/;
+
 // Regex pattern for Zero-Width joiner unicode characters
 const ZWJ_REGEX = new RegExp("\u200D|\u2003", "g");
 
@@ -63,7 +67,7 @@ const PERMITTED_URL_SCHEMES = ['http', 'https', 'ftp', 'mailto', 'magnet'];
  * unicodeToImage uses this function.
  */
 function mightContainEmoji(str: string) {
-    return SURROGATE_PAIR_PATTERN.test(str) || SYMBOL_PATTERN.test(str);
+    return SURROGATE_PAIR_PATTERN.test(str) || SYMBOL_PATTERN.test(str) || EMOTE_PATTERN.test(str);
 }
 
 /**
@@ -243,7 +247,7 @@ export const sanitizeHtmlParams: IExtendedSanitizeOptions = {
         font: ['color', 'data-mx-bg-color', 'data-mx-color', 'style'], // custom to matrix
         span: ['data-mx-bg-color', 'data-mx-color', 'data-mx-spoiler', 'style'], // custom to matrix
         a: ['href', 'name', 'target', 'rel'], // remote target: custom to matrix
-        img: ['src', 'width', 'height', 'alt', 'title', 'vertical-align'],
+        img: ['src', 'width', 'height', 'alt', 'title', 'vertical-align', 'data-mx-emote', 'data-mx-emoticon'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
     },
@@ -426,28 +430,32 @@ export function bodyToHtml(content: IContent, highlights: string[], opts: IOpts 
 
     let emojiBody = false;
     if (!opts.disableBigEmoji && bodyHasEmoji) {
-        let contentBodyTrimmed = strippedBody !== undefined ? strippedBody.trim() : '';
+        if (isHtmlMessage) {
+            emojiBody = Boolean(ONLY_EMOTES_EMOJI_REGEX.test(safeBody));
+        } else {
+            let contentBodyTrimmed = strippedBody !== undefined ? strippedBody.trim() : '';
 
-        // Ignore spaces in body text. Emojis with spaces in between should
-        // still be counted as purely emoji messages.
-        contentBodyTrimmed = contentBodyTrimmed.replace(WHITESPACE_REGEX, '');
+            // Ignore spaces in body text. Emojis with spaces in between should
+            // still be counted as purely emoji messages.
+            contentBodyTrimmed = contentBodyTrimmed.replace(WHITESPACE_REGEX, '');
 
-        // Remove zero width joiner characters from emoji messages. This ensures
-        // that emojis that are made up of multiple unicode characters are still
-        // presented as large.
-        contentBodyTrimmed = contentBodyTrimmed.replace(ZWJ_REGEX, '');
+            // Remove zero width joiner characters from emoji messages. This ensures
+            // that emojis that are made up of multiple unicode characters are still
+            // presented as large.
+            contentBodyTrimmed = contentBodyTrimmed.replace(ZWJ_REGEX, '');
 
-        const match = BIGEMOJI_REGEX.exec(contentBodyTrimmed);
-        emojiBody = match && match[0] && match[0].length === contentBodyTrimmed.length &&
-                    // Prevent user pills expanding for users with only emoji in
-                    // their username. Permalinks (links in pills) can be any URL
-                    // now, so we just check for an HTTP-looking thing.
-                    (
-                        strippedBody === safeBody || // replies have the html fallbacks, account for that here
-                        content.formatted_body === undefined ||
-                        (!content.formatted_body.includes("http:") &&
-                        !content.formatted_body.includes("https:"))
-                    );
+            const match = BIGEMOJI_REGEX.exec(contentBodyTrimmed);
+            emojiBody = match && match[0] && match[0].length === contentBodyTrimmed.length &&
+                        // Prevent user pills expanding for users with only emoji in
+                        // their username. Permalinks (links in pills) can be any URL
+                        // now, so we just check for an HTTP-looking thing.
+                        (
+                            strippedBody === safeBody || // replies have the html fallbacks, account for that here
+                            content.formatted_body === undefined ||
+                            (!content.formatted_body.includes("http:") &&
+                            !content.formatted_body.includes("https:"))
+                        );
+        }
     }
 
     const className = classNames({

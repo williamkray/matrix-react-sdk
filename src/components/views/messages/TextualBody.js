@@ -18,7 +18,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
