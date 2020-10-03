@@ -19,7 +19,6 @@ limitations under the License.
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
 import { MatrixClient } from 'matrix-js-sdk/src/client';
-import { MatrixEvent } from 'matrix-js-sdk/src/models/event';
 import { DragDropContext } from 'react-beautiful-dnd';
 
 import {Key, isOnlyCtrlOrCmdKeyEvent, isOnlyCtrlOrCmdIgnoreShiftKeyEvent} from '../../Keyboard';
@@ -41,16 +40,23 @@ import * as KeyboardShortcuts from "../../accessibility/KeyboardShortcuts";
 import HomePage from "./HomePage";
 import ResizeNotifier from "../../utils/ResizeNotifier";
 import PlatformPeg from "../../PlatformPeg";
-import { RoomListStoreTempProxy } from "../../stores/room-list/RoomListStoreTempProxy";
 import { DefaultTagID } from "../../stores/room-list/models";
 import {
     showToast as showSetPasswordToast,
-    hideToast as hideSetPasswordToast
+    hideToast as hideSetPasswordToast,
 } from "../../toasts/SetPasswordToast";
 import {
     showToast as showServerLimitToast,
-    hideToast as hideServerLimitToast
+    hideToast as hideServerLimitToast,
 } from "../../toasts/ServerLimitToast";
+import { Action } from "../../dispatcher/actions";
+import LeftPanel from "./LeftPanel";
+import CallContainer from '../views/voip/CallContainer';
+import { ViewRoomDeltaPayload } from "../../dispatcher/payloads/ViewRoomDeltaPayload";
+import RoomListStore from "../../stores/room-list/RoomListStore";
+import NonUrgentToastContainer from "./NonUrgentToastContainer";
+import { ToggleRightPanelPayload } from "../../dispatcher/payloads/ToggleRightPanelPayload";
+import { IThreepidInvite } from "../../stores/ThreepidInviteStore";
 
 // We need to fetch each pinned message individually (if we don't already have it)
 // so each pinned message may trigger a request. Limit the number per room for sanity.
@@ -71,12 +77,12 @@ interface IProps {
     hideToSRUsers: boolean;
     resizeNotifier: ResizeNotifier;
     middleDisabled: boolean;
-    initialEventPixelOffset: number;
     leftDisabled: boolean;
     rightDisabled: boolean;
+    // eslint-disable-next-line camelcase
     page_type: string;
     autoJoin: boolean;
-    thirdPartyInvite?: object;
+    threepidInvite?: IThreepidInvite;
     roomOobData?: object;
     currentRoomId: string;
     ConferenceHandler?: object;
@@ -92,12 +98,25 @@ interface IProps {
     currentGroupIsNew?: boolean;
 }
 
+interface IUsageLimit {
+    // eslint-disable-next-line camelcase
+    limit_type: "monthly_active_user" | string;
+    // eslint-disable-next-line camelcase
+    admin_contact?: string;
+}
+
 interface IState {
     mouseDown?: {
         x: number;
         y: number;
     };
-    syncErrorData: any;
+    syncErrorData?: {
+        error: {
+            data: IUsageLimit;
+            errcode: string;
+        };
+    };
+    usageLimitEventContent?: IUsageLimit;
     useCompactLayout: boolean;
     useSuperCompactLayout: boolean;
 }
@@ -111,7 +130,7 @@ interface IState {
  *
  * Components mounted below us can access the matrix client via the react context.
  */
-class LoggedInView extends React.PureComponent<IProps, IState> {
+class LoggedInView extends React.Component<IProps, IState> {
     static displayName = 'LoggedInView';
 
     static propTypes = {
@@ -134,6 +153,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
     protected readonly _resizeContainer: React.RefObject<ResizeHandle>;
     protected readonly _sessionStore: sessionStore;
     protected readonly _sessionStoreToken: { remove: () => void };
+    protected readonly _compactLayoutWatcherRef: string;
     protected resizer: Resizer;
 
     constructor(props, context) {
@@ -166,6 +186,10 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         this._matrixClient.on("sync", this.onSync);
         this._matrixClient.on("RoomState.events", this.onRoomStateEvents);
 
+        this._compactLayoutWatcherRef = SettingsStore.watchSetting(
+            "useCompactLayout", null, this.onCompactLayoutChanged,
+        );
+
         fixupColorFonts();
 
         this._roomView = React.createRef();
@@ -183,6 +207,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         this._matrixClient.removeListener("accountData", this.onAccountData);
         this._matrixClient.removeListener("sync", this.onSync);
         this._matrixClient.removeListener("RoomState.events", this.onRoomStateEvents);
+        SettingsStore.unwatchSetting(this._compactLayoutWatcherRef);
         if (this._sessionStoreToken) {
             this._sessionStoreToken.remove();
         }
@@ -234,6 +259,12 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
                 window.localStorage.setItem("mx_lhs_size", '' + size);
                 this.props.resizeNotifier.notifyLeftHandleResized();
             },
+            onResizeStart: () => {
+                this.props.resizeNotifier.startResizing();
+            },
+            onResizeStop: () => {
+                this.props.resizeNotifier.stopResizing();
+            },
         };
         const resizer = new Resizer(
             this._resizeContainer.current,
@@ -252,14 +283,15 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
     }
 
     onAccountData = (event) => {
-        if (event.getType() === "im.vector.web.settings") {
-            this.setState({
-                useCompactLayout: event.getContent().useCompactLayout,
-            });
-        }
         if (event.getType() === "m.ignored_user_list") {
             dis.dispatch({action: "ignore_state_changed"});
         }
+    };
+
+    onCompactLayoutChanged = (setting, roomId, level, valueAtLevel, newValue) => {
+        this.setState({
+            useCompactLayout: valueAtLevel,
+        });
     };
 
     onSync = (syncState, oldSyncState, data) => {
@@ -284,21 +316,21 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         if (oldSyncState === 'PREPARED' && syncState === 'SYNCING') {
             this._updateServerNoticeEvents();
         } else {
-            this._calculateServerLimitToast(data);
+            this._calculateServerLimitToast(this.state.syncErrorData, this.state.usageLimitEventContent);
         }
     };
 
     onRoomStateEvents = (ev, state) => {
-        const roomLists = RoomListStoreTempProxy.getRoomLists();
-        if (roomLists[DefaultTagID.ServerNotice] && roomLists[DefaultTagID.ServerNotice].some(r => r.roomId === ev.getRoomId())) {
+        const serverNoticeList = RoomListStore.instance.orderedLists[DefaultTagID.ServerNotice];
+        if (serverNoticeList && serverNoticeList.some(r => r.roomId === ev.getRoomId())) {
             this._updateServerNoticeEvents();
         }
     };
 
-    _calculateServerLimitToast(syncErrorData, usageLimitEventContent?) {
-        const error = syncErrorData && syncErrorData.error && syncErrorData.error.errcode === "M_RESOURCE_LIMIT_EXCEEDED";
+    _calculateServerLimitToast(syncError: IState["syncErrorData"], usageLimitEventContent?: IUsageLimit) {
+        const error = syncError && syncError.error && syncError.error.errcode === "M_RESOURCE_LIMIT_EXCEEDED";
         if (error) {
-            usageLimitEventContent = syncErrorData.error.data;
+            usageLimitEventContent = syncError.error.data;
         }
 
         if (usageLimitEventContent) {
@@ -309,11 +341,11 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
     }
 
     _updateServerNoticeEvents = async () => {
-        const roomLists = RoomListStoreTempProxy.getRoomLists();
-        if (!roomLists[DefaultTagID.ServerNotice]) return [];
+        const serverNoticeList = RoomListStore.instance.orderedLists[DefaultTagID.ServerNotice];
+        if (!serverNoticeList) return [];
 
         const events = [];
-        for (const room of roomLists[DefaultTagID.ServerNotice]) {
+        for (const room of serverNoticeList) {
             const pinStateEvent = room.currentState.getStateEvents("m.room.pinned_events", "");
 
             if (!pinStateEvent || !pinStateEvent.getContent().pinned) continue;
@@ -332,8 +364,9 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
                 e.getContent()['server_notice_type'] === 'm.server_notice.usage_limit_reached'
             );
         });
-
-        this._calculateServerLimitToast(this.state.syncErrorData, usageLimitEvent && usageLimitEvent.getContent());
+        const usageLimitEventContent = usageLimitEvent && usageLimitEvent.getContent();
+        this._calculateServerLimitToast(this.state.syncErrorData, usageLimitEventContent);
+        this.setState({ usageLimitEventContent });
     };
 
     _onPaste = (ev) => {
@@ -348,7 +381,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
             // refocusing during a paste event will make the
             // paste end up in the newly focused element,
             // so dispatch synchronously before paste happens
-            dis.dispatch({action: 'focus_composer'}, true);
+            dis.fire(Action.FocusComposer, true);
         }
     };
 
@@ -390,20 +423,6 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
     };
 
     _onKeyDown = (ev) => {
-            /*
-            // Remove this for now as ctrl+alt = alt-gr so this breaks keyboards which rely on alt-gr for numbers
-            // Will need to find a better meta key if anyone actually cares about using this.
-            if (ev.altKey && ev.ctrlKey && ev.keyCode > 48 && ev.keyCode < 58) {
-                dis.dispatch({
-                    action: 'view_indexed_room',
-                    roomIndex: ev.keyCode - 49,
-                });
-                ev.stopPropagation();
-                ev.preventDefault();
-                return;
-            }
-            */
-
         let handled = false;
         const ctrlCmdOnly = isOnlyCtrlOrCmdKeyEvent(ev);
         const hasModifier = ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey;
@@ -440,9 +459,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
                 // composer, so CTRL+` it is
 
                 if (ctrlCmdOnly) {
-                    dis.dispatch({
-                        action: 'toggle_top_left_menu',
-                    });
+                    dis.fire(Action.ToggleUserMenu);
                     handled = true;
                 }
                 break;
@@ -457,8 +474,8 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
             case Key.ARROW_UP:
             case Key.ARROW_DOWN:
                 if (ev.altKey && !ev.ctrlKey && !ev.metaKey) {
-                    dis.dispatch({
-                        action: 'view_room_delta',
+                    dis.dispatch<ViewRoomDeltaPayload>({
+                        action: Action.ViewRoomDelta,
                         delta: ev.key === Key.ARROW_UP ? -1 : 1,
                         unread: ev.shiftKey,
                     });
@@ -468,8 +485,8 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
 
             case Key.PERIOD:
                 if (ctrlCmdOnly && (this.props.page_type === "room_view" || this.props.page_type === "group_view")) {
-                    dis.dispatch({
-                        action: 'toggle_right_panel',
+                    dis.dispatch<ToggleRightPanelPayload>({
+                        action: Action.ToggleRightPanel,
                         type: this.props.page_type === "room_view" ? "room" : "group",
                     });
                     handled = true;
@@ -498,7 +515,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
 
             if (!isClickShortcut && ev.key !== Key.TAB && !canElementReceiveInput(ev.target)) {
                 // synchronous dispatch so we focus before key generates input
-                dis.dispatch({action: 'focus_composer'}, true);
+                dis.fire(Action.FocusComposer, true);
                 ev.stopPropagation();
                 // we should *not* preventDefault() here as
                 // that would prevent typing in the now-focussed composer
@@ -590,7 +607,7 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         const maxRadius = 5; // People shouldn't be straying too far, hopefully
 
         // Note: we track how far the user moved their mouse to help
-        // combat against https://github.com/vector-im/riot-web/issues/7158
+        // combat against https://github.com/vector-im/element-web/issues/7158
 
         if (distance < maxRadius) {
             // This is probably a real click, and not a drag
@@ -603,7 +620,6 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
     };
 
     render() {
-        const LeftPanel = sdk.getComponent('structures.LeftPanel');
         const RoomView = sdk.getComponent('structures.RoomView');
         const UserView = sdk.getComponent('structures.UserView');
         const GroupView = sdk.getComponent('structures.GroupView');
@@ -615,18 +631,17 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         switch (this.props.page_type) {
             case PageTypes.RoomView:
                 pageElement = <RoomView
-                        ref={this._roomView}
-                        autoJoin={this.props.autoJoin}
-                        onRegistered={this.props.onRegistered}
-                        thirdPartyInvite={this.props.thirdPartyInvite}
-                        oobData={this.props.roomOobData}
-                        viaServers={this.props.viaServers}
-                        eventPixelOffset={this.props.initialEventPixelOffset}
-                        key={this.props.currentRoomId || 'roomview'}
-                        disabled={this.props.middleDisabled}
-                        ConferenceHandler={this.props.ConferenceHandler}
-                        resizeNotifier={this.props.resizeNotifier}
-                    />;
+                    ref={this._roomView}
+                    autoJoin={this.props.autoJoin}
+                    onRegistered={this.props.onRegistered}
+                    threepidInvite={this.props.threepidInvite}
+                    oobData={this.props.roomOobData}
+                    viaServers={this.props.viaServers}
+                    key={this.props.currentRoomId || 'roomview'}
+                    disabled={this.props.middleDisabled}
+                    ConferenceHandler={this.props.ConferenceHandler}
+                    resizeNotifier={this.props.resizeNotifier}
+                />;
                 break;
 
             case PageTypes.MyGroups:
@@ -642,12 +657,13 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
                 break;
 
             case PageTypes.UserView:
-                pageElement = <UserView userId={this.props.currentUserId} />;
+                pageElement = <UserView userId={this.props.currentUserId} resizeNotifier={this.props.resizeNotifier} />;
                 break;
             case PageTypes.GroupView:
                 pageElement = <GroupView
                     groupId={this.props.currentGroupId}
                     isNew={this.props.currentGroupIsNew}
+                    resizeNotifier={this.props.resizeNotifier}
                 />;
                 break;
         }
@@ -659,6 +675,13 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
         if (this.state.useSuperCompactLayout) {
             bodyClasses += ' mx_MatrixChat_useSuperCompactLayout';
         }
+
+        const leftPanel = (
+            <LeftPanel
+                isMinimized={this.props.collapseLhs || false}
+                resizeNotifier={this.props.resizeNotifier}
+            />
+        );
 
         return (
             <MatrixClientContext.Provider value={this._matrixClient}>
@@ -673,16 +696,14 @@ class LoggedInView extends React.PureComponent<IProps, IState> {
                     <ToastContainer />
                     <DragDropContext onDragEnd={this._onDragEnd}>
                         <div ref={this._resizeContainer} className={bodyClasses}>
-                            <LeftPanel
-                                resizeNotifier={this.props.resizeNotifier}
-                                collapsed={this.props.collapseLhs || false}
-                                disabled={this.props.leftDisabled}
-                            />
+                            { leftPanel }
                             <ResizeHandle />
                             { pageElement }
                         </div>
                     </DragDropContext>
                 </div>
+                <CallContainer />
+                <NonUrgentToastContainer />
             </MatrixClientContext.Provider>
         );
     }

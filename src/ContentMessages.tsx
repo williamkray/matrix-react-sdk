@@ -31,6 +31,7 @@ import Spinner from "./components/views/elements/Spinner";
 
 // Polyfill for Canvas.toBlob API using Canvas.toDataURL
 import "blueimp-canvas-to-blob";
+import { Action } from "./dispatcher/actions";
 
 const MAX_WIDTH = 800;
 const MAX_HEIGHT = 600;
@@ -69,6 +70,7 @@ interface IContent {
 
 interface IThumbnail {
     info: {
+        // eslint-disable-next-line camelcase
         thumbnail_info: {
             w: number;
             h: number;
@@ -103,7 +105,12 @@ interface IAbortablePromise<T> extends Promise<T> {
  * @return {Promise} A promise that resolves with an object with an info key
  *  and a thumbnail key.
  */
-function createThumbnail(element: ThumbnailableElement, inputWidth: number, inputHeight: number, mimeType: string): Promise<IThumbnail> {
+function createThumbnail(
+    element: ThumbnailableElement,
+    inputWidth: number,
+    inputHeight: number,
+    mimeType: string,
+): Promise<IThumbnail> {
     return new Promise((resolve) => {
         let targetWidth = inputWidth;
         let targetHeight = inputHeight;
@@ -385,7 +392,7 @@ export default class ContentMessages {
         const isQuoting = Boolean(RoomViewStore.getQuotingEvent());
         if (isQuoting) {
             const QuestionDialog = sdk.getComponent("dialogs.QuestionDialog");
-            const {finished} = Modal.createTrackedDialog('Upload Reply Warning', '', QuestionDialog, {
+            const {finished} = Modal.createTrackedDialog<[boolean]>('Upload Reply Warning', '', QuestionDialog, {
                 title: _t('Replying With Files'),
                 description: (
                     <div>{_t(
@@ -396,7 +403,7 @@ export default class ContentMessages {
                 hasCancelButton: true,
                 button: _t("Continue"),
             });
-            const [shouldUpload]: [boolean] = await finished;
+            const [shouldUpload] = await finished;
             if (!shouldUpload) return;
         }
 
@@ -419,12 +426,12 @@ export default class ContentMessages {
 
         if (tooBigFiles.length > 0) {
             const UploadFailureDialog = sdk.getComponent("dialogs.UploadFailureDialog");
-            const {finished} = Modal.createTrackedDialog('Upload Failure', '', UploadFailureDialog, {
+            const {finished} = Modal.createTrackedDialog<[boolean]>('Upload Failure', '', UploadFailureDialog, {
                 badFiles: tooBigFiles,
                 totalFiles: files.length,
                 contentMessages: this,
             });
-            const [shouldContinue]: [boolean] = await finished;
+            const [shouldContinue] = await finished;
             if (!shouldContinue) return;
         }
 
@@ -436,12 +443,14 @@ export default class ContentMessages {
         for (let i = 0; i < okFiles.length; ++i) {
             const file = okFiles[i];
             if (!uploadAll) {
-                const {finished} = Modal.createTrackedDialog('Upload Files confirmation', '', UploadConfirmDialog, {
-                    file,
-                    currentIndex: i,
-                    totalFiles: okFiles.length,
-                });
-                const [shouldContinue, shouldUploadAll]: [boolean, boolean] = await finished;
+                const {finished} = Modal.createTrackedDialog<[boolean, boolean]>('Upload Files confirmation',
+                    '', UploadConfirmDialog, {
+                        file,
+                        currentIndex: i,
+                        totalFiles: okFiles.length,
+                    },
+                );
+                const [shouldContinue, shouldUploadAll] = await finished;
                 if (!shouldContinue) break;
                 if (shouldUploadAll) {
                     uploadAll = true;
@@ -529,7 +538,7 @@ export default class ContentMessages {
         dis.dispatch({action: 'upload_started'});
 
         // Focus the composer view
-        dis.dispatch({action: 'focus_composer'});
+        dis.fire(Action.FocusComposer);
 
         function onProgress(ev) {
             upload.total = ev.total;
@@ -620,9 +629,9 @@ export default class ContentMessages {
     }
 
     static sharedInstance() {
-        if (window.mx_ContentMessages === undefined) {
-            window.mx_ContentMessages = new ContentMessages();
+        if (window.mxContentMessages === undefined) {
+            window.mxContentMessages = new ContentMessages();
         }
-        return window.mx_ContentMessages;
+        return window.mxContentMessages;
     }
 }

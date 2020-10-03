@@ -17,7 +17,7 @@ limitations under the License.
 
 Additionally, original modifications by ponies.im are licensed under the CSL.
 See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of 
+These modifications may only be redistributed and used within the terms of
 the Cooperative Software License as distributed with this project.
 */
 
@@ -37,7 +37,8 @@ export function mdSerialize(model: EditorModel) {
                 return html + part.text;
             case "room-pill":
             case "user-pill":
-                return html + `[${part.text.replace(/[[\\\]]/g, c => "\\" + c)}](${makeGenericPermalink(part.resourceId)})`;
+                return html +
+                    `[${part.text.replace(/[[\\\]]/g, c => "\\" + c)}](${makeGenericPermalink(part.resourceId)})`;
             case "emote":
                 return html + `![${part.code}](emote:${part.mxc})`;
         }
@@ -52,6 +53,10 @@ export function htmlSerializeIfNeeded(model: EditorModel, {forceHTML = false} = 
         // we need to make emotes nicer
         html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img data-mx-emote src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
         return html;
+    }
+    // ensure removal of escape backslashes in non-Markdown messages
+    if (md.indexOf("\\") > -1) {
+        return parser.toPlaintext();
     }
 }
 
@@ -75,16 +80,20 @@ export function textSerialize(model: EditorModel) {
 }
 
 export function containsEmote(model: EditorModel) {
-    return startsWith(model, "/me ");
+    return startsWith(model, "/me ", false);
 }
 
-export function startsWith(model: EditorModel, prefix: string) {
+export function startsWith(model: EditorModel, prefix: string, caseSensitive = true) {
     const firstPart = model.parts[0];
     // part type will be "plain" while editing,
     // and "command" while composing a message.
-    return firstPart &&
-        (firstPart.type === "plain" || firstPart.type === "command") &&
-        firstPart.text.startsWith(prefix);
+    let text = firstPart && firstPart.text;
+    if (!caseSensitive) {
+        prefix = prefix.toLowerCase();
+        text = text.toLowerCase();
+    }
+
+    return firstPart && (firstPart.type === "plain" || firstPart.type === "command") && text.startsWith(prefix);
 }
 
 export function stripEmoteCommand(model: EditorModel) {

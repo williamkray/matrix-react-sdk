@@ -25,7 +25,6 @@ the Cooperative Software License as distributed with this project.
 import React, {createRef} from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 import highlight from 'highlight.js';
 import * as HtmlUtils from '../../../HtmlUtils';
 import {formatDate} from '../../../DateUtils';
@@ -41,11 +40,10 @@ import {IntegrationManagers} from "../../../integrations/IntegrationManagers";
 import {isPermalinkHost} from "../../../utils/permalinks/Permalinks";
 import {toRightOf} from "../../structures/ContextMenu";
 import {copyPlaintext} from "../../../utils/strings";
+import AccessibleTooltipButton from "../elements/AccessibleTooltipButton";
 
-export default createReactClass({
-    displayName: 'TextualBody',
-
-    propTypes: {
+export default class TextualBody extends React.Component {
+    static propTypes = {
         /* the MatrixEvent to show */
         mxEvent: PropTypes.object.isRequired,
 
@@ -63,10 +61,14 @@ export default createReactClass({
 
         /* the shape of the tile, used */
         tileShape: PropTypes.string,
-    },
+    };
 
-    getInitialState: function() {
-        return {
+    constructor(props) {
+        super(props);
+
+        this._content = createRef();
+
+        this.state = {
             // the URLs (if any) to be previewed with a LinkPreviewWidget
             // inside this TextualBody.
             links: [],
@@ -74,20 +76,15 @@ export default createReactClass({
             // track whether the preview widget is hidden
             widgetHidden: false,
         };
-    },
+    }
 
-    // TODO: [REACT-WARNING] Replace component with real class, use constructor for refs
-    UNSAFE_componentWillMount: function() {
-        this._content = createRef();
-    },
-
-    componentDidMount: function() {
+    componentDidMount() {
         this._unmounted = false;
         this._pills = [];
         if (!this.props.editState) {
             this._applyFormatting();
         }
-    },
+    }
 
     _applyFormatting() {
         this.activateSpoilers([this._content.current]);
@@ -112,7 +109,7 @@ export default createReactClass({
                         } else {
                             // Only syntax highlight if there's a class starting with language-
                             const classes = blocks[i].className.split(/\s+/).filter(function(cl) {
-                                return cl.startsWith('language-');
+                                return cl.startsWith('language-') && !cl.startsWith('language-_');
                             });
 
                             if (classes.length != 0) {
@@ -124,9 +121,9 @@ export default createReactClass({
             }
             this._addCodeCopyButton();
         }
-    },
+    }
 
-    componentDidUpdate: function(prevProps) {
+    componentDidUpdate(prevProps) {
         if (!this.props.editState) {
             const stoppedEditing = prevProps.editState && !this.props.editState;
             const messageWasEdited = prevProps.replacingEventId !== this.props.replacingEventId;
@@ -134,14 +131,14 @@ export default createReactClass({
                 this._applyFormatting();
             }
         }
-    },
+    }
 
-    componentWillUnmount: function() {
+    componentWillUnmount() {
         this._unmounted = true;
         unmountPills(this._pills);
-    },
+    }
 
-    shouldComponentUpdate: function(nextProps, nextState) {
+    shouldComponentUpdate(nextProps, nextState) {
         //console.info("shouldComponentUpdate: ShowUrlPreview for %s is %s", this.props.mxEvent.getId(), this.props.showUrlPreview);
 
         // exploit that events are immutable :)
@@ -152,11 +149,10 @@ export default createReactClass({
                 nextProps.showUrlPreview !== this.props.showUrlPreview ||
                 nextProps.editState !== this.props.editState ||
                 nextState.links !== this.state.links ||
-                nextState.editedMarkerHovered !== this.state.editedMarkerHovered ||
                 nextState.widgetHidden !== this.state.widgetHidden);
-    },
+    }
 
-    calculateUrlPreview: function() {
+    calculateUrlPreview() {
         //console.info("calculateUrlPreview: ShowUrlPreview for %s is %s", this.props.mxEvent.getId(), this.props.showUrlPreview);
 
         if (this.props.showUrlPreview) {
@@ -178,11 +174,13 @@ export default createReactClass({
                     const hidden = global.localStorage.getItem("hide_preview_" + this.props.mxEvent.getId());
                     this.setState({ widgetHidden: hidden });
                 }
+            } else if (this.state.links.length) {
+                this.setState({ links: [] });
             }
         }
-    },
+    }
 
-    activateSpoilers: function(nodes) {
+    activateSpoilers(nodes) {
         let node = nodes[0];
         while (node) {
             if (node.tagName === "SPAN" && typeof node.getAttribute("data-mx-spoiler") === "string") {
@@ -208,9 +206,9 @@ export default createReactClass({
 
             node = node.nextSibling;
         }
-    },
+    }
 
-    findLinks: function(nodes) {
+    findLinks(nodes) {
         let links = [];
 
         for (let i = 0; i < nodes.length; i++) {
@@ -227,9 +225,9 @@ export default createReactClass({
             }
         }
         return links;
-    },
+    }
 
-    isLinkPreviewable: function(node) {
+    isLinkPreviewable(node) {
         // don't try to preview relative links
         if (!node.getAttribute("href").startsWith("http://") &&
             !node.getAttribute("href").startsWith("https://")) {
@@ -260,7 +258,7 @@ export default createReactClass({
                 return true;
             }
         }
-    },
+    }
 
     _addCodeCopyButton() {
         // Add 'copy' buttons to pre blocks
@@ -292,41 +290,39 @@ export default createReactClass({
             div.appendChild(p);
             div.appendChild(button);
         });
-    },
+    }
 
-    onCancelClick: function(event) {
+    onCancelClick = event => {
         this.setState({ widgetHidden: true });
         // FIXME: persist this somewhere smarter than local storage
         if (global.localStorage) {
             global.localStorage.setItem("hide_preview_" + this.props.mxEvent.getId(), "1");
         }
         this.forceUpdate();
-    },
+    };
 
-    onEmoteSenderClick: function(event) {
+    onEmoteSenderClick = event => {
         const mxEvent = this.props.mxEvent;
         dis.dispatch({
             action: 'insert_mention',
             user_id: mxEvent.getSender(),
         });
-    },
+    };
 
-    getEventTileOps: function() {
-        return {
-            isWidgetHidden: () => {
-                return this.state.widgetHidden;
-            },
+    getEventTileOps = () => ({
+        isWidgetHidden: () => {
+            return this.state.widgetHidden;
+        },
 
-            unhideWidget: () => {
-                this.setState({ widgetHidden: false });
-                if (global.localStorage) {
-                    global.localStorage.removeItem("hide_preview_" + this.props.mxEvent.getId());
-                }
-            },
-        };
-    },
+        unhideWidget: () => {
+            this.setState({widgetHidden: false});
+            if (global.localStorage) {
+                global.localStorage.removeItem("hide_preview_" + this.props.mxEvent.getId());
+            }
+        },
+    });
 
-    onStarterLinkClick: function(starterLink, ev) {
+    onStarterLinkClick = (starterLink, ev) => {
         ev.preventDefault();
         // We need to add on our scalar token to the starter link, but we may not have one!
         // In addition, we can't fetch one on click and then go to it immediately as that
@@ -357,7 +353,7 @@ export default createReactClass({
                             "Do you wish to continue?", { integrationsUrl: integrationsUrl }) }
                     </div>,
                 button: _t("Continue"),
-                onFinished: function(confirmed) {
+                onFinished(confirmed) {
                     if (!confirmed) {
                         return;
                     }
@@ -371,48 +367,39 @@ export default createReactClass({
                 },
             });
         });
-    },
+    };
 
-    _onMouseEnterEditedMarker: function() {
-        this.setState({editedMarkerHovered: true});
-    },
-
-    _onMouseLeaveEditedMarker: function() {
-        this.setState({editedMarkerHovered: false});
-    },
-
-    _openHistoryDialog: async function() {
+    _openHistoryDialog = async () => {
         const MessageEditHistoryDialog = sdk.getComponent("views.dialogs.MessageEditHistoryDialog");
         Modal.createDialog(MessageEditHistoryDialog, {mxEvent: this.props.mxEvent});
-    },
+    };
 
-    _renderEditedMarker: function() {
-        let editedTooltip;
-        if (this.state.editedMarkerHovered) {
-            const Tooltip = sdk.getComponent('elements.Tooltip');
-            const date = this.props.mxEvent.replacingEventDate();
-            const dateString = date && formatDate(date);
-            editedTooltip = <Tooltip
-                tooltipClassName="mx_Tooltip_timeline"
-                label={_t("Edited at %(date)s. Click to view edits.", {date: dateString})}
-            />;
-        }
+    _renderEditedMarker() {
+        const date = this.props.mxEvent.replacingEventDate();
+        const dateString = date && formatDate(date);
 
-        const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
+        const tooltip = <div>
+            <div className="mx_Tooltip_title">
+                {_t("Edited at %(date)s", {date: dateString})}
+            </div>
+            <div className="mx_Tooltip_sub">
+                {_t("Click to view edits")}
+            </div>
+        </div>;
+
         return (
-            <AccessibleButton
-                key="editedMarker"
+            <AccessibleTooltipButton
                 className="mx_EventTile_edited"
                 onClick={this._openHistoryDialog}
-                onMouseEnter={this._onMouseEnterEditedMarker}
-                onMouseLeave={this._onMouseLeaveEditedMarker}
+                title={_t("Edited at %(date)s. Click to view edits.", {date: dateString})}
+                tooltip={tooltip}
             >
-                { editedTooltip }<span>{`(${_t("edited")})`}</span>
-            </AccessibleButton>
+                <span>{`(${_t("edited")})`}</span>
+            </AccessibleTooltipButton>
         );
-    },
+    }
 
-    render: function() {
+    render() {
         if (this.props.editState) {
             const EditMessageComposer = sdk.getComponent('rooms.EditMessageComposer');
             return <EditMessageComposer editState={this.props.editState} className="mx_EventTile_content" />;
@@ -481,5 +468,5 @@ export default createReactClass({
                     </span>
                 );
         }
-    },
-});
+    }
+}

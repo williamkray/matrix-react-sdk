@@ -30,6 +30,15 @@ import {MatrixClientPeg} from "../../../MatrixClientPeg";
 import dis from "../../../dispatcher/dispatcher";
 import SettingsStore from "../../../settings/SettingsStore";
 import EmotesRoomSettingsTab from "../settings/tabs/room/EmotesRoomSettingsTab";
+import {UIFeature} from "../../../settings/UIFeature";
+
+export const ROOM_GENERAL_TAB = "ROOM_GENERAL_TAB";
+export const ROOM_SECURITY_TAB = "ROOM_SECURITY_TAB";
+export const ROOM_ROLES_TAB = "ROOM_ROLES_TAB";
+export const ROOM_NOTIFICATIONS_TAB = "ROOM_NOTIFICATIONS_TAB";
+export const ROOM_BRIDGES_TAB = "ROOM_BRIDGES_TAB";
+export const ROOM_ADVANCED_TAB = "ROOM_ADVANCED_TAB";
+export const ROOM_EMOTES_TAB = "ROOM_EMOTES_TAB";
 
 export default class RoomSettingsDialog extends React.Component {
     static propTypes = {
@@ -57,44 +66,53 @@ export default class RoomSettingsDialog extends React.Component {
         const tabs = [];
 
         tabs.push(new Tab(
+            ROOM_GENERAL_TAB,
             _td("General"),
             "mx_RoomSettingsDialog_settingsIcon",
             <GeneralRoomSettingsTab roomId={this.props.roomId} />,
         ));
         tabs.push(new Tab(
+            ROOM_SECURITY_TAB,
             _td("Security & Privacy"),
             "mx_RoomSettingsDialog_securityIcon",
             <SecurityRoomSettingsTab roomId={this.props.roomId} />,
         ));
         tabs.push(new Tab(
+            ROOM_ROLES_TAB,
             _td("Roles & Permissions"),
             "mx_RoomSettingsDialog_rolesIcon",
             <RolesRoomSettingsTab roomId={this.props.roomId} />,
         ));
         tabs.push(new Tab(
+            ROOM_NOTIFICATIONS_TAB,
             _td("Notifications"),
             "mx_RoomSettingsDialog_notificationsIcon",
             <NotificationSettingsTab roomId={this.props.roomId} />,
         ));
         tabs.push(new Tab(
+            ROOM_EMOTES_TAB,
             _td("Emotes"),
             "mx_MessageComposer_emoji",
             <EmotesRoomSettingsTab roomId={this.props.roomId} />,
         ));
 
-        if (SettingsStore.isFeatureEnabled("feature_bridge_state")) {
+        if (SettingsStore.getValue("feature_bridge_state")) {
             tabs.push(new Tab(
+                ROOM_BRIDGES_TAB,
                 _td("Bridges"),
                 "mx_RoomSettingsDialog_bridgesIcon",
                 <BridgeSettingsTab roomId={this.props.roomId} />,
             ));
         }
 
-        tabs.push(new Tab(
-            _td("Advanced"),
-            "mx_RoomSettingsDialog_warningIcon",
-            <AdvancedRoomSettingsTab roomId={this.props.roomId} closeSettingsFn={this.props.onFinished} />,
-        ));
+        if (SettingsStore.getValue(UIFeature.AdvancedSettings)) {
+            tabs.push(new Tab(
+                ROOM_ADVANCED_TAB,
+                _td("Advanced"),
+                "mx_RoomSettingsDialog_warningIcon",
+                <AdvancedRoomSettingsTab roomId={this.props.roomId} closeSettingsFn={this.props.onFinished} />,
+            ));
+        }
 
         return tabs;
     }
