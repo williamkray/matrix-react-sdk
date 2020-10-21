@@ -274,6 +274,13 @@ export default class UserMenu extends React.Component<IProps, IState> {
                 </div>
             );
         }
+        const hostingSignupIFrame = SdkConfig.get().hosting_signup_iframe;
+        let hostingIFrame;
+        if (hostingSignupIFrame) {
+            hostingIFrame = <div className="mx_UserMenu_contextMenu_header mx_UserMenu_contextMenu_hostingLink">
+                Get your own personal Element!
+            </div>;
+        }
 
         let homeButton = null;
         if (this.hasHomePage) {
@@ -444,6 +451,7 @@ export default class UserMenu extends React.Component<IProps, IState> {
                 </AccessibleTooltipButton>
             </div>
             {hostingLink}
+            {hostingIFrame}
             {primaryOptionList}
             {secondarySection}
         </IconizedContextMenu>;
