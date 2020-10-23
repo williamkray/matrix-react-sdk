@@ -51,6 +51,7 @@ import { RightPanelPhases } from "../../stores/RightPanelStorePhases";
 import ErrorDialog from "../views/dialogs/ErrorDialog";
 import EditCommunityPrototypeDialog from "../views/dialogs/EditCommunityPrototypeDialog";
 import {UIFeature} from "../../settings/UIFeature";
+import HostingProviderTrigger from "./HostingProviderTrigger";
 
 interface IProps {
     isMinimized: boolean;
@@ -277,8 +278,11 @@ export default class UserMenu extends React.Component<IProps, IState> {
         const hostingSignupIFrame = SdkConfig.get().hosting_signup_iframe;
         let hostingIFrame;
         if (hostingSignupIFrame) {
-            hostingIFrame = <div className="mx_UserMenu_contextMenu_header mx_UserMenu_contextMenu_hostingLink">
-                Get your own personal Element!
+            hostingIFrame = <div
+                className="mx_UserMenu_contextMenu_header mx_UserMenu_contextMenu_hostingLink"
+                onClick={this.onCloseMenu}
+            >
+                <HostingProviderTrigger />
             </div>;
         }
 
