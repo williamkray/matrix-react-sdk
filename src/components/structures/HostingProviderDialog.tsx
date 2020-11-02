@@ -64,7 +64,7 @@ export default class HostingProviderDialog extends React.PureComponent<IProps, I
         if (token && token.access_token) {
             this.sendMessage({
                 action: 'openid_credentials',
-                token: token.access_token,
+                tokenData: token,
             });
         } else {
             this.setState({
