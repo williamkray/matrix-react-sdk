@@ -245,6 +245,12 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
+    "feature_dehydration": {
+        isFeature: true,
+        displayName: _td("Offline encrypted messaging using dehydrated devices"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
     "advancedRoomListLogging": {
         // TODO: Remove flag before launch: https://github.com/vector-im/element-web/issues/14231
         displayName: _td("Enable advanced debugging for the room list"),
@@ -682,6 +688,14 @@ export const SETTINGS: {[setting: string]: ISetting} = {
     "Widgets.pinned": {
         supportedLevels: LEVELS_ROOM_OR_ACCOUNT,
         default: {},
+    },
+    "Widgets.leftPanel": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: null,
+    },
+    [UIFeature.RoomHistorySettings]: {
+        supportedLevels: LEVELS_UI_FEATURE,
+        default: true,
     },
     [UIFeature.AdvancedEncryption]: {
         supportedLevels: LEVELS_UI_FEATURE,
