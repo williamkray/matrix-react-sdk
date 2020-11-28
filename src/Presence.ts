@@ -34,6 +34,7 @@ class Presence {
     private unavailableTimer: Timer = null;
     private dispatcherRef: string = null;
     private state: State = null;
+    public statusMsg: string = "";
 
     /**
      * Start listening the user activity to evaluate his presence state.
@@ -126,7 +127,7 @@ class Presence {
     async _send() {
         const opts = {
             presence: this.state || "online",
-        };
+        } as any;
         if (this.statusMsg) {
             opts.status_msg = this.statusMsg;
         }
