@@ -24,6 +24,10 @@ the Cooperative Software License as distributed with this project.
 import Markdown from '../Markdown';
 import {makeGenericPermalink} from "../utils/permalinks/Permalinks";
 import EditorModel from "./model";
+import { AllHtmlEntities } from 'html-entities';
+import SettingsStore from '../settings/SettingsStore';
+import SdkConfig from '../SdkConfig';
+import cheerio from 'cheerio';
 
 export function mdSerialize(model: EditorModel) {
     return model.parts.reduce((html, part) => {
@@ -46,13 +50,46 @@ export function mdSerialize(model: EditorModel) {
 }
 
 export function htmlSerializeIfNeeded(model: EditorModel, {forceHTML = false} = {}) {
-    const md = mdSerialize(model);
+    let md = mdSerialize(model);
+
+    if (SettingsStore.getValue("feature_latex_maths")) {
+        const displayPattern = (SdkConfig.get()['latex_maths_delims'] || {})['display_pattern'] ||
+            "\\$\\$(([^$]|\\\\\\$)*)\\$\\$";
+        const inlinePattern = (SdkConfig.get()['latex_maths_delims'] || {})['inline_pattern'] ||
+            "\\$(([^$]|\\\\\\$)*)\\$";
+
+        md = md.replace(RegExp(displayPattern, "gm"), function(m, p1) {
+            const p1e = AllHtmlEntities.encode(p1);
+            return `<div data-mx-maths="${p1e}">\n\n</div>\n\n`;
+        });
+
+        md = md.replace(RegExp(inlinePattern, "gm"), function(m, p1) {
+            const p1e = AllHtmlEntities.encode(p1);
+            return `<span data-mx-maths="${p1e}"></span>`;
+        });
+
+        // make sure div tags always start on a new line, otherwise it will confuse
+        // the markdown parser
+        md = md.replace(/(.)<div/g, function(m, p1) { return `${p1}\n<div`; });
+    }
+
     const parser = new Markdown(md);
     if (!parser.isPlainText() || forceHTML) {
         let html = parser.toHTML();
         // we need to make emotes nicer
         html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img data-mx-emoticon src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
-        return html;
+        // feed Markdown output to HTML parser
+        const phtml = cheerio.load(html,
+            { _useHtmlParser2: true, decodeEntities: false })
+
+        // add fallback output for latex math, which should not be interpreted as markdown
+        phtml('div, span').each(function(i, e) {
+            const tex = phtml(e).attr('data-mx-maths')
+            if (tex) {
+                phtml(e).html(`<code>${tex}</code>`)
+            }
+        });
+        return phtml.html();
     }
     // ensure removal of escape backslashes in non-Markdown messages
     if (md.indexOf("\\") > -1) {

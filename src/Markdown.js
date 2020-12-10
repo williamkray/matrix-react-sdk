@@ -24,12 +24,18 @@ const ALLOWED_HTML_TAGS = HtmlUtils.sanitizeHtmlParams.allowedTags;
 const TEXT_NODES = ['text', 'softbreak', 'linebreak', 'paragraph', 'document'];
 
 function is_allowed_html_tag(node) {
+    if (node.literal != null &&
+        node.literal.match('^<((div|span) data-mx-maths="[^"]*"|\/(div|span))>$') != null) {
+        return true;
+    }
+
     // Our regex does work with tags with attrs!
     const matches = /^<\/?(\w+)(?: |.*>)$/.exec(node.literal);
     if (matches && matches.length == 2) {
         const tag = matches[1];
         return ALLOWED_HTML_TAGS.indexOf(tag) > -1;
     }
+
     return false;
 }
 

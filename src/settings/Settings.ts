@@ -39,6 +39,7 @@ import UseSystemFontController from './controllers/UseSystemFontController';
 import { SettingLevel } from "./SettingLevel";
 import SettingController from "./controllers/SettingController";
 import { RightPanelPhases } from "../stores/RightPanelStorePhases";
+import { isMac } from '../Keyboard';
 import UIFeatureController from "./controllers/UIFeatureController";
 import { UIFeature } from "./UIFeature";
 import { OrderedMultiController } from "./controllers/OrderedMultiController";
@@ -168,6 +169,12 @@ export const SETTINGS: {[setting: string]: ISetting} = {
     "feature_interplanetary_time": {
         isFeature: true,
         displayName: _td("IPT Format Timestamps"),
+        supportedLevels: LEVELS_FEATURE,
+        default: false,
+    },
+    "feature_latex_maths": {
+        isFeature: true,
+        displayName: _td("Render LaTeX maths in messages"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
     },
@@ -382,6 +389,11 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td("Show typing notifications"),
         default: true,
+    },
+    "MessageComposerInput.ctrlEnterToSend": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        displayName: isMac ? _td("Use Command + Enter to send a message") : _td("Use Ctrl + Enter to send a message"),
+        default: false,
     },
     "MessageComposerInput.autoReplaceEmoji": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
