@@ -42,9 +42,6 @@ export function textToHtmlRainbowBar(str: string): string {
 
     return Array.from(str)
         .map((c, i) => {
-            if (c === " ") {
-                return c;
-            }
             const [a, b] = generateAB(i * frequency, 1);
             const [red, green, blue] = labToRGB(75, a, b);
             return (
