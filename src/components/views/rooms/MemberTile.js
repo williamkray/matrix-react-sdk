@@ -50,7 +50,7 @@ export default class MemberTile extends React.Component {
         if (SettingsStore.getValue("feature_custom_status")) {
             const { user } = this.props.member;
             if (user) {
-                user.on("User._unstable_statusMessage", this._onStatusMessageCommitted);
+                user.on("User.presenceStatusMsg", this._onStatusMessageCommitted);
             }
         }
 
@@ -77,7 +77,7 @@ export default class MemberTile extends React.Component {
         const { user } = this.props.member;
         if (user) {
             user.removeListener(
-                "User._unstable_statusMessage",
+                "User.presenceStatusMsg",
                 this._onStatusMessageCommitted,
             );
         }
@@ -146,8 +146,8 @@ export default class MemberTile extends React.Component {
         if (!user) {
             return "";
         }
-        return user._unstable_statusMessage;
-    }
+        return user.presenceStatusMsg;
+    };
 
     _onStatusMessageCommitted = () => {
         // The `User` object has observed a status message change.

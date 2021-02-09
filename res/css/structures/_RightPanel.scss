@@ -136,6 +136,12 @@ limitations under the License.
     margin: auto;
 }
 
+.mx_MatrixChat_useSuperCompactLayout {
+    .mx_RightPanel {
+        min-width: 200px;
+    }
+}
+
 .mx_RightPanel_empty {
     margin-right: -28px;
 

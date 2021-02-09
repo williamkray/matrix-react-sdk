@@ -1439,7 +1439,7 @@ const UserInfoHeader: React.FC<{
         presenceCurrentlyActive = member.user.currentlyActive;
 
         if (SettingsStore.getValue("feature_custom_status")) {
-            statusMessage = member.user._unstable_statusMessage;
+            statusMessage = member.user.presenceStatusMsg;
         }
     }
 

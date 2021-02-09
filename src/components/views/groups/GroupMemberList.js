@@ -182,25 +182,13 @@ export default class GroupMemberList extends React.Component {
         );
 
         const joined = this.state.members ? <div className="mx_MemberList_joined">
-            {
-                this.makeGroupMemberTiles(
-                    this.state.searchQuery,
-                    this.state.members,
-                    this.state.membersError,
-                )
-            }
+            { this.makeGroupMemberTiles(this.state.searchQuery, this.state.members) }
         </div> : <div />;
 
         const invited = (this.state.invitedMembers && this.state.invitedMembers.length > 0) ?
             <div className="mx_MemberList_invited">
-                <h2>{_t("Invited")}</h2>
-                {
-                    this.makeGroupMemberTiles(
-                        this.state.searchQuery,
-                        this.state.invitedMembers,
-                        this.state.invitedMembersError,
-                    )
-                }
+                <h2>{ _t("Invited") }</h2>
+                { this.makeGroupMemberTiles(this.state.searchQuery, this.state.invitedMembers) }
             </div> : <div />;
 
         let inviteButton;

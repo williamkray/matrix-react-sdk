@@ -14,6 +14,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of 
+the Cooperative Software License as distributed with this project.
 */
 
 import React from 'react';
@@ -21,6 +26,8 @@ import PropTypes from 'prop-types';
 import * as sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
 import { _t } from '../../../languageHandler';
+import SettingsStore from "../../../settings/SettingsStore";
+import { discordColorToCssAdjust, getMembersBgColorForTheme } from "../../../utils/poniesUtils";
 import classNames from "classnames";
 import E2EIcon from './E2EIcon';
 
@@ -104,6 +111,19 @@ class EntityTile extends React.Component {
         let nameEl;
         const {name} = this.props;
 
+        // do discord colors
+        let style = {}
+        let discordMember;
+        try {
+            // too lazy to check if all properties exist, thus try...catch
+            discordMember = this.props.member.events.member.event.content["uk.half-shot.discord.member"];
+        } catch (e) {
+            discordMember = undefined;
+        }
+        if (!SettingsStore.getValue("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
+            style.color = discordColorToCssAdjust(discordMember.displayColor, getMembersBgColorForTheme());
+        }
+
         if (!this.props.suppressOnHover) {
             const activeAgo = this.props.presenceLastActiveAgo ?
                 (Date.now() - (this.props.presenceLastTs - this.props.presenceLastActiveAgo)) : -1;
@@ -120,7 +140,7 @@ class EntityTile extends React.Component {
             }
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <div className="mx_EntityTile_name" dir="auto">
+                    <div className="mx_EntityTile_name" dir="auto" style={style}>
                         { name }
                     </div>
                     {presenceLabel}
@@ -129,7 +149,7 @@ class EntityTile extends React.Component {
         } else if (this.props.subtextLabel) {
             nameEl = (
                 <div className="mx_EntityTile_details">
-                    <div className="mx_EntityTile_name" dir="auto">
+                    <div className="mx_EntityTile_name" dir="auto" style={style}>
                         {name}
                     </div>
                     <span className="mx_EntityTile_subtext">{this.props.subtextLabel}</span>
@@ -137,7 +157,7 @@ class EntityTile extends React.Component {
             );
         } else {
             nameEl = (
-                <div className="mx_EntityTile_name" dir="auto">{ name }</div>
+                <div className="mx_EntityTile_name" dir="auto" style={style}>{ name }</div>
             );
         }
 

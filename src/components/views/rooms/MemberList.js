@@ -2,6 +2,7 @@
 Copyright 2015, 2016 OpenMarket Ltd
 Copyright 2017 Vector Creations Ltd
 Copyright 2017, 2018 New Vector Ltd
+Copyright 2018 ponies.im
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,6 +15,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of
+the Cooperative Software License as distributed with this project.
 */
 
 import React from 'react';
@@ -28,7 +35,8 @@ import {CommunityPrototypeStore} from "../../../stores/CommunityPrototypeStore";
 import BaseCard from "../right_panel/BaseCard";
 import {RightPanelPhases} from "../../../stores/RightPanelStorePhases";
 
-const INITIAL_LOAD_NUM_MEMBERS = 30;
+const INITIAL_LOAD_NUM_MEMBERS = 25;
+const INITIAL_LOAD_NUM_DISCORD = 20;
 const INITIAL_LOAD_NUM_INVITED = 5;
 const SHOW_MORE_INCREMENT = 100;
 
@@ -135,11 +143,13 @@ export default class MemberList extends React.Component {
             loading: false,
             members: members,
             filteredJoinedMembers: this._filterMembers(members, 'join'),
+            filteredDiscordMembers: this._filterMembers(members, 'discord'),
             filteredInvitedMembers: this._filterMembers(members, 'invite'),
 
             // ideally we'd size this to the page height, but
             // in practice I find that a little constraining
             truncateAtJoined: INITIAL_LOAD_NUM_MEMBERS,
+            truncateAtDiscord: INITIAL_LOAD_NUM_DISCORD,
             truncateAtInvited: INITIAL_LOAD_NUM_INVITED,
             searchQuery: "",
         };
@@ -204,6 +214,7 @@ export default class MemberList extends React.Component {
             members: this.roomMembers(),
         };
         newState.filteredJoinedMembers = this._filterMembers(newState.members, 'join', this.state.searchQuery);
+        newState.filteredDiscordMembers = this._filterMembers(newState.members, 'discord', this.state.searchQuery);
         newState.filteredInvitedMembers = this._filterMembers(newState.members, 'invite', this.state.searchQuery);
         this.setState(newState);
     }
@@ -246,6 +257,10 @@ export default class MemberList extends React.Component {
         return this._createOverflowTile(overflowCount, totalCount, this._showMoreJoinedMemberList);
     };
 
+    _createOverflowTileDiscord = (overflowCount, totalCount) => {
+        return this._createOverflowTile(overflowCount, totalCount, this._showMoreDiscordMemberList);
+    };
+
     _createOverflowTileInvited = (overflowCount, totalCount) => {
         return this._createOverflowTile(overflowCount, totalCount, this._showMoreInvitedMemberList);
     };
@@ -266,6 +281,12 @@ export default class MemberList extends React.Component {
     _showMoreJoinedMemberList = () => {
         this.setState({
             truncateAtJoined: this.state.truncateAtJoined + SHOW_MORE_INCREMENT,
+        });
+    };
+
+    _showMoreDiscordMemberList = () => {
+        this.setState({
+            truncateAtDiscord: this.state.truncateAtDiscord + SHOW_MORE_INCREMENT,
         });
     };
 
@@ -350,6 +371,7 @@ export default class MemberList extends React.Component {
         this.setState({
             searchQuery,
             filteredJoinedMembers: this._filterMembers(this.state.members, 'join', searchQuery),
+            filteredDiscordMembers: this._filterMembers(this.state.members, 'discord', searchQuery),
             filteredInvitedMembers: this._filterMembers(this.state.members, 'invite', searchQuery),
         });
     };
@@ -373,7 +395,11 @@ export default class MemberList extends React.Component {
                 }
             }
 
-            return m.membership === membership;
+            if (typeof m.events.member.event.content["uk.half-shot.discord.member"] != "undefined") {
+                return membership === 'discord';
+            } else {
+                return m.membership === membership;
+            }
         });
     }
 
@@ -417,6 +443,14 @@ export default class MemberList extends React.Component {
 
     _getChildCountJoined = () => this.state.filteredJoinedMembers.length;
 
+    _getChildrenDiscord = (start, end) => {
+        return this._makeMemberTiles(this.state.filteredDiscordMembers.slice(start, end));
+    };
+
+    _getChildCountDiscord = () => {
+        return this.state.filteredDiscordMembers.length;
+    };
+
     _getChildrenInvited = (start, end) => {
         let targets = this.state.filteredInvitedMembers;
         if (end > this.state.filteredInvitedMembers.length) {
@@ -428,7 +462,7 @@ export default class MemberList extends React.Component {
 
     _getChildCountInvited = () => {
         return this.state.filteredInvitedMembers.length + (this._getPending3PidInvites() || []).length;
-    }
+    };
 
     render() {
         if (this.state.loading) {
@@ -486,6 +520,18 @@ export default class MemberList extends React.Component {
                 />;
         }
 
+        let discordHeader;
+        let discordSection;
+        if (this._getChildCountDiscord() > 0) {
+            discordHeader = <h2 style={{ textAlign: "center" }}><img src="img/bridges/discordlogo.svg" style={{ verticalAlign: "middle", height: "40px", paddingRight: "5px" }} />{ _t("Discord Users") }</h2>;
+            discordSection = <TruncatedList className="mx_MemberList_section" truncateAt={this.state.truncateAtDiscord}
+                        createOverflowElement={this._createOverflowTileDiscord}
+                        getChildren={this._getChildrenDiscord}
+                        getChildCount={this._getChildCountDiscord}
+                        style={{ marginTop: "8px", marginBottom: "8px", backgroundColor: "#23272A10", borderRadius: "10px", padding: "3px", boxShadow: "inset 0 0 5px #7289DA" }}
+                />;
+        }
+
         const footer = (
             <SearchBox
                 className="mx_MemberList_query mx_textinput_icon mx_textinput_search"
@@ -505,6 +551,8 @@ export default class MemberList extends React.Component {
                                createOverflowElement={this._createOverflowTileJoined}
                                getChildren={this._getChildrenJoined}
                                getChildCount={this._getChildCountJoined} />
+                { discordHeader }
+                { discordSection }
                 { invitedHeader }
                 { invitedSection }
             </div>

@@ -1,6 +1,7 @@
 /*
 Copyright 2019 New Vector Ltd
 Copyright 2019 The Matrix.org Foundation C.I.C.
+Copyright 2019 ponies.im
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,6 +14,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Additionally, original modifications by ponies.im are licensed under the CSL.
+See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
+These modifications may only be redistributed and used within the terms of
+the Cooperative Software License as distributed with this project.
 */
 
 import {MatrixClient} from "matrix-js-sdk/src/client";
@@ -37,7 +43,14 @@ interface ISerializedPillPart {
     resourceId: string;
 }
 
-export type SerializedPart = ISerializedPart | ISerializedPillPart;
+interface ISerializedEmotePart {
+    type: Type.Emote;
+    code: string;
+    mxc: string;
+    text: string;
+}
+
+export type SerializedPart = ISerializedPart | ISerializedPillPart | ISerializedEmotePart;
 
 enum Type {
     Plain = "plain",
@@ -47,6 +60,7 @@ enum Type {
     RoomPill = "room-pill",
     AtRoomPill = "at-room-pill",
     PillCandidate = "pill-candidate",
+    Emote = "emote",
 }
 
 interface IBasePart {
@@ -76,7 +90,13 @@ interface IPillPart extends Omit<IBasePart, "type" | "resourceId"> {
     resourceId: string;
 }
 
-export type Part = IBasePart | IPillCandidatePart | IPillPart;
+interface IEmotePart extends Omit<IBasePart, "type" | "resourceId"> {
+    type: Type.Emote;
+    mxc: string;
+    code: string;
+}
+
+export type Part = IBasePart | IPillCandidatePart | IPillPart | IEmotePart;
 
 abstract class BasePart {
     protected _text: string;
@@ -402,6 +422,67 @@ class UserPillPart extends PillPart {
     }
 }
 
+class EmotePart extends BasePart implements IEmotePart {
+    public mxc: string;
+    public code: string;
+
+    constructor(mxc, code) {
+        super(code);
+        this.mxc = mxc;
+        this.code = code;
+    }
+
+    acceptsInsertion(chr, offset, inputType) {
+        return true;
+    }
+
+    acceptsRemoval(position, chr) {
+        return true;
+    }
+
+    toDOMNode() {
+        const img = document.createElement("img");
+        const url = Avatar.avatarUrlForMxc(this.mxc, 36, 36, "crop");
+        img.src = url;
+        img.width = 36;
+        img.height = 36;
+        img.alt = this.code;
+        return img;
+    }
+
+    merge() {
+        return false;
+    }
+
+    updateDOMNode(node) {
+        const url = Avatar.avatarUrlForMxc(this.mxc, 36, 36, "crop");
+        node.src = url;
+        node.alt = this.code;
+    }
+
+    canUpdateDOMNode(node) {
+        return node.tagName === "IMG";
+    }
+
+    get canEdit() {
+        return false;
+    }
+
+    get type(): IEmotePart["type"] {
+        return Type.Emote;
+    }
+
+    serialize(): ISerializedEmotePart {
+        return {
+            type: this.type,
+            code: this.code,
+            mxc: this.mxc,
+            text: "",
+        };
+    }
+}
+
+
 class PillCandidatePart extends PlainBasePart implements IPillCandidatePart {
     constructor(text: string, private autoCompleteCreator: IAutocompleteCreator) {
         super(text);
@@ -496,6 +577,8 @@ export class PartCreator {
                 return this.roomPill(part.text);
             case Type.UserPill:
                 return this.userPill(part.text, part.resourceId);
+            case "emote":
+                return this.emote(part.mxc, part.code);
         }
     }
 
@@ -531,6 +614,9 @@ export class PartCreator {
     userPill(displayName: string, userId: string) {
         const member = this.room.getMember(userId);
         return new UserPillPart(userId, displayName, member);
+    }
+    emote(mxid, code) {
+        return new EmotePart(mxid, code);
     }
 
     createMentionParts(partIndex: number, displayName: string, userId: string) {

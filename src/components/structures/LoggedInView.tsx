@@ -108,6 +108,7 @@ interface IState {
     };
     usageLimitEventContent?: IUsageLimit;
     useCompactLayout: boolean;
+    useSuperCompactLayout: boolean;
 }
 
 /**
@@ -150,6 +151,7 @@ class LoggedInView extends React.Component<IProps, IState> {
             syncErrorData: undefined,
             // use compact timeline view
             useCompactLayout: SettingsStore.getValue('useCompactLayout'),
+            useSuperCompactLayout: SettingsStore.getValue("feature_super_compact"),
         };
 
         // stash the MatrixClient in case we log out before we are unmounted
@@ -620,6 +622,9 @@ class LoggedInView extends React.Component<IProps, IState> {
         let bodyClasses = 'mx_MatrixChat';
         if (this.state.useCompactLayout) {
             bodyClasses += ' mx_MatrixChat_useCompactLayout';
+        }
+        if (this.state.useSuperCompactLayout) {
+            bodyClasses += ' mx_MatrixChat_useSuperCompactLayout';
         }
 
         const leftPanel = (

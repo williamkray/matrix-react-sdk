@@ -16,8 +16,9 @@ limitations under the License.
 
 import * as commonmark from 'commonmark';
 import {escape} from "lodash";
+import * as HtmlUtils from './HtmlUtils';
 
-const ALLOWED_HTML_TAGS = ['sub', 'sup', 'del', 'u'];
+const ALLOWED_HTML_TAGS = HtmlUtils.sanitizeHtmlParams.allowedTags;
 
 // These types of node are definitely text
 const TEXT_NODES = ['text', 'softbreak', 'linebreak', 'paragraph', 'document'];
@@ -28,9 +29,8 @@ function is_allowed_html_tag(node) {
         return true;
     }
 
-    // Regex won't work for tags with attrs, but we only
-    // allow <del> anyway.
-    const matches = /^<\/?(.*)>$/.exec(node.literal);
+    // Our regex does work with tags with attrs!
+    const matches = /^<\/?(\w+)(?: |.*>)$/.exec(node.literal);
     if (matches && matches.length == 2) {
         const tag = matches[1];
         return ALLOWED_HTML_TAGS.indexOf(tag) > -1;

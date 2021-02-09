@@ -37,6 +37,30 @@ export function textToHtmlRainbow(str: string): string {
         .join("");
 }
 
+export function textToHtmlRainbowBar(str: string): string {
+    const frequency = (2 * Math.PI) / str.length;
+
+    return Array.from(str)
+        .map((c, i) => {
+            const [a, b] = generateAB(i * frequency, 1);
+            const [red, green, blue] = labToRGB(75, a, b);
+            return (
+                '<font color="#' +
+                red.toString(16).padStart(2, "0") +
+                green.toString(16).padStart(2, "0") +
+                blue.toString(16).padStart(2, "0") +
+                '" data-mx-bg-color="#'+
+                red.toString(16).padStart(2, "0") +
+                green.toString(16).padStart(2, "0") +
+                blue.toString(16).padStart(2, "0") +
+                '">' +
+                c +
+                "</font>"
+            );
+        })
+        .join("");
+}
+
 function generateAB(hue: number, chroma: number): [number, number] {
     const a = chroma * 127 * Math.cos(hue);
     const b = chroma * 127 * Math.sin(hue);
