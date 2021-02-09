@@ -222,7 +222,7 @@
     "This doesn't appear to be a valid email address": "This doesn't appear to be a valid email address",
     "This phone number is already in use": "This phone number is already in use",
     "This room is not accessible by remote Matrix servers": "This room is not accessible by remote Matrix servers",
-    "This is a list of all emote packs available in this room. To be able to use them in other rooms, enable the switch.":"This is a list of all emote packs available in this room. To be able to use them in other rooms, enable the switch."
+    "This is a list of all emote packs available in this room. To be able to use them in other rooms, enable the switch.":"This is a list of all emote packs available in this room. To be able to use them in other rooms, enable the switch.",
     "To use it, just wait for autocomplete results to load and tab through them.": "To use it, just wait for autocomplete results to load and tab through them.",
     "Tried to load a specific point in this room's timeline, but you do not have permission to view the message in question.": "Tried to load a specific point in this room's timeline, but you do not have permission to view the message in question.",
     "Tried to load a specific point in this room's timeline, but was unable to find it.": "Tried to load a specific point in this room's timeline, but was unable to find it.",
