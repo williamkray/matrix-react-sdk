@@ -167,7 +167,7 @@ export default class EmotesRoomSettingsTab extends React.Component {
                 <div className="mx_SettingsTab_heading">{ _t("Emotes") }</div>
                 <div>
                     <p>
-                        { _t("This is a list of all emote packs available in this room. To be able to use them elsewhere than only this room, use the switch.")}
+                        { _t("This is a list of all emote packs available in this room. To be able to use them in other rooms, enable the switch.")}
                     </p>
                 </div>
                 <table>
