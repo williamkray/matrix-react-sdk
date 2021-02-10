@@ -12,11 +12,6 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
-
- Additionally, original modifications by ponies.im are licensed under the CSL.
- See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
- These modifications may only be redistributed and used within the terms of
- the Cooperative Software License as distributed with this project.
  */
 
 import React from 'react';
@@ -24,9 +19,6 @@ import PropTypes from 'prop-types';
 import Flair from '../elements/Flair.js';
 import FlairStore from '../../../stores/FlairStore';
 import { _t } from '../../../languageHandler';
-import {hashCode} from '../../../utils/FormattingUtils';
-import SettingsStore from "../../../settings/SettingsStore";
-import { discordColorToCssAdjust, getBodyBgColorForTheme } from "../../../utils/poniesUtils";
 import {getUserNameColorClass} from '../../../utils/FormattingUtils';
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
 
@@ -118,22 +110,9 @@ export default class SenderProfile extends React.Component {
 
         const nameElem = name || '';
 
-        // do discord colors
-        let style = {};
-        let discordMember;
-        try {
-            // too lazy to check if all properties exist, thus try...catch
-            discordMember = mxEvent.sender.events.member.event.content["uk.half-shot.discord.member"];
-        } catch (e) {
-            discordMember = undefined;
-        }
-        if (!SettingsStore.getValue("feature_no_discord_colours") && discordMember && discordMember.displayColor !== undefined) {
-            style.color = discordColorToCssAdjust(discordMember.displayColor, getBodyBgColorForTheme());
-        }
-
         // Name + flair
         const nameFlair = <span>
-              <span className={`mx_SenderProfile_name ${colorClass}`} style={style}>
+            <span className={`mx_SenderProfile_name ${colorClass}`}>
                 { nameElem }
             </span>
             { flair }

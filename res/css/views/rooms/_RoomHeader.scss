@@ -282,18 +282,6 @@ limitations under the License.
     background-color: $pinned-unread-color;
 }
 
-.mx_MatrixChat_useSuperCompactLayout {
-
-    .mx_RoomHeader {
-        flex: 0 0 32px;
-    }
-
-    .mx_RoomHeader_wrapper {
-        height: 32px;
-        padding: 0 1px 0 1px;
-    }
-}
-
 @media only screen and (max-width: 480px) {
     .mx_RoomHeader_wrapper {
         padding: 0;

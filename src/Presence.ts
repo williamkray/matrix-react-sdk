@@ -34,7 +34,6 @@ class Presence {
     private unavailableTimer: Timer = null;
     private dispatcherRef: string = null;
     private state: State = null;
-    public statusMsg: string = "";
 
     /**
      * Start listening the user activity to evaluate his presence state.
@@ -99,39 +98,12 @@ class Presence {
         }
 
         try {
-            await this._send();
+            await MatrixClientPeg.get().setPresence(this.state);
             console.info("Presence: %s", newState);
         } catch (err) {
             console.error("Failed to set presence: %s", err);
             this.state = oldState;
         }
-    }
-
-    /**
-     * Set the status message
-     * @param {string} statusMsg the status message to set
-     */
-    async setStatusMessage(newStatusMsg) {
-        const oldStatusMsg = this.statusMsg;
-        this.statusMsg = newStatusMsg;
-
-        try {
-            await this._send();
-            console.log("Presence Status Msg: %s", newStatusMsg);
-        } catch (err) {
-            console.error("Failed to set presence: %s", err);
-            this.statusMsg = oldStatusMsg;
-        }
-    }
-
-    async _send() {
-        const opts = {
-            presence: this.state || "online",
-        } as any;
-        if (this.statusMsg) {
-            opts.status_msg = this.statusMsg;
-        }
-        await MatrixClientPeg.get().setPresence(opts);
     }
 }
 

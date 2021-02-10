@@ -119,22 +119,3 @@ limitations under the License.
 .mx_MemberList_addRoomToCommunity span::before {
     mask-image: url('$(res)/img/icons-room-add.svg');
 }
-
-.mx_MatrixChat_useSuperCompactLayout {
-
-    .mx_MemberList_invite,
-    .mx_RightPanel_invite {
-        padding: 1px;
-        margin: 1px;
-    }
-
-    .mx_MemberList_wrapper {
-        padding: 1px;
-    }
-
-    #mx_MemberList_query,{
-        margin: 0;
-        height: 32px;
-    }
-
-}

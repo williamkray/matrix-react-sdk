@@ -1,7 +1,5 @@
 /*
 Copyright 2017 Travis Ralston
-Copyright 2018, 2019 New Vector Ltd.
-Copyright 2018, 2019 ponies.im
 Copyright 2018, 2019, 2020 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +13,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-Additionally, original modifications by ponies.im are licensed under the CSL.
-See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of
-the Cooperative Software License as distributed with this project.
 */
 
 import { MatrixClient } from 'matrix-js-sdk/src/client';
@@ -124,54 +117,6 @@ export interface ISetting {
 }
 
 export const SETTINGS: {[setting: string]: ISetting} = {
-    "feature_squircle_avatars": {
-        isFeature: true,
-        displayName: _td("Enable Squircle Avatars"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_super_compact": {
-        isFeature: true,
-        displayName: _td("Enable Super Compact Layout"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_no_discord_colours": {
-        isFeature: true,
-        displayName: _td("Disable Discord Colours"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_no_bridge_badges": {
-        isFeature: true,
-        displayName: _td("Disable Bridge Badges"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_nsfw_ponymotes": {
-        isFeature: true,
-        displayName: _td("NSFW Ponymotes"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_disable_ponymotes": {
-        isFeature: true,
-        displayName: _td("Disable Ponymotes"),
-        supportedLevels: LEVELS_FEATURE,
-        default: true,
-    },
-    "feature_disable_mutant_standard": {
-        isFeature: true,
-        displayName: _td("Disable Mutant Standard Emotes"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
-    "feature_interplanetary_time": {
-        isFeature: true,
-        displayName: _td("IPT Format Timestamps"),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-    },
     "feature_latex_maths": {
         isFeature: true,
         displayName: _td("Render LaTeX maths in messages"),
@@ -197,7 +142,7 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         isFeature: true,
         displayName: _td("Message Pinning"),
         supportedLevels: LEVELS_FEATURE,
-        default: true,
+        default: false,
     },
     "feature_custom_status": {
         isFeature: true,
@@ -217,10 +162,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td("Render simple counters in room header"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
-    },
-    "custom_colour_contrast_adjustment": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        default: "1",
     },
     "feature_many_integration_managers": {
         isFeature: true,
@@ -299,11 +240,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         default: true,
         invertedSettingName: 'MessageComposerInput.dontSuggestEmoji',
     },
-    "MessageComposerInput.showStickersButton": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Show stickers button'),
-        default: true,
-    },
     // TODO: Wire up appropriately to UI (FTUE notifications)
     "Notifications.alwaysShowBadgeCounts": {
         supportedLevels: LEVELS_ROOM_OR_ACCOUNT,
@@ -363,16 +299,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td('Enable automatic language detection for syntax highlighting'),
         default: false,
-    },
-    "expandCodeByDefault": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Expand code blocks by default'),
-        default: false,
-    },
-    "showCodeLineNumbers": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Show line numbers in code blocks'),
-        default: true,
     },
     "Pill.shouldShowPillAvatar": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
@@ -693,10 +619,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
                 MatrixClient.prototype.setCryptoTrustCrossSignedDevices, true,
             ),
         ]),
-    },
-    "statusMessage": {
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
-        default: "",
     },
     "ircDisplayNameWidth": {
         // We specifically want to have room-device > device so that users may set a device default

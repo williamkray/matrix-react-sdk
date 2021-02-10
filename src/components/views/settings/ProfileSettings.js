@@ -52,23 +52,19 @@ export default class ProfileSettings extends React.Component {
         // clear file upload field so same file can be selected
         this._avatarUpload.current.value = "";
         this.setState({
-            avatarUrl: null,
-            avatarFile: null,
+            avatarUrl: undefined,
+            avatarFile: undefined,
             enableProfileSave: true,
         });
     };
 
-    _cancelProfileChanges = async (e) => {
+    _clearProfile = async (e) => {
         e.stopPropagation();
         e.preventDefault();
 
         if (!this.state.enableProfileSave) return;
-        this.setState({
-            enableProfileSave: false,
-            displayName: this.state.originalDisplayName,
-            avatarUrl: this.state.originalAvatarUrl,
-            avatarFile: null,
-        });
+        this._removeAvatar();
+        this.setState({enableProfileSave: false, displayName: this.state.originalDisplayName});
     };
 
     _saveProfile = async (e) => {
@@ -190,7 +186,7 @@ export default class ProfileSettings extends React.Component {
                 </div>
                 <div className="mx_ProfileSettings_buttons">
                     <AccessibleButton
-                        onClick={this._cancelProfileChanges}
+                        onClick={this._clearProfile}
                         kind="link"
                         disabled={!this.state.enableProfileSave}
                     >

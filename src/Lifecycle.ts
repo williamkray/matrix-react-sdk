@@ -808,11 +808,6 @@ async function startMatrixClient(startSyncing = true): Promise<void> {
     // the client
     if (!SettingsStore.getValue("lowBandwidth")) {
         Presence.start();
-        Presence.setStatusMessage(SettingsStore.getValue("statusMessage"));
-        // if only things worked nicely....
-        setTimeout(() => {
-            Presence.setStatusMessage(SettingsStore.getValue("statusMessage"));
-        }, 10 * 1000);
     }
 
     // Now that we have a MatrixClientPeg, update the Jitsi info

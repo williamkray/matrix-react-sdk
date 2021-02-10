@@ -20,9 +20,6 @@ import { _t } from '../../../languageHandler';
 import {MatrixClientPeg} from '../../../MatrixClientPeg';
 import * as sdk from '../../../index';
 import AccessibleButton from '../elements/AccessibleButton';
-import Presence from '../../../Presence';
-import SettingsStore from "../../../settings/SettingsStore";
-import {SettingLevel} from "../../../settings/SettingLevel";
 
 export default class StatusMessageContextMenu extends React.Component {
     static propTypes = {
@@ -43,7 +40,7 @@ export default class StatusMessageContextMenu extends React.Component {
         if (!user) {
             return;
         }
-        user.on("User.presenceStatusMsg", this._onStatusMessageCommitted);
+        user.on("User._unstable_statusMessage", this._onStatusMessageCommitted);
     }
 
     componentWillUnmount() {
@@ -52,13 +49,13 @@ export default class StatusMessageContextMenu extends React.Component {
             return;
         }
         user.removeListener(
-            "User.presenceStatusMsg",
+            "User._unstable_statusMessage",
             this._onStatusMessageCommitted,
         );
     }
 
     get comittedStatusMessage() {
-        return this.props.user ? this.props.user.presenceStatusMsg : "";
+        return this.props.user ? this.props.user._unstable_statusMessage : "";
     }
 
     _onStatusMessageCommitted = () => {
@@ -70,13 +67,7 @@ export default class StatusMessageContextMenu extends React.Component {
     };
 
     _onClearClick = (e) => {
-        Presence.setStatusMessage("");
-        SettingsStore.setValue(
-            "statusMessage",
-            null,
-            SettingLevel.DEVICE,
-            "",
-        );
+        MatrixClientPeg.get()._unstable_setStatusMessage("");
         this.setState({
             waiting: true,
         });
@@ -84,13 +75,7 @@ export default class StatusMessageContextMenu extends React.Component {
 
     _onSubmit = (e) => {
         e.preventDefault();
-        Presence.setStatusMessage(this.state.message);
-        SettingsStore.setValue(
-            "statusMessage",
-            null,
-            SettingLevel.DEVICE,
-            this.state.message,
-        );
+        MatrixClientPeg.get()._unstable_setStatusMessage(this.state.message);
         this.setState({
             waiting: true,
         });

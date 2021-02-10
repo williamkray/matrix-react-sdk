@@ -1,7 +1,6 @@
 /*
 Copyright 2015, 2016 OpenMarket Ltd
 Copyright 2018 New Vector Ltd
-Copyright 2018, 2019 ponies.im
 Copyright 2019 Michael Telatynski <7t3chguy@gmail.com>
 Copyright 2019, 2020 The Matrix.org Foundation C.I.C.
 
@@ -16,11 +15,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-Additionally, original modifications by ponies.im are licensed under the CSL.
-See https://coinsh.red/csl/csl.txt or the provided CSL.txt for additional information.
-These modifications may only be redistributed and used within the terms of
-the Cooperative Software License as distributed with this project.
 */
 
 import React, {useCallback, useContext, useEffect, useState} from 'react';
@@ -113,11 +107,6 @@ const BaseAvatar = (props: IProps) => {
 
     const [imageUrl, onError] = useImageUrl({url, urls});
 
-    let imageClasses = 'mx_BaseAvatar mx_BaseAvatar_image';
-    if (!SettingsStore.getValue("feature_squircle_avatars")) {
-        imageClasses += ' mx_RoundAvatar';
-    }
-
     if (!imageUrl && defaultToInitialLetter) {
         const initialLetter = AvatarLogic.getInitialLetter(name);
         const textNode = (
@@ -135,7 +124,7 @@ const BaseAvatar = (props: IProps) => {
         );
         const imgNode = (
             <img
-                className={imageClasses}
+                className="mx_BaseAvatar_image"
                 src={AvatarLogic.defaultAvatarUrlForString(idName || name)}
                 alt=""
                 title={title}
@@ -178,7 +167,7 @@ const BaseAvatar = (props: IProps) => {
     if (onClick) {
         return (
             <AccessibleButton
-                className={classNames(imageClasses, className)}
+                className={classNames("mx_BaseAvatar mx_BaseAvatar_image", className)}
                 element='img'
                 src={imageUrl}
                 onClick={onClick}
@@ -194,7 +183,7 @@ const BaseAvatar = (props: IProps) => {
     } else {
         return (
             <img
-                className={classNames(imageClasses, className)}
+                className={classNames("mx_BaseAvatar mx_BaseAvatar_image", className)}
                 src={imageUrl}
                 onError={onError}
                 style={{

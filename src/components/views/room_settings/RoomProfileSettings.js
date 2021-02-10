@@ -69,24 +69,19 @@ export default class RoomProfileSettings extends React.Component {
         // clear file upload field so same file can be selected
         this._avatarUpload.current.value = "";
         this.setState({
-            avatarUrl: null,
-            avatarFile: null,
+            avatarUrl: undefined,
+            avatarFile: undefined,
             enableProfileSave: true,
         });
     };
 
-    _cancelProfileChanges = async (e) => {
+    _clearProfile = async (e) => {
         e.stopPropagation();
         e.preventDefault();
 
         if (!this.state.enableProfileSave) return;
-        this.setState({
-            enableProfileSave: false,
-            displayName: this.state.originalDisplayName,
-            topic: this.state.originalTopic,
-            avatarUrl: this.state.originalAvatarUrl,
-            avatarFile: null,
-        });
+        this._removeAvatar();
+        this.setState({enableProfileSave: false, displayName: this.state.originalDisplayName});
     };
 
     _saveProfile = async (e) => {
@@ -113,7 +108,7 @@ export default class RoomProfileSettings extends React.Component {
             newState.originalAvatarUrl = newState.avatarUrl;
             newState.avatarFile = null;
         } else if (this.state.originalAvatarUrl !== this.state.avatarUrl) {
-            await client.sendStateEvent(this.props.roomId, 'm.room.avatar', {}, '');
+            await client.sendStateEvent(this.props.roomId, 'm.room.avatar', {url: undefined}, '');
         }
 
         if (this.state.originalTopic !== this.state.topic) {
@@ -169,15 +164,11 @@ export default class RoomProfileSettings extends React.Component {
         const AvatarSetting = sdk.getComponent('settings.AvatarSetting');
 
         let profileSettingsButtons;
-        if (
-            this.state.canSetName ||
-            this.state.canSetTopic ||
-            this.state.canSetAvatar
-        ) {
+        if (this.state.canSetTopic && this.state.canSetName) {
             profileSettingsButtons = (
                 <div className="mx_ProfileSettings_buttons">
                     <AccessibleButton
-                        onClick={this._cancelProfileChanges}
+                        onClick={this._clearProfile}
                         kind="link"
                         disabled={!this.state.enableProfileSave}
                     >

@@ -60,7 +60,7 @@ export default class MemberStatusMessageAvatar extends React.Component {
         if (!user) {
             return;
         }
-        user.on("User.presenceStatusMsg", this._onStatusMessageCommitted);
+        user.on("User._unstable_statusMessage", this._onStatusMessageCommitted);
     }
 
     componentWillUnmount() {
@@ -69,7 +69,7 @@ export default class MemberStatusMessageAvatar extends React.Component {
             return;
         }
         user.removeListener(
-            "User.presenceStatusMsg",
+            "User._unstable_statusMessage",
             this._onStatusMessageCommitted,
         );
     }
@@ -79,7 +79,7 @@ export default class MemberStatusMessageAvatar extends React.Component {
         if (!user) {
             return false;
         }
-        return !!user.presenceStatusMsg;
+        return !!user._unstable_statusMessage;
     }
 
     _onStatusMessageCommitted = () => {
