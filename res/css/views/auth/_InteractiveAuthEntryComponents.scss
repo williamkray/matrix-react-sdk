@@ -83,10 +83,7 @@ limitations under the License.
 }
 
 .mx_InteractiveAuthEntryComponents_termsPolicy {
-    display: flex;
-    flex-direction: row;
-    justify-content: start;
-    align-items: center;
+    display: block;
 }
 
 .mx_InteractiveAuthEntryComponents_passwordSection {
