@@ -73,7 +73,7 @@ export function htmlSerializeIfNeeded(model: EditorModel, {forceHTML = false} = 
         // we need to make emotes nicer
         html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img data-mx-emoticon src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
         // feed Markdown output to HTML parser
-        const phtml = cheerio.load(parser.toHTML(),
+        const phtml = cheerio.load(html,
             { _useHtmlParser2: true, decodeEntities: false })
 
         // add fallback output for latex math, which should not be interpreted as markdown
