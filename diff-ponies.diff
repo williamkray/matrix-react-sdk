@@ -3753,7 +3753,8 @@ to it if necessary!
 #                 onError={onError}
 #                 style={{
 
-##I don't think this is necessary, seems to be related to user avatars
+##Looks like this might be important after all
+## addint this whole file as-is
 #diff --git a/src/components/views/avatars/EmoteAvatar.js b/src/components/views/avatars/EmoteAvatar.js
 #deleted file mode 100644
 #index ffd435e25..000000000
