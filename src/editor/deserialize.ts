@@ -60,6 +60,12 @@ function parseLink(a: HTMLAnchorElement, partCreator: PartCreator) {
     }
 }
 
+function parseEmote(img: HTMLImageElement, partCreator: PartCreator) {
+    const src = img.src;
+    const alt = img.alt || img.title || "";
+    return partCreator.emote(src, alt);
+}
+
 function parseCodeBlock(n: HTMLElement, partCreator: PartCreator) {
     const parts = [];
     let language = "";
@@ -102,6 +108,8 @@ function parseElement(n: HTMLElement, partCreator: PartCreator, lastNode: HTMLEl
             return parseHeader(n, partCreator);
         case "A":
             return parseLink(<HTMLAnchorElement>n, partCreator);
+        case "IMG":
+            return parseEmote(<HTMLImageElement>n, partCreator);
         case "BR":
             return partCreator.newline();
         case "EM":
