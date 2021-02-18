@@ -91,8 +91,6 @@ interface ISerializedEmotePart {
     text: string;
 }
 
-export type SerializedPart = ISerializedPart | ISerializedPillPart | ISerializedEmotePart;
-
 abstract class BasePart {
     protected _text: string;
 
