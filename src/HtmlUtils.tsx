@@ -47,6 +47,10 @@ const SURROGATE_PAIR_PATTERN = /([\ud800-\udbff])([\udc00-\udfff])/;
 // (with plenty of false positives, but that's OK)
 const SYMBOL_PATTERN = /([\u2100-\u2bff])/;
 
+const EMOTE_PATTERN = /<img[^>]+data-mx-(?:emote|emoticon)(?==|>|\s)[^>]*>/;
+
+const ONLY_EMOTES_EMOJI_REGEX = /^((?:\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])[\ufe00-\ufe0f]?|<img[^>]+data-mx-(?:emote|emoticon)(?==|>|\s)[^>]*>|\s)*$/;
+
 // Regex pattern for Zero-Width joiner unicode characters
 const ZWJ_REGEX = new RegExp("\u200D|\u2003", "g");
 
@@ -67,7 +71,7 @@ export const PERMITTED_URL_SCHEMES = ['http', 'https', 'ftp', 'mailto', 'magnet'
  * unicodeToImage uses this function.
  */
 function mightContainEmoji(str: string) {
-    return SURROGATE_PAIR_PATTERN.test(str) || SYMBOL_PATTERN.test(str);
+    return SURROGATE_PAIR_PATTERN.test(str) || SYMBOL_PATTERN.test(str) || EMOTE_PATTERN.test(str);
 }
 
 /**
@@ -246,7 +250,7 @@ const sanitizeHtmlParams: IExtendedSanitizeOptions = {
         span: ['data-mx-maths', 'data-mx-bg-color', 'data-mx-color', 'data-mx-spoiler', 'style'], // custom to matrix
         div: ['data-mx-maths'],
         a: ['href', 'name', 'target', 'rel'], // remote target: custom to matrix
-        img: ['src', 'width', 'height', 'alt', 'title'],
+        img: ['src', 'width', 'height', 'alt', 'title', 'data-mx-emote', 'data-mx-emoticon'],
         ol: ['start'],
         code: ['class'], // We don't actually allow all classes, we filter them in transformTags
     },

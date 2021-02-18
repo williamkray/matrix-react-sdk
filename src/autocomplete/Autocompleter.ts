@@ -24,6 +24,7 @@ import RoomProvider from './RoomProvider';
 import UserProvider from './UserProvider';
 import EmojiProvider from './EmojiProvider';
 import NotifProvider from './NotifProvider';
+import EmoteProvider from './EmoteProvider';
 import {timeout} from "../utils/promise";
 import AutocompleteProvider, {ICommand} from "./AutocompleteProvider";
 
@@ -34,7 +35,7 @@ export interface ISelectionRange {
 }
 
 export interface ICompletion {
-    type: "at-room" | "command" | "community" | "room" | "user";
+    type: "at-room" | "command" | "community" | "room" | "user" | "emote";
     completion: string;
     completionId?: string;
     component?: ReactElement;
@@ -54,6 +55,7 @@ const PROVIDERS = [
     CommandProvider,
     CommunityProvider,
     DuckDuckGoProvider,
+    EmoteProvider,
 ];
 
 // Providers will get rejected if they take longer than this.

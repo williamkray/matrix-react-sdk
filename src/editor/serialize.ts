@@ -37,6 +37,8 @@ export function mdSerialize(model: EditorModel) {
             case "user-pill":
                 return html +
                     `[${part.text.replace(/[[\\\]]/g, c => "\\" + c)}](${makeGenericPermalink(part.resourceId)})`;
+            case "emote":
+                return html + `![${part.code}](emote:${part.mxc})`;
         }
     }, "");
 }
@@ -67,6 +69,9 @@ export function htmlSerializeIfNeeded(model: EditorModel, {forceHTML = false} = 
 
     const parser = new Markdown(md);
     if (!parser.isPlainText() || forceHTML) {
+        let html = parser.toHTML();
+        // we need to make emotes nicer
+        html = html.replace(/<img +src="emote:([^"]+)" +alt="([^"]+)"/gi, '<img data-mx-emoticon src="$1" height="32" alt="$2" title="$2" vertical-align="middle"');
         // feed Markdown output to HTML parser
         const phtml = cheerio.load(parser.toHTML(),
             { _useHtmlParser2: true, decodeEntities: false })
@@ -99,6 +104,8 @@ export function textSerialize(model: EditorModel) {
             case "room-pill":
             case "user-pill":
                 return text + `${part.text}`;
+            case "emote":
+                return text + part.code;
         }
     }, "");
 }
