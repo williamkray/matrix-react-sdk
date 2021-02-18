@@ -81,6 +81,7 @@
     "Add Emote": "Add Emote",
     "Room Emotes": "Room Emotes",
     "New Emote": "New Emote",
+    "Upload Image": "Upload Image",
     "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.": "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.",
     "%(senderName)s ended the call.": "%(senderName)s ended the call.",
     "Error": "Error",
