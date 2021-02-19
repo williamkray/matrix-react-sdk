@@ -84,13 +84,6 @@ interface IPillPart extends Omit<IBasePart, "type" | "resourceId"> {
     resourceId: string;
 }
 
-interface ISerializedEmotePart {
-    type: Type.Emote;
-    code: string;
-    mxc: string;
-    text: string;
-}
-
 interface IEmotePart extends Omit<IBasePart, "type" | "resourceId"> {
     type: Type.Emote;
     mxc: string;
