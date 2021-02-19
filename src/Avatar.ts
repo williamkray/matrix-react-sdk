@@ -112,6 +112,16 @@ export function defaultAvatarUrlForString(s: string): string {
     return dataUrl;
 }
 
+export function avatarUrlForMxc(mxc, width, height, resizeMethod) {
+    const url = getHttpUriForMxc(
+        MatrixClientPeg.get().getHomeserverUrl(), mxc,
+        Math.floor(width * window.devicePixelRatio),
+        Math.floor(height * window.devicePixelRatio),
+        resizeMethod,
+    );
+    return url;
+}
+
 /**
  * returns the first (non-sigil) character of 'name',
  * converted to uppercase
