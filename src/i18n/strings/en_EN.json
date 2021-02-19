@@ -2632,6 +2632,7 @@
     "Add Emote": "Add Emote",
     "Room Emotes": "Room Emotes",
     "New Emote": "New Emote",
+    "Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. You can use emotes in a room by typing a ':' and then typing in the emote name.": "Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. You can use emotes in a room by typing a ':' and then typing in the emote name.",
     "Upload Image": "Upload Image",
     "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.": "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.",
     "Notify the whole room": "Notify the whole room",
