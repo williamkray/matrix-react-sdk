@@ -91,6 +91,14 @@ interface ISerializedEmotePart {
     text: string;
 }
 
+interface IEmotePart extends Omit<IBasePart, "type" | "resourceId"> {
+    type: Type.Emote;
+    mxc: string;
+    code: string;
+}
+
+export type Part = IBasePart | IPillCandidatePart | IPillPart | IEmotePart;
+
 abstract class BasePart {
     protected _text: string;
 
