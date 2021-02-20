@@ -84,6 +84,7 @@
     "New Emote": "New Emote",
     "Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. You can use emotes in a room by typing a ':' and then typing in the emote name.": "Add a new emote with 'New Emote'. Use the 'Upload Image' button to set emote images. You can use emotes in a room by typing a ':' and then typing in the emote name.",
     "Upload Image": "Upload Image",
+    "Image URL": "Image URL",
     "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.": "This is a list of all custom emoji available in this room. To be able to use them in other rooms, enable the switch below.",
     "%(senderName)s ended the call.": "%(senderName)s ended the call.",
     "Error": "Error",
