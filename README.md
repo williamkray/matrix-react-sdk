@@ -1,3 +1,14 @@
+IMPORTED CHANGES
+================
+
+this code has the following changes merged in:
+
++ [tulir's compact-reply-rendering PR](https://github.com/maunium/matrix-react-sdk/tree/compact-reply-rendering)
++ [ponies.im changes for custom emotes](https://github.com/williamkray/matrix-react-sdk/tree/wreck/v3.14.0-custom-emoji)
++ [my changes for scaling down image/video thumbnailing](https://github.com/williamkray/matrix-react-sdk/tree/wreck/small-image-and-video-thumbnails)
+
+these changes are merged into the latest STABLE release, not develop! updates should be made to each stable release.
+
 matrix-react-sdk
 ================
 
