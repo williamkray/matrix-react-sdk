@@ -19,7 +19,6 @@ import * as Roles from './Roles';
 import {isValid3pidInvite} from "./RoomInvite";
 import SettingsStore from "./settings/SettingsStore";
 import {ALL_RULE_TYPES, ROOM_RULE_TYPES, SERVER_RULE_TYPES, USER_RULE_TYPES} from "./mjolnir/BanList";
-import {WIDGET_LAYOUT_EVENT_TYPE} from "./stores/widgets/WidgetLayoutStore";
 
 function textForMemberEvent(ev) {
     // XXX: SYJS-16 "sender is sometimes null for join messages"
@@ -478,11 +477,6 @@ function textForWidgetEvent(event) {
     }
 }
 
-function textForWidgetLayoutEvent(event) {
-    const senderName = event.sender?.name || event.getSender();
-    return _t("%(senderName)s has updated the widget layout", {senderName});
-}
-
 function textForMjolnirEvent(event) {
     const senderName = event.getSender();
     const {entity: prevEntity} = event.getPrevContent();
@@ -589,7 +583,6 @@ const stateHandlers = {
 
     // TODO: Enable support for m.widget event type (https://github.com/vector-im/element-web/issues/13111)
     'im.vector.modular.widgets': textForWidgetEvent,
-    [WIDGET_LAYOUT_EVENT_TYPE]: textForWidgetLayoutEvent,
 };
 
 // Add all the Mjolnir stuff to the renderer

@@ -197,9 +197,6 @@ limitations under the License.
 
         .mx_RoomSublist_resizerHandles {
             flex: 0 0 4px;
-            display: flex;
-            justify-content: center;
-            width: 100%;
         }
 
         // Class name comes from the ResizableBox component
@@ -210,12 +207,17 @@ limitations under the License.
             border-radius: 3px;
 
             // Override styles from library
-            max-width: 64px;
+            width: unset !important;
             height: 4px !important; // Update RESIZE_HANDLE_HEIGHT if this changes
 
             // This is positioned directly below the 'show more' button.
-            position: relative !important;
+            position: absolute;
             bottom: 0 !important; // override from library
+
+            // Together, these make the bar 64px wide
+            // These are also overridden from the library
+            left: calc(50% - 32px) !important;
+            right: calc(50% - 32px) !important;
         }
 
         &:hover, &.mx_RoomSublist_hasMenuOpen {

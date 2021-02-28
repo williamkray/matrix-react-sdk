@@ -27,8 +27,8 @@ import {Room} from "matrix-js-sdk/src/models/room";
 import {WidgetType} from "../widgets/WidgetType";
 import {objectClone} from "./objects";
 import {_t} from "../languageHandler";
-import {Capability, IWidget, IWidgetData, MatrixCapabilities} from "matrix-widget-api";
-import {IApp} from "../stores/WidgetStore";
+import {Capability, IWidgetData, MatrixCapabilities} from "matrix-widget-api";
+import {IApp} from "../stores/WidgetStore"; // TODO @@
 
 // How long we wait for the state event echo to come back from the server
 // before waitFor[Room/User]Widget rejects its promise
@@ -297,16 +297,6 @@ export default class WidgetUtils {
             content = {};
         }
 
-        return WidgetUtils.setRoomWidgetContent(roomId, widgetId, content);
-    }
-
-    static setRoomWidgetContent(
-        roomId: string,
-        widgetId: string,
-        content: IWidget,
-    ) {
-        const addingWidget = !!content.url;
-
         WidgetEchoStore.setRoomWidgetEcho(roomId, widgetId, content);
 
         const client = MatrixClientPeg.get();
@@ -477,7 +467,6 @@ export default class WidgetUtils {
             'userId=$matrix_user_id',
             'roomId=$matrix_room_id',
             'theme=$theme',
-            'roomName=$roomName',
         ];
         if (opts.auth) {
             queryStringParts.push(`auth=${opts.auth}`);

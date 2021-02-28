@@ -297,19 +297,19 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
         } else if (this.state.restoreError) {
             if (this.state.restoreError.errcode === MatrixClient.RESTORE_BACKUP_ERROR_BAD_KEY) {
                 if (this.state.restoreType === RESTORE_TYPE_RECOVERYKEY) {
-                    title = _t("Security Key mismatch");
+                    title = _t("Recovery key mismatch");
                     content = <div>
                         <p>{_t(
-                            "Backup could not be decrypted with this Security Key: " +
-                            "please verify that you entered the correct Security Key.",
+                            "Backup could not be decrypted with this recovery key: " +
+                            "please verify that you entered the correct recovery key.",
                         )}</p>
                     </div>;
                 } else {
-                    title = _t("Incorrect Security Phrase");
+                    title = _t("Incorrect recovery passphrase");
                     content = <div>
                         <p>{_t(
-                            "Backup could not be decrypted with this Security Phrase: " +
-                            "please verify that you entered the correct Security Phrase.",
+                            "Backup could not be decrypted with this recovery passphrase: " +
+                            "please verify that you entered the correct recovery passphrase.",
                         )}</p>
                     </div>;
                 }
@@ -342,7 +342,7 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
         } else if (backupHasPassphrase && !this.state.forceRecoveryKey) {
             const DialogButtons = sdk.getComponent('views.elements.DialogButtons');
             const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
-            title = _t("Enter Security Phrase");
+            title = _t("Enter recovery passphrase");
             content = <div>
                 <p>{_t(
                     "<b>Warning</b>: you should only set up key backup " +
@@ -351,7 +351,7 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                 )}</p>
                 <p>{_t(
                     "Access your secure message history and set up secure " +
-                    "messaging by entering your Security Phrase.",
+                    "messaging by entering your recovery passphrase.",
                 )}</p>
 
                 <form className="mx_RestoreKeyBackupDialog_primaryContainer">
@@ -371,8 +371,8 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                     />
                 </form>
                 {_t(
-                    "If you've forgotten your Security Phrase you can "+
-                    "<button1>use your Security Key</button1> or " +
+                    "If you've forgotten your recovery passphrase you can "+
+                    "<button1>use your recovery key</button1> or " +
                     "<button2>set up new recovery options</button2>"
                 , {}, {
                     button1: s => <AccessibleButton className="mx_linkButton"
@@ -390,7 +390,7 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                 })}
             </div>;
         } else {
-            title = _t("Enter Security Key");
+            title = _t("Enter recovery key");
             const DialogButtons = sdk.getComponent('views.elements.DialogButtons');
             const AccessibleButton = sdk.getComponent('elements.AccessibleButton');
 
@@ -399,11 +399,11 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                 keyStatus = <div className="mx_RestoreKeyBackupDialog_keyStatus"></div>;
             } else if (this.state.recoveryKeyValid) {
                 keyStatus = <div className="mx_RestoreKeyBackupDialog_keyStatus">
-                    {"\uD83D\uDC4D "}{_t("This looks like a valid Security Key!")}
+                    {"\uD83D\uDC4D "}{_t("This looks like a valid recovery key!")}
                 </div>;
             } else {
                 keyStatus = <div className="mx_RestoreKeyBackupDialog_keyStatus">
-                    {"\uD83D\uDC4E "}{_t("Not a valid Security Key")}
+                    {"\uD83D\uDC4E "}{_t("Not a valid recovery key")}
                 </div>;
             }
 
@@ -415,7 +415,7 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                 )}</p>
                 <p>{_t(
                     "Access your secure message history and set up secure " +
-                    "messaging by entering your Security Key.",
+                    "messaging by entering your recovery key.",
                 )}</p>
 
                 <div className="mx_RestoreKeyBackupDialog_primaryContainer">
@@ -434,7 +434,7 @@ export default class RestoreKeyBackupDialog extends React.PureComponent {
                     />
                 </div>
                 {_t(
-                    "If you've forgotten your Security Key you can "+
+                    "If you've forgotten your recovery key you can "+
                     "<button>set up new recovery options</button>"
                 , {}, {
                     button: s => <AccessibleButton className="mx_linkButton"

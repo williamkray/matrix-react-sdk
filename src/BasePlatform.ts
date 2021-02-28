@@ -30,7 +30,6 @@ import {idbLoad, idbSave, idbDelete} from "./utils/StorageManager";
 
 export const SSO_HOMESERVER_URL_KEY = "mx_sso_hs_url";
 export const SSO_ID_SERVER_URL_KEY = "mx_sso_is_url";
-export const SSO_IDP_ID_KEY = "mx_sso_idp_id";
 
 export enum UpdateCheckStatus {
     Checking = "CHECKING",
@@ -57,7 +56,7 @@ export default abstract class BasePlatform {
         this.startUpdateCheck = this.startUpdateCheck.bind(this);
     }
 
-    abstract getConfig(): Promise<{}>;
+    abstract async getConfig(): Promise<{}>;
 
     abstract getDefaultDeviceDisplayName(): string;
 
@@ -258,9 +257,6 @@ export default abstract class BasePlatform {
         localStorage.setItem(SSO_HOMESERVER_URL_KEY, mxClient.getHomeserverUrl());
         if (mxClient.getIdentityServerUrl()) {
             localStorage.setItem(SSO_ID_SERVER_URL_KEY, mxClient.getIdentityServerUrl());
-        }
-        if (idpId) {
-            localStorage.setItem(SSO_IDP_ID_KEY, idpId);
         }
         const callbackUrl = this.getSSOCallbackUrl(fragmentAfterLogin);
         window.location.href = mxClient.getSsoLoginUrl(callbackUrl.toString(), loginType, idpId); // redirect to SSO

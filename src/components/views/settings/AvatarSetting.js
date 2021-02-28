@@ -65,7 +65,7 @@ const AvatarSetting = ({avatarUrl, avatarAltText, avatarName, uploadAvatar, remo
 
     const avatarClasses = classNames({
         "mx_AvatarSetting_avatar": true,
-        "mx_AvatarSetting_avatar_hovering": isHovering && uploadAvatar,
+        "mx_AvatarSetting_avatar_hovering": isHovering,
     });
     return <div className={avatarClasses}>
         {avatarElement}

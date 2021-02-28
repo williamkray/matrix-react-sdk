@@ -169,7 +169,7 @@ export default class AccountSettingsHandler extends MatrixClientBackedSettingsHa
 
     public isSupported(): boolean {
         const cli = MatrixClientPeg.get();
-        return cli !== undefined && cli !== null && !cli.isGuest();
+        return cli !== undefined && cli !== null;
     }
 
     private getSettings(eventType = "im.vector.web.settings"): any { // TODO: [TS] Types on return

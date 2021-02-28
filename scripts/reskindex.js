@@ -1,30 +1,29 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
-const util = require('util');
-const args = require('minimist')(process.argv);
-const chokidar = require('chokidar');
+var fs = require('fs');
+var path = require('path');
+var glob = require('glob');
+var args = require('minimist')(process.argv);
+var chokidar = require('chokidar');
 
-const componentIndex = path.join('src', 'component-index.js');
-const componentIndexTmp = componentIndex+".tmp";
-const componentsDir = path.join('src', 'components');
-const componentJsGlob = '**/*.js';
-const componentTsGlob = '**/*.tsx';
-let prevFiles = [];
+var componentIndex = path.join('src', 'component-index.js');
+var componentIndexTmp = componentIndex+".tmp";
+var componentsDir = path.join('src', 'components');
+var componentJsGlob = '**/*.js';
+var componentTsGlob = '**/*.tsx';
+var prevFiles = [];
 
-async function reskindex() {
-    const jsFiles = glob.sync(componentJsGlob, {cwd: componentsDir}).sort();
-    const tsFiles = glob.sync(componentTsGlob, {cwd: componentsDir}).sort();
-    const files = [...tsFiles, ...jsFiles];
+function reskindex() {
+    var jsFiles = glob.sync(componentJsGlob, {cwd: componentsDir}).sort();
+    var tsFiles = glob.sync(componentTsGlob, {cwd: componentsDir}).sort();
+    var files = [...tsFiles, ...jsFiles];
     if (!filesHaveChanged(files, prevFiles)) {
         return;
     }
     prevFiles = files;
 
-    const header = args.h || args.header;
+    var header = args.h || args.header;
 
-    const strm = fs.createWriteStream(componentIndexTmp);
+    var strm = fs.createWriteStream(componentIndexTmp);
 
     if (header) {
        strm.write(fs.readFileSync(header));
@@ -39,11 +38,11 @@ async function reskindex() {
     strm.write(" */\n\n");
     strm.write("let components = {};\n");
 
-    for (let i = 0; i < files.length; ++i) {
-        const file = files[i].replace('.js', '').replace('.tsx', '');
+    for (var i = 0; i < files.length; ++i) {
+        var file = files[i].replace('.js', '').replace('.tsx', '');
 
-        const moduleName = (file.replace(/\//g, '.'));
-        const importName = moduleName.replace(/\./g, "$");
+        var moduleName = (file.replace(/\//g, '.'));
+        var importName = moduleName.replace(/\./g, "$");
 
         strm.write("import " + importName + " from './components/" + file + "';\n");
         strm.write(importName + " && (components['"+moduleName+"'] = " + importName + ");");
@@ -52,10 +51,9 @@ async function reskindex() {
     }
 
     strm.write("export {components};\n");
-    // Ensure the file has been fully written to disk before proceeding
-    await util.promisify(strm.end);
+    strm.end();
     fs.rename(componentIndexTmp, componentIndex, function(err) {
-        if (err) {
+        if(err) {
             console.error("Error moving new index into place: " + err);
         } else {
             console.log('Reskindex: completed');
@@ -69,7 +67,7 @@ function filesHaveChanged(files, prevFiles) {
         return true;
     }
     // Check for name changes
-    for (let i = 0; i < files.length; i++) {
+    for (var i = 0; i < files.length; i++) {
         if (prevFiles[i] !== files[i]) {
             return true;
         }
@@ -83,7 +81,7 @@ if (!args.w) {
     return;
 }
 
-let watchDebouncer = null;
+var watchDebouncer = null;
 chokidar.watch(path.join(componentsDir, componentJsGlob)).on('all', (event, path) => {
     if (path === componentIndex) return;
     if (watchDebouncer) clearTimeout(watchDebouncer);

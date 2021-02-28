@@ -33,7 +33,6 @@ interface IProps {
     previousPhase?: RightPanelPhases;
     closeLabel?: string;
     onClose?(): void;
-    refireParams?;
 }
 
 interface IGroupProps {
@@ -57,7 +56,6 @@ const BaseCard: React.FC<IProps> = ({
     withoutScrollContainer,
     previousPhase,
     children,
-    refireParams,
 }) => {
     let backButton;
     if (previousPhase) {
@@ -65,7 +63,6 @@ const BaseCard: React.FC<IProps> = ({
             defaultDispatcher.dispatch<SetRightPanelPhasePayload>({
                 action: Action.SetRightPanelPhase,
                 phase: previousPhase,
-                refireParams: refireParams,
             });
         };
         backButton = <AccessibleButton className="mx_BaseCard_back" onClick={onBackClick} title={_t("Back")} />;

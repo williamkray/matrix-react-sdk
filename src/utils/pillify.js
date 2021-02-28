@@ -1,5 +1,5 @@
 /*
-Copyright 2019, 2020, 2021 The Matrix.org Foundation C.I.C.
+Copyright 2019, 2020 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ import ReactDOM from 'react-dom';
 import {MatrixClientPeg} from '../MatrixClientPeg';
 import SettingsStore from "../settings/SettingsStore";
 import {PushProcessor} from 'matrix-js-sdk/src/pushprocessor';
-import Pill from "../components/views/elements/Pill";
-import { parseAppLocalLink } from "./permalinks/Permalinks";
+import * as sdk from '../index';
 
 /**
  * Recurses depth-first through a DOM tree, converting matrix.to links
@@ -44,10 +43,10 @@ export function pillifyLinks(nodes, mxEvent, pills) {
 
         if (node.tagName === "A" && node.getAttribute("href")) {
             const href = node.getAttribute("href");
-            const parts = parseAppLocalLink(href);
+
             // If the link is a (localised) matrix.to link, replace it with a pill
-            // We don't want to pill event permalinks, so those are ignored.
-            if (parts && !parts.eventId) {
+            const Pill = sdk.getComponent('elements.Pill');
+            if (Pill.isMessagePillUrl(href)) {
                 const pillContainer = document.createElement('span');
 
                 const pill = <Pill
@@ -73,6 +72,8 @@ export function pillifyLinks(nodes, mxEvent, pills) {
             // to clear the pills from the last run of pillifyLinks
             !node.parentElement.classList.contains("mx_AtRoomPill")
         ) {
+            const Pill = sdk.getComponent('elements.Pill');
+
             let currentTextNode = node;
             const roomNotifTextNodes = [];
 

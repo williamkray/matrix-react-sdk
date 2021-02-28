@@ -24,7 +24,6 @@ import {wantsDateSeparator} from '../../../DateUtils';
 import {MatrixEvent} from 'matrix-js-sdk';
 import {makeUserPermalink, RoomPermalinkCreator} from "../../../utils/permalinks/Permalinks";
 import SettingsStore from "../../../settings/SettingsStore";
-import {LayoutPropType} from "../../../settings/Layout";
 import escapeHtml from "escape-html";
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
 import {Action} from "../../../dispatcher/actions";
@@ -43,7 +42,7 @@ export default class ReplyThread extends React.Component {
         onHeightChanged: PropTypes.func.isRequired,
         permalinkCreator: PropTypes.instanceOf(RoomPermalinkCreator).isRequired,
         // Specifies which layout to use.
-        layout: LayoutPropType,
+        useIRCLayout: PropTypes.bool,
     };
 
     static contextType = MatrixClientContext;
@@ -210,7 +209,7 @@ export default class ReplyThread extends React.Component {
         };
     }
 
-    static makeThread(parentEv, onHeightChanged, permalinkCreator, ref, layout) {
+    static makeThread(parentEv, onHeightChanged, permalinkCreator, ref, useIRCLayout) {
         if (!ReplyThread.getParentEventId(parentEv)) {
             return <div className="mx_ReplyThread_wrapper_empty" />;
         }
@@ -219,7 +218,7 @@ export default class ReplyThread extends React.Component {
             onHeightChanged={onHeightChanged}
             ref={ref}
             permalinkCreator={permalinkCreator}
-            layout={layout}
+            useIRCLayout={useIRCLayout}
         />;
     }
 
@@ -387,7 +386,7 @@ export default class ReplyThread extends React.Component {
                     permalinkCreator={this.props.permalinkCreator}
                     isRedacted={ev.isRedacted()}
                     isTwelveHour={SettingsStore.getValue("showTwelveHourTimestamps")}
-                    layout={this.props.layout}
+                    useIRCLayout={this.props.useIRCLayout}
                     enableFlair={SettingsStore.getValue(UIFeature.Flair)}
                     replacingEventId={ev.replacingEventId()}
                 />

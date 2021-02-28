@@ -165,9 +165,6 @@ export function avatarUrlForRoom(room: Room, width: number, height: number, resi
         return explicitRoomAvatar;
     }
 
-    // space rooms cannot be DMs so skip the rest
-    if (room.isSpaceRoom()) return null;
-
     let otherMember = null;
     const otherUserId = DMRoomMap.shared().getUserIdForRoomId(room.roomId);
     if (otherUserId) {

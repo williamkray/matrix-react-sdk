@@ -37,14 +37,13 @@ import SettingsStore from "../../../settings/SettingsStore";
 import TextWithTooltip from "../elements/TextWithTooltip";
 import WidgetAvatar from "../avatars/WidgetAvatar";
 import AccessibleTooltipButton from "../elements/AccessibleTooltipButton";
-import WidgetStore, {IApp} from "../../../stores/WidgetStore";
+import WidgetStore, {IApp, MAX_PINNED} from "../../../stores/WidgetStore";
 import { E2EStatus } from "../../../utils/ShieldUtils";
 import RoomContext from "../../../contexts/RoomContext";
 import {UIFeature} from "../../../settings/UIFeature";
 import {ChevronFace, ContextMenuTooltipButton, useContextMenu} from "../../structures/ContextMenu";
 import WidgetContextMenu from "../context_menus/WidgetContextMenu";
 import {useRoomMemberCount} from "../../../hooks/useRoomMembers";
-import { Container, MAX_PINNED, WidgetLayoutStore } from "../../../stores/widgets/WidgetLayoutStore";
 
 interface IProps {
     room: Room;
@@ -77,9 +76,8 @@ export const useWidgets = (room: Room) => {
         setApps([...WidgetStore.instance.getApps(room.roomId)]);
     }, [room]);
 
-    useEffect(updateApps, [room, updateApps]);
+    useEffect(updateApps, [room]);
     useEventEmitter(WidgetStore.instance, room.roomId, updateApps);
-    useEventEmitter(WidgetLayoutStore.instance, WidgetLayoutStore.emissionForRoom(room), updateApps);
 
     return apps;
 };
@@ -104,10 +102,10 @@ const AppRow: React.FC<IAppRowProps> = ({ app, room }) => {
         });
     };
 
-    const isPinned = WidgetLayoutStore.instance.isInContainer(room, app, Container.Top);
+    const isPinned = WidgetStore.instance.isPinned(room.roomId, app.id);
     const togglePin = isPinned
-        ? () => { WidgetLayoutStore.instance.moveToContainer(room, app, Container.Right); }
-        : () => { WidgetLayoutStore.instance.moveToContainer(room, app, Container.Top); };
+        ? () => { WidgetStore.instance.unpinWidget(room.roomId, app.id); }
+        : () => { WidgetStore.instance.pinWidget(room.roomId, app.id); };
 
     const [menuDisplayed, handle, openMenu, closeMenu] = useContextMenu<HTMLDivElement>();
     let contextMenu;
@@ -122,7 +120,7 @@ const AppRow: React.FC<IAppRowProps> = ({ app, room }) => {
         />;
     }
 
-    const cannotPin = !isPinned && !WidgetLayoutStore.instance.canAddToContainer(room, Container.Top);
+    const cannotPin = !isPinned && !WidgetStore.instance.canPin(room.roomId, app.id);
 
     let pinTitle: string;
     if (cannotPin) {
@@ -186,18 +184,9 @@ const AppsSection: React.FC<IAppsSectionProps> = ({ room }) => {
         }
     };
 
-    let copyLayoutBtn = null;
-    if (apps.length > 0 && WidgetLayoutStore.instance.canCopyLayoutToRoom(room)) {
-        copyLayoutBtn = (
-            <AccessibleButton kind="link" onClick={() => WidgetLayoutStore.instance.copyLayoutToRoom(room)}>
-                { _t("Set my room layout for everyone") }
-            </AccessibleButton>
-        );
-    }
-
     return <Group className="mx_RoomSummaryCard_appsGroup" title={_t("Widgets")}>
         { apps.map(app => <AppRow key={app.id} app={app} room={room} />) }
-        { copyLayoutBtn }
+
         <AccessibleButton kind="link" onClick={onManageIntegrations}>
             { apps.length > 0 ? _t("Edit widgets, bridges & bots") : _t("Add widgets, bridges & bots") }
         </AccessibleButton>

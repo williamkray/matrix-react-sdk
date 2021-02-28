@@ -23,11 +23,9 @@ import classNames from 'classnames';
 import shouldHideEvent from '../../shouldHideEvent';
 import {wantsDateSeparator} from '../../DateUtils';
 import * as sdk from '../../index';
-import dis from "../../dispatcher/dispatcher";
 
 import {MatrixClientPeg} from '../../MatrixClientPeg';
 import SettingsStore from '../../settings/SettingsStore';
-import {Layout, LayoutPropType} from "../../settings/Layout";
 import {_t} from "../../languageHandler";
 import {haveTileForEvent} from "../views/rooms/EventTile";
 import {textForEvent} from "../../TextForEvent";
@@ -137,13 +135,14 @@ export default class MessagePanel extends React.Component {
         // whether to show reactions for an event
         showReactions: PropTypes.bool,
 
-        // which layout to use
-        layout: LayoutPropType,
+        // whether to use the irc layout
+        useIRCLayout: PropTypes.bool,
 
         // whether or not to show flair at all
         enableFlair: PropTypes.bool,
     };
 
+    // Force props to be loaded for useIRCLayout
     constructor(props) {
         super(props);
 
@@ -208,13 +207,11 @@ export default class MessagePanel extends React.Component {
 
     componentDidMount() {
         this._isMounted = true;
-        this.dispatcherRef = dis.register(this.onAction);
     }
 
     componentWillUnmount() {
         this._isMounted = false;
         SettingsStore.unwatchSetting(this._showTypingNotificationsWatcherRef);
-        dis.unregister(this.dispatcherRef);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -224,14 +221,6 @@ export default class MessagePanel extends React.Component {
             this.setState({
                 ghostReadMarkers,
             });
-        }
-    }
-
-    onAction = (payload) => {
-        switch (payload.action) {
-            case "scroll_to_bottom":
-                this.scrollToBottom();
-                break;
         }
     }
 
@@ -623,7 +612,7 @@ export default class MessagePanel extends React.Component {
                         isSelectedEvent={highlight}
                         getRelationsForEvent={this.props.getRelationsForEvent}
                         showReactions={this.props.showReactions}
-                        layout={this.props.layout}
+                        useIRCLayout={this.props.useIRCLayout}
                         enableFlair={this.props.enableFlair}
                     />
                 </TileErrorBoundary>
@@ -821,7 +810,7 @@ export default class MessagePanel extends React.Component {
         }
 
         let ircResizer = null;
-        if (this.props.layout == Layout.IRC) {
+        if (this.props.useIRCLayout) {
             ircResizer = <IRCTimelineProfileResizer
                 minWidth={20}
                 maxWidth={600}

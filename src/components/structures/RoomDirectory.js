@@ -477,7 +477,7 @@ export default class RoomDirectory extends React.Component {
         dis.dispatch(payload);
     }
 
-    createRoomCells(room) {
+    getRow(room) {
         const client = MatrixClientPeg.get();
         const clientRoom = client.getRoom(room.room_id);
         const hasJoinedRoom = clientRoom && clientRoom.getMyMembership() === "join";
@@ -487,11 +487,7 @@ export default class RoomDirectory extends React.Component {
         let previewButton;
         let joinOrViewButton;
 
-        // Element Web currently does not allow guests to join rooms, so we
-        // instead show them preview buttons for all rooms. If the room is not
-        // world readable, a modal will appear asking you to register first. If
-        // it is readable, the preview appears as normal.
-        if (!hasJoinedRoom && (room.world_readable || isGuest)) {
+        if (room.world_readable && !hasJoinedRoom) {
             previewButton = (
                 <AccessibleButton kind="secondary" onClick={(ev) => this.onPreviewClick(ev, room)}>{_t("Preview")}</AccessibleButton>
             );
@@ -500,7 +496,7 @@ export default class RoomDirectory extends React.Component {
             joinOrViewButton = (
                 <AccessibleButton kind="secondary" onClick={(ev) => this.onViewClick(ev, room)}>{_t("View")}</AccessibleButton>
             );
-        } else if (!isGuest) {
+        } else if (!isGuest || room.guest_can_join) {
             joinOrViewButton = (
                 <AccessibleButton kind="primary" onClick={(ev) => this.onJoinClick(ev, room)}>{_t("Join")}</AccessibleButton>
             );
@@ -523,56 +519,31 @@ export default class RoomDirectory extends React.Component {
                                 MatrixClientPeg.get().getHomeserverUrl(),
                                 room.avatar_url, 32, 32, "crop",
                             );
-        return [
-            <div key={ `${room.room_id}_avatar` }
+        return (
+            <tr key={ room.room_id }
                 onClick={(ev) => this.onRoomClicked(room, ev)}
                 // cancel onMouseDown otherwise shift-clicking highlights text
                 onMouseDown={(ev) => {ev.preventDefault();}}
-                className="mx_RoomDirectory_roomAvatar"
             >
-                <BaseAvatar width={32} height={32} resizeMethod='crop'
-                    name={ name } idName={ name }
-                    url={ avatarUrl }
-                />
-            </div>,
-            <div key={ `${room.room_id}_description` }
-                onClick={(ev) => this.onRoomClicked(room, ev)}
-                // cancel onMouseDown otherwise shift-clicking highlights text
-                onMouseDown={(ev) => {ev.preventDefault();}}
-                className="mx_RoomDirectory_roomDescription"
-            >
-                <div className="mx_RoomDirectory_name">{ name }</div>&nbsp;
-                <div className="mx_RoomDirectory_topic"
-                    onClick={ (ev) => { ev.stopPropagation(); } }
-                    dangerouslySetInnerHTML={{ __html: topic }}
-                />
-                <div className="mx_RoomDirectory_alias">{ get_display_alias_for_room(room) }</div>
-            </div>,
-            <div key={ `${room.room_id}_memberCount` }
-                onClick={(ev) => this.onRoomClicked(room, ev)}
-                // cancel onMouseDown otherwise shift-clicking highlights text
-                onMouseDown={(ev) => {ev.preventDefault();}}
-                className="mx_RoomDirectory_roomMemberCount"
-            >
-                { room.num_joined_members }
-            </div>,
-            <div key={ `${room.room_id}_preview` }
-                onClick={(ev) => this.onRoomClicked(room, ev)}
-                // cancel onMouseDown otherwise shift-clicking highlights text
-                onMouseDown={(ev) => {ev.preventDefault();}}
-                className="mx_RoomDirectory_preview"
-            >
-                {previewButton}
-            </div>,
-            <div key={ `${room.room_id}_join` }
-                onClick={(ev) => this.onRoomClicked(room, ev)}
-                // cancel onMouseDown otherwise shift-clicking highlights text
-                onMouseDown={(ev) => {ev.preventDefault();}}
-                className="mx_RoomDirectory_join"
-            >
-                {joinOrViewButton}
-            </div>,
-        ];
+                <td className="mx_RoomDirectory_roomAvatar">
+                    <BaseAvatar width={32} height={32} resizeMethod='crop'
+                        name={ name } idName={ name }
+                        url={ avatarUrl } />
+                </td>
+                <td className="mx_RoomDirectory_roomDescription">
+                    <div className="mx_RoomDirectory_name">{ name }</div>&nbsp;
+                    <div className="mx_RoomDirectory_topic"
+                        onClick={ (ev) => { ev.stopPropagation(); } }
+                        dangerouslySetInnerHTML={{ __html: topic }} />
+                    <div className="mx_RoomDirectory_alias">{ get_display_alias_for_room(room) }</div>
+                </td>
+                <td className="mx_RoomDirectory_roomMemberCount">
+                    { room.num_joined_members }
+                </td>
+                <td className="mx_RoomDirectory_preview">{previewButton}</td>
+                <td className="mx_RoomDirectory_join">{joinOrViewButton}</td>
+            </tr>
+        );
     }
 
     collectScrollPanel = (element) => {
@@ -631,8 +602,7 @@ export default class RoomDirectory extends React.Component {
         } else if (this.state.protocolsLoading) {
             content = <Loader />;
         } else {
-            const cells = (this.state.publicRooms || [])
-                .reduce((cells, room) => cells.concat(this.createRoomCells(room)), [],);
+            const rows = (this.state.publicRooms || []).map(room => this.getRow(room));
             // we still show the scrollpanel, at least for now, because
             // otherwise we don't fetch more because we don't get a fill
             // request from the scrollpanel because there isn't one
@@ -643,12 +613,14 @@ export default class RoomDirectory extends React.Component {
             }
 
             let scrollpanel_content;
-            if (cells.length === 0 && !this.state.loading) {
+            if (rows.length === 0 && !this.state.loading) {
                 scrollpanel_content = <i>{ _t('No rooms to show') }</i>;
             } else {
-                scrollpanel_content = <div className="mx_RoomDirectory_table">
-                    { cells }
-                </div>;
+                scrollpanel_content = <table className="mx_RoomDirectory_table">
+                    <tbody>
+                        { rows }
+                    </tbody>
+                </table>;
             }
             const ScrollPanel = sdk.getComponent("structures.ScrollPanel");
             content = <ScrollPanel ref={this.collectScrollPanel}

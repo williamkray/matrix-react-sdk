@@ -42,7 +42,7 @@ describe("mkClient self-test", function() {
 
 describe("shieldStatusForMembership self-trust behaviour", function() {
     beforeAll(() => {
-        DMRoomMap.sharedInstance = {
+        DMRoomMap._sharedInstance = {
             getUserIdForRoomId: (roomId) => roomId === "DM" ? "@any:h" : null,
         };
     });

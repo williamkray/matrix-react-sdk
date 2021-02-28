@@ -48,10 +48,6 @@ export class CommunityPrototypeStore extends AsyncStoreWithClient<IState> {
         return CommunityPrototypeStore.internalInstance;
     }
 
-    public static getUpdateEventName(roomId: string): string {
-        return `${UPDATE_EVENT}:${roomId}`;
-    }
-
     public getSelectedCommunityId(): string {
         if (SettingsStore.getValue("feature_communities_v2_prototypes")) {
             return GroupFilterOrderStore.getSelectedTags()[0];
@@ -138,8 +134,7 @@ export class CommunityPrototypeStore extends AsyncStoreWithClient<IState> {
             }
         } else if (payload.action === "MatrixActions.accountData") {
             if (payload.event_type.startsWith("im.vector.group_info.")) {
-                const roomId = payload.event_type.substring("im.vector.group_info.".length);
-                this.emit(CommunityPrototypeStore.getUpdateEventName(roomId), roomId);
+                this.emit(UPDATE_EVENT, payload.event_type.substring("im.vector.group_info.".length));
             }
         } else if (payload.action === "select_tag") {
             // Automatically select the general chat when switching communities
@@ -172,7 +167,7 @@ export class CommunityPrototypeStore extends AsyncStoreWithClient<IState> {
             if (getEffectiveMembership(myMember.membership) === EffectiveMembership.Invite) {
                 // Fake an update for anything that might have started listening before the invite
                 // data was available (eg: RoomPreviewBar after a refresh)
-                this.emit(CommunityPrototypeStore.getUpdateEventName(room.roomId), room.roomId);
+                this.emit(UPDATE_EVENT, room.roomId);
             }
         }
     }

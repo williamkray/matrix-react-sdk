@@ -34,7 +34,6 @@ import InteractiveAuthDialog from '../InteractiveAuthDialog';
 export default class CreateCrossSigningDialog extends React.PureComponent {
     static propTypes = {
         accountPassword: PropTypes.string,
-        tokenLogin: PropTypes.bool,
     };
 
     constructor(props) {
@@ -97,9 +96,6 @@ export default class CreateCrossSigningDialog extends React.PureComponent {
                 user: MatrixClientPeg.get().getUserId(),
                 password: this.state.accountPassword,
             });
-        } else if (this.props.tokenLogin) {
-            // We are hoping the grace period is active
-            await makeRequest({});
         } else {
             const dialogAesthetics = {
                 [SSOAuthEntry.PHASE_PREAUTH]: {
@@ -148,12 +144,6 @@ export default class CreateCrossSigningDialog extends React.PureComponent {
             });
             this.props.onFinished(true);
         } catch (e) {
-            if (this.props.tokenLogin) {
-                // ignore any failures, we are relying on grace period here
-                this.props.onFinished();
-                return;
-            }
-
             this.setState({ error: e });
             console.error("Error bootstrapping cross-signing", e);
         }

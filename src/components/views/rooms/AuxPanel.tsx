@@ -19,6 +19,7 @@ import {MatrixClientPeg} from "../../../MatrixClientPeg";
 import { Room } from 'matrix-js-sdk/src/models/room'
 import * as sdk from '../../../index';
 import dis from "../../../dispatcher/dispatcher";
+import * as ObjectUtils from '../../../ObjectUtils';
 import AppsDrawer from './AppsDrawer';
 import { _t } from '../../../languageHandler';
 import classNames from 'classnames';
@@ -28,7 +29,6 @@ import AutoHideScrollbar from "../../structures/AutoHideScrollbar";
 import {UIFeature} from "../../../settings/UIFeature";
 import { ResizeNotifier } from "../../../utils/ResizeNotifier";
 import CallViewForRoom from '../voip/CallViewForRoom';
-import {objectHasDiff} from "../../../utils/objects";
 
 interface IProps {
     // js-sdk room object
@@ -89,7 +89,8 @@ export default class AuxPanel extends React.Component<IProps, IState> {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return objectHasDiff(this.props, nextProps) || objectHasDiff(this.state, nextState);
+        return (!ObjectUtils.shallowEqual(this.props, nextProps) ||
+                !ObjectUtils.shallowEqual(this.state, nextState));
     }
 
     componentDidUpdate(prevProps, prevState) {

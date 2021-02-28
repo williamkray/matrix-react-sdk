@@ -44,8 +44,7 @@ const RegistrationEmailPromptDialog: React.FC<IProps> = ({onFinished}) => {
     const [email, setEmail] = useState("");
     const fieldRef = useRef<Field>();
 
-    const onSubmit = async (e) => {
-        e.preventDefault();
+    const onSubmit = async () => {
         if (email) {
             const valid = await fieldRef.current.validate({ allowEmpty: false });
 
@@ -74,7 +73,6 @@ const RegistrationEmailPromptDialog: React.FC<IProps> = ({onFinished}) => {
             <form onSubmit={onSubmit}>
                 <Field
                     ref={fieldRef}
-                    autoFocus={true}
                     type="text"
                     label={_t("Email (optional)")}
                     value={email}

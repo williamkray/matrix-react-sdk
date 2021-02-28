@@ -450,7 +450,17 @@ export default class MemberList extends React.Component {
         let inviteButton;
 
         if (room && room.getMyMembership() === 'join') {
-            const canInvite = room.canInvite(cli.getUserId());
+            // assume we can invite until proven false
+            let canInvite = true;
+
+            const plEvent = room.currentState.getStateEvents("m.room.power_levels", "");
+            const me = room.getMember(cli.getUserId());
+            if (plEvent && me) {
+                const content = plEvent.getContent();
+                if (content && content.invite > me.powerLevel) {
+                    canInvite = false;
+                }
+            }
 
             let inviteButtonText = _t("Invite to this room");
             const chat = CommunityPrototypeStore.instance.getSelectedCommunityGeneralChat();

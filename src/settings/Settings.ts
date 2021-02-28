@@ -36,9 +36,6 @@ import { isMac } from '../Keyboard';
 import UIFeatureController from "./controllers/UIFeatureController";
 import { UIFeature } from "./UIFeature";
 import { OrderedMultiController } from "./controllers/OrderedMultiController";
-import { Layout } from "./Layout";
-import ReducedMotionController from './controllers/ReducedMotionController';
-import IncompatibleController from "./controllers/IncompatibleController";
 
 // These are just a bunch of helper arrays to avoid copy/pasting a bunch of times
 const LEVELS_ROOM_SETTINGS = [
@@ -120,14 +117,6 @@ export interface ISetting {
 }
 
 export const SETTINGS: {[setting: string]: ISetting} = {
-    "feature_spaces": {
-        isFeature: true,
-        displayName: _td("Spaces prototype. Incompatible with Communities, Communities v2 and Custom Tags. " +
-            "Requires compatible homeserver for some features."),
-        supportedLevels: LEVELS_FEATURE,
-        default: false,
-        controller: new ReloadOnChangeController(),
-    },
     "feature_latex_maths": {
         isFeature: true,
         displayName: _td("Render LaTeX maths in messages"),
@@ -142,7 +131,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         ),
         supportedLevels: LEVELS_FEATURE,
         default: false,
-        controller: new IncompatibleController("feature_spaces"),
     },
     "feature_new_spinner": {
         isFeature: true,
@@ -168,7 +156,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td("Group & filter rooms by custom tags (refresh to apply changes)"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
-        controller: new IncompatibleController("feature_spaces"),
     },
     "feature_state_counters": {
         isFeature: true,
@@ -199,8 +186,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td("Show message previews for reactions in DMs"),
         supportedLevels: LEVELS_FEATURE,
         default: false,
-        // this option is a subset of `feature_roomlist_preview_reactions_all` so disable it when that one is enabled
-        controller: new IncompatibleController("feature_roomlist_preview_reactions_all"),
     },
     "feature_roomlist_preview_reactions_all": {
         isFeature: true,
@@ -254,11 +239,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td('Enable Emoji suggestions while typing'),
         default: true,
         invertedSettingName: 'MessageComposerInput.dontSuggestEmoji',
-    },
-    "MessageComposerInput.showStickersButton": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Show stickers button'),
-        default: true,
     },
     // TODO: Wire up appropriately to UI (FTUE notifications)
     "Notifications.alwaysShowBadgeCounts": {
@@ -320,16 +300,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td('Enable automatic language detection for syntax highlighting'),
         default: false,
     },
-    "expandCodeByDefault": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Expand code blocks by default'),
-        default: false,
-    },
-    "showCodeLineNumbers": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td('Show line numbers in code blocks'),
-        default: true,
-    },
     "Pill.shouldShowPillAvatar": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td('Show avatars in user and room mentions'),
@@ -360,11 +330,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td("Show typing notifications"),
         default: true,
-    },
-    "ctrlFForSearch": {
-        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: isMac ? _td("Use Command + F to search") : _td("Use Ctrl + F to search"),
-        default: false,
     },
     "MessageComposerInput.ctrlEnterToSend": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
@@ -456,8 +421,7 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         default: true,
     },
     "allowedWidgets": {
-        supportedLevels: [SettingLevel.ROOM_ACCOUNT, SettingLevel.ROOM_DEVICE],
-        supportedLevelsAreOrdered: true,
+        supportedLevels: [SettingLevel.ROOM_ACCOUNT],
         default: {}, // none allowed
     },
     "analyticsOptIn": {
@@ -632,8 +596,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         default: 3000,
     },
     "showCallButtonsInComposer": {
-        // Dev note: This is no longer "in composer" but is instead "in room header".
-        // TODO: Rename with settings v3
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,
         default: true,
         controller: new UIFeatureController(UIFeature.Voip),
@@ -660,21 +622,17 @@ export const SETTINGS: {[setting: string]: ISetting} = {
         displayName: _td("IRC display name width"),
         default: 80,
     },
-    "layout": {
+    "useIRCLayout": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        default: Layout.Group,
+        displayName: _td("Enable experimental, compact IRC style layout"),
+        default: false,
     },
     "showChatEffects": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
-        displayName: _td("Show chat effects (animations when receiving e.g. confetti)"),
+        displayName: _td("Show chat effects"),
         default: true,
-        controller: new ReducedMotionController(),
     },
-    "Widgets.pinned": { // deprecated
-        supportedLevels: LEVELS_ROOM_OR_ACCOUNT,
-        default: {},
-    },
-    "Widgets.layout": {
+    "Widgets.pinned": {
         supportedLevels: LEVELS_ROOM_OR_ACCOUNT,
         default: {},
     },
@@ -745,7 +703,6 @@ export const SETTINGS: {[setting: string]: ISetting} = {
     [UIFeature.Communities]: {
         supportedLevels: LEVELS_UI_FEATURE,
         default: true,
-        controller: new IncompatibleController("feature_spaces"),
     },
     [UIFeature.AdvancedSettings]: {
         supportedLevels: LEVELS_UI_FEATURE,

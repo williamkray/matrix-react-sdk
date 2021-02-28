@@ -119,16 +119,20 @@ limitations under the License.
     }
 
     &.mx_UserMenu_minimized {
-        padding-right: 0px;
+        .mx_UserMenu_userHeader {
+            .mx_UserMenu_row {
+                justify-content: center;
+            }
 
-        .mx_UserMenu_userAvatarContainer {
-            margin-right: 0px;
+            .mx_UserMenu_userAvatarContainer {
+                margin-right: 0;
+            }
         }
     }
 }
 
 .mx_UserMenu_contextMenu {
-    width: 258px;
+    width: 247px;
 
     // These override the styles already present on the user menu rather than try to
     // define a new menu. They are specifically for the stacked menu when a community
@@ -271,9 +275,6 @@ limitations under the License.
 
     .mx_UserMenu_iconHome::before {
         mask-image: url('$(res)/img/element-icons/roomlist/home.svg');
-    }
-    .mx_UserMenu_iconHosting::before {
-        mask-image: url('$(res)/img/element-icons/brands/element.svg');
     }
 
     .mx_UserMenu_iconBell::before {

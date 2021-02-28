@@ -30,6 +30,7 @@ import MatrixClientContext from "../../contexts/MatrixClientContext";
 import {Action} from "../../dispatcher/actions";
 import RoomSummaryCard from "../views/right_panel/RoomSummaryCard";
 import WidgetCard from "../views/right_panel/WidgetCard";
+import defaultDispatcher from "../../dispatcher/dispatcher";
 
 export default class RightPanel extends React.Component {
     static get propTypes() {
@@ -185,7 +186,7 @@ export default class RightPanel extends React.Component {
         }
     }
 
-    onClose = () => {
+    onCloseUserInfo = () => {
         // XXX: There are three different ways of 'closing' this panel depending on what state
         // things are in... this knows far more than it should do about the state of the rest
         // of the app and is generally a bit silly.
@@ -197,19 +198,29 @@ export default class RightPanel extends React.Component {
             dis.dispatch({
                 action: "view_home_page",
             });
-        } else if (
-            this.state.phase === RightPanelPhases.EncryptionPanel &&
+        } else if (this.state.phase === RightPanelPhases.EncryptionPanel &&
             this.state.verificationRequest && this.state.verificationRequest.pending
         ) {
             // When the user clicks close on the encryption panel cancel the pending request first if any
             this.state.verificationRequest.cancel();
         } else {
-            // the RightPanelStore has no way of knowing which mode room/group it is in, so we handle closing here
+            // Otherwise we have got our user from RoomViewStore which means we're being shown
+            // within a room/group, so go back to the member panel if we were in the encryption panel,
+            // or the member list if we were in the member panel... phew.
+            const isEncryptionPhase = this.state.phase === RightPanelPhases.EncryptionPanel;
             dis.dispatch({
-                action: Action.ToggleRightPanel,
-                type: this.props.groupId ? "group" : "room",
+                action: Action.ViewUser,
+                member: isEncryptionPhase ? this.state.member : null,
             });
         }
+    };
+
+    onClose = () => {
+        // the RightPanelStore has no way of knowing which mode room/group it is in, so we handle closing here
+        defaultDispatcher.dispatch({
+            action: Action.ToggleRightPanel,
+            type: this.props.groupId ? "group" : "room",
+        });
     };
 
     render() {
@@ -249,7 +260,7 @@ export default class RightPanel extends React.Component {
                     user={this.state.member}
                     room={this.props.room}
                     key={roomId || this.state.member.userId}
-                    onClose={this.onClose}
+                    onClose={this.onCloseUserInfo}
                     phase={this.state.phase}
                     verificationRequest={this.state.verificationRequest}
                     verificationRequestPromise={this.state.verificationRequestPromise}
@@ -265,7 +276,7 @@ export default class RightPanel extends React.Component {
                     user={this.state.member}
                     groupId={this.props.groupId}
                     key={this.state.member.userId}
-                    onClose={this.onClose} />;
+                    onClose={this.onCloseUserInfo} />;
                 break;
 
             case RightPanelPhases.GroupRoomInfo:
