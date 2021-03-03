@@ -19,10 +19,8 @@ import dis from '../../../dispatcher/dispatcher';
 import * as sdk from '../../../index';
 import { _t } from '../../../languageHandler';
 import RoomViewStore from '../../../stores/RoomViewStore';
-import SettingsStore from "../../../settings/SettingsStore";
 import PropTypes from "prop-types";
 import {RoomPermalinkCreator} from "../../../utils/permalinks/Permalinks";
-import {UIFeature} from "../../../settings/UIFeature";
 
 function cancelQuoting() {
     dis.dispatch({
@@ -69,7 +67,7 @@ export default class ReplyPreview extends React.Component {
     render() {
         if (!this.state.event) return null;
 
-        const EventTile = sdk.getComponent('rooms.EventTile');
+        const ReplyTile = sdk.getComponent('rooms.ReplyTile');
 
         return <div className="mx_ReplyPreview">
             <div className="mx_ReplyPreview_section">
@@ -81,14 +79,11 @@ export default class ReplyPreview extends React.Component {
                          onClick={cancelQuoting} />
                 </div>
                 <div className="mx_ReplyPreview_clear" />
-                <EventTile
-                    last={true}
-                    tileShape="reply_preview"
-                    mxEvent={this.state.event}
-                    permalinkCreator={this.props.permalinkCreator}
-                    isTwelveHour={SettingsStore.getValue("showTwelveHourTimestamps")}
-                    enableFlair={SettingsStore.getValue(UIFeature.Flair)}
-                />
+                <div className="mx_ReplyPreview_tile">
+                    <ReplyTile isRedacted={this.state.event.isRedacted()}
+                               mxEvent={this.state.event}
+                               permalinkCreator={this.props.permalinkCreator} />
+                </div>
             </div>
         </div>;
     }
