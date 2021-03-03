@@ -20,13 +20,13 @@ import * as sdk from '../../../index';
 import {_t} from '../../../languageHandler';
 import PropTypes from 'prop-types';
 import dis from '../../../dispatcher/dispatcher';
-import {wantsDateSeparator} from '../../../DateUtils';
 import {MatrixEvent} from 'matrix-js-sdk';
 import {makeUserPermalink, RoomPermalinkCreator} from "../../../utils/permalinks/Permalinks";
 import SettingsStore from "../../../settings/SettingsStore";
 import {LayoutPropType} from "../../../settings/Layout";
 import escapeHtml from "escape-html";
 import MatrixClientContext from "../../../contexts/MatrixClientContext";
+import { getUserNameColorClass } from "../../../utils/FormattingUtils";
 import {Action} from "../../../dispatcher/actions";
 import sanitizeHtml from "sanitize-html";
 import {UIFeature} from "../../../settings/UIFeature";
@@ -335,6 +335,10 @@ export default class ReplyThread extends React.Component {
         dis.fire(Action.FocusComposer);
     }
 
+    getReplyThreadColorClass(ev) {
+        return getUserNameColorClass(ev.getSender()).replace("Username", "ReplyThread");
+    }
+
     render() {
         let header = null;
 
@@ -349,7 +353,7 @@ export default class ReplyThread extends React.Component {
             const ev = this.state.loadedEv;
             const Pill = sdk.getComponent('elements.Pill');
             const room = this.context.getRoom(ev.getRoomId());
-            header = <blockquote className="mx_ReplyThread">
+            header = <blockquote className={`mx_ReplyThread ${this.getReplyThreadColorClass(ev)}`}>
                 {
                     _t('<a>In reply to</a> <pill>', {}, {
                         'a': (sub) => <a onClick={this.onQuoteClick} className="mx_ReplyThread_show">{ sub }</a>,
@@ -369,20 +373,11 @@ export default class ReplyThread extends React.Component {
             header = <Spinner w={16} h={16} />;
         }
 
-        const EventTile = sdk.getComponent('views.rooms.EventTile');
-        const DateSeparator = sdk.getComponent('messages.DateSeparator');
+        const ReplyTile = sdk.getComponent('views.rooms.ReplyTile');
         const evTiles = this.state.events.map((ev) => {
-            let dateSep = null;
-
-            if (wantsDateSeparator(this.props.parentEv.getDate(), ev.getDate())) {
-                dateSep = <a href={this.props.url}><DateSeparator ts={ev.getTs()} /></a>;
-            }
-
-            return <blockquote className="mx_ReplyThread" key={ev.getId()}>
-                { dateSep }
-                <EventTile
+            return <blockquote className={`mx_ReplyThread ${this.getReplyThreadColorClass(ev)}`} key={ev.getId()}>
+                <ReplyTile
                     mxEvent={ev}
-                    tileShape="reply"
                     onHeightChanged={this.props.onHeightChanged}
                     permalinkCreator={this.props.permalinkCreator}
                     isRedacted={ev.isRedacted()}

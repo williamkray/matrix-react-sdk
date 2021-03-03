@@ -44,6 +44,9 @@ export default class MessageEvent extends React.Component {
 
         /* the maximum image height to use, if the event is an image */
         maxImageHeight: PropTypes.number,
+
+        overrideBodyTypes: PropTypes.object,
+        overrideEventTypes: PropTypes.object,
     };
 
     constructor(props) {
@@ -69,9 +72,11 @@ export default class MessageEvent extends React.Component {
             'm.file': sdk.getComponent('messages.MFileBody'),
             'm.audio': sdk.getComponent('messages.MAudioBody'),
             'm.video': sdk.getComponent('messages.MVideoBody'),
+            ...(this.props.overrideBodyTypes || {}),
         };
         const evTypes = {
             'm.sticker': sdk.getComponent('messages.MStickerBody'),
+            ...(this.props.overrideEventTypes || {}),
         };
 
         const content = this.props.mxEvent.getContent();
@@ -108,7 +113,7 @@ export default class MessageEvent extends React.Component {
             }
         }
 
-        return <BodyType
+        return BodyType ? <BodyType
             ref={this._body}
             mxEvent={this.props.mxEvent}
             highlights={this.props.highlights}
@@ -120,6 +125,6 @@ export default class MessageEvent extends React.Component {
             editState={this.props.editState}
             onHeightChanged={this.props.onHeightChanged}
             onMessageAllowed={this.onTileUpdate}
-        />;
+        /> : null;
     }
 }
