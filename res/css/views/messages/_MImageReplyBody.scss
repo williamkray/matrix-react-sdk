@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Matrix.org Foundation C.I.C.
+Copyright 2020 Tulir Asokan <tulir@maunium.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,10 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-span.mx_MVideoBody {
-    video.mx_MVideoBody {
-        max-width: 100%;
-        max-height: 300px;
-        border-radius: 4px;
+.mx_MImageReplyBody {
+    display: grid;
+    grid-template:
+        "image sender"   20px
+        "image filename" 20px
+        / 44px  auto;
+    grid-gap: 4px;
+}
+
+.mx_MImageReplyBody_thumbnail {
+    grid-area: image;
+
+    .mx_MImageBody_thumbnail_container {
+        max-height: 44px !important;
     }
+}
+
+.mx_MImageReplyBody_sender {
+    grid-area: sender;
+}
+
+.mx_MImageReplyBody_filename {
+    grid-area: filename;
 }
